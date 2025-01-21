@@ -32,7 +32,7 @@ export async function GET(req) {
       if (data.event === 'OPENPIX:CHARGE_COMPLETED') {
         // Localiza o user_id nos campos adicionais
         console.log(data);
-        const additionalInfo = data.additionalInfo || [];
+        const additionalInfo = data.charge.additionalInfo || [];
         const userIdField = additionalInfo.find(info => info.key === "UserID");
         
         if (!userIdField) {
@@ -40,7 +40,7 @@ export async function GET(req) {
         }
   
         const user_id = userIdField.value; // Obtém o user_id
-        const saldo = data.value / 100; // Converte o valor para o formato correto
+        const saldo = data.charge.value / 100; // Converte o valor para o formato correto
   
         // Atualiza o saldo no Supabase
         const { error } = await supabase
