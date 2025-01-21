@@ -127,6 +127,11 @@ console.log(rechargeAmount);
         correlationID: chatId+"000"+(new Date().getDate()),  // ID de correlação para rastrear a transação
         value: rechargeAmount * 100,  // O valor em centavos (OpenPix usa centavos)
         comment: '@NEXTRECARGAS - ADIÇÃO DE SALDOS!',
+        additionalInfo: [
+          { key: "UserID", value: chatId },
+          { key: "Product", value: "Saldo" },
+          { key: "Invoice", value: `${new Date().getTime()}` } 
+        ]
       }),
     });
 
