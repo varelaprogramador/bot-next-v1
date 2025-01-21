@@ -114,7 +114,7 @@ bot.on('callback_query', async (ctx) => {
     ctx.reply('💰 Escolha o valor para recarregar seu saldo:', options);
   } else if (callbackData.startsWith('recarregar_')) {
     
-    const rechargeAmount = parseFloat(callbackData.slice(-2)); // Aqui funciona porque callbackData está no contexto correto
+   let rechargeAmount = parseFloat(callbackData.slice(-2)); // Aqui funciona porque callbackData está no contexto correto
 console.log(rechargeAmount);
     // Fazer a requisição para o OpenPix para gerar o link de pagamento
     const response = await fetch('https://api.openpix.com.br/api/v1/charge?return_existing=true', {
@@ -124,7 +124,7 @@ console.log(rechargeAmount);
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        correlationID: chatId,  // ID de correlação para rastrear a transação
+        correlationID: chatId+"000"+(new Date().getDate()),  // ID de correlação para rastrear a transação
         value: rechargeAmount * 100,  // O valor em centavos (OpenPix usa centavos)
         comment: '@NEXTRECARGAS - ADIÇÃO DE SALDOS!',
       }),
