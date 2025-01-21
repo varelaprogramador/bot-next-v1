@@ -41,7 +41,7 @@ export async function GET(req) {
   
         const user_id = userIdField.value; // Obtém o user_id
         const saldo = data.charge.value / 100; // Converte o valor para o formato correto
-  
+        console.log(saldo+ "   -    "+user_id);
         // Atualiza o saldo no Supabase
         const { error } = await supabase
           .from('users') // Nome da tabela
@@ -51,6 +51,7 @@ export async function GET(req) {
           .eq('user_id', user_id); // Filtra pelo ID do usuário
   
         if (error) {
+          console.log("ERROOOOOO")
           throw new Error(`Erro ao atualizar saldo: ${error.message}`);
         }
   
