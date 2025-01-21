@@ -26,11 +26,12 @@ export async function GET(req) {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
     try {
       const data = await req.json(); // Corpo da requisição
-      console.log(data);
+     
   
       // Valida se o evento e o status são os esperados
-      if (data.event === "OPENPIX:CHARGE_COMPLETED" && data.status === "COMPLETED") {
+      if (data.event === 'OPENPIX:CHARGE_COMPLETED') {
         // Localiza o user_id nos campos adicionais
+        console.log(data);
         const additionalInfo = data.additionalInfo || [];
         const userIdField = additionalInfo.find(info => info.key === "UserID");
         
