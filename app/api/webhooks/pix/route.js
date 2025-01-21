@@ -1,7 +1,8 @@
-require('dotenv').config();
+
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(req) {
+  require('dotenv').config();
  
   try {
     console.log(req.json())
@@ -23,6 +24,7 @@ export async function GET(req) {
 
 
   export async function POST(req) {
+    require('dotenv').config();
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
     try {
       const data = await req.json(); // Corpo da requisição
@@ -46,7 +48,7 @@ export async function GET(req) {
         const { error } = await supabase
           .from('users') // Nome da tabela
           .update({
-            saldo: supabase.raw('saldo + ?', [saldo]), // Incrementa o saldo
+            saldo: supabase.raw('saldo + ?', saldo), // Incrementa o saldo
           })
           .eq('user_id', user_id); // Filtra pelo ID do usuário
   
