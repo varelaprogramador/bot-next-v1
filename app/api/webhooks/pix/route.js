@@ -54,26 +54,14 @@ export async function GET(req) {
           throw new Error(`Valor de saldo inválido: ${saldo}`);
         }
   
-       
-const { data: user, error: fetchError } = await supabase
-.from('users')
-.select('saldo')
-.eq('user_id', user_id)
-.single();
+        // Atualiza o saldo no Supabase
+        const { error } = await supabase
+          .from('users')
+          .update({
+            saldo: saldo
 
-if (fetchError) {
-console.error(fetchError);
-} else {
-const newSaldo = user.saldo + saldo; // Increment the saldo
-const { error: updateError } = await supabase
-  .from('users')
-  .update({ saldo: newSaldo })
-  .eq('user_id', user_id);
-
-if (updateError) {
-  console.error(updateError);
-}
-}
+          })
+          .eq('user_id', user_id);
   
         if (error) {
           console.error("Erro ao atualizar saldo no Supabase:", error);
