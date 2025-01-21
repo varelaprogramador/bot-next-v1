@@ -1,6 +1,7 @@
 require('dotenv').config();  // Carregar variáveis de ambiente do .env
 const { Telegraf } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
+const { randomUUID } = require('crypto');
 
 // Inicializando o Supabase
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
@@ -86,6 +87,7 @@ bot.start(async (ctx) => {
 });
 
 bot.on('callback_query', async (ctx) => {
+  const userId = ctx.from.id;
   const chatId = ctx.chat.id;
   const callbackData = ctx.callbackQuery.data;  // Aqui é onde callbackData é definida
 
@@ -124,14 +126,19 @@ console.log(rechargeAmount);
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        correlationID: chatId+"000"+(new Date().getDate()),  // ID de correlação para rastrear a transação
+        correlationID: `${userId}-${randomUUID()}`,  // ID de correlação para rastrear a transação
         value: rechargeAmount * 100,  // O valor em centavos (OpenPix usa centavos)
         comment: '@NEXTRECARGAS - ADIÇÃO DE SALDOS!',
         additionalInfo: [
-          { key: "UserID", value: chatId },
+          { key: "UserID", value: userId },
           { key: "Product", value: "Saldo" },
           { key: "Invoice", value: `${new Date().getTime()}` } 
-        ]
+        ],payer:{
+          name: `telegram - ${userId}`,
+          email: '',
+      phone: '',
+      correlationID: userId
+        }
       }),
     });
 
