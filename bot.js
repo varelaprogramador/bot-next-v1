@@ -107,116 +107,133 @@ bot.on('callback_query', async (ctx) => {
     const options = {
       reply_markup: {
         inline_keyboard: [
-          [{ text: 'Recarregar R$10', callback_data: 'recarregar_10' }],
-          [{ text: 'Recarregar R$20', callback_data: 'recarregar_20' }],
-          [{ text: 'Recarregar R$50', callback_data: 'recarregar_50' }],
+          [{ text: 'Gerar Pix 💠', callback_data: 'gerar_pix' }],
+          [{ text: '⬅ Voltar', callback_data: 'voltar' }],
         ],
       },
     };
-    ctx.reply('💰 Escolha o valor para recarregar seu saldo:', options);
-  } else if (callbackData.startsWith('recarregar_')) {
     
-   let rechargeAmount = parseFloat(callbackData.slice(-2)); // Aqui funciona porque callbackData está no contexto correto
-console.log(rechargeAmount);
+    ctx.reply('💰 Escolha o valor para recarregar seu saldo💰', options);
+  } else if (callbackData === 'gerar_pix') {
+    // Solicitar ao usuário que insira o valor para recarga
+    ctx.reply('Digite o valor da recarga (de R$1 a R$999):');
+    
+    // Espera pelo texto da resposta
+    bot.on('text', async (messageCtx) => {
+      const valorInput = parseFloat(messageCtx.message.text);
+      if (isNaN(valorInput) || valorInput < 1 || valorInput > 999) {
+        messageCtx.reply('⚠️ Valor inválido. Por favor, insira um valor entre R$1 e R$999.');
+        return;
+      }
+
+      // Pergunta de confirmação
+      const confirmationOptions = {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: `Confirmar recargar de R$${valorInput.toFixed(2)}`, callback_data: `confirmar_pix_${valorInput}` }],
+            [{ text: 'Cancelar', callback_data: 'voltar' }],
+          ],
+        },
+      };
+      messageCtx.reply(`Você escolheu R$${valorInput.toFixed(2)}. Confirme o valor para gerar o link de pagamento:`, confirmationOptions);
+    });
+  } else if (callbackData.startsWith('confirmar_pix_')) {
+    const rechargeAmount = parseFloat(callbackData.split('_')[2]);
+
     // Fazer a requisição para o OpenPix para gerar o link de pagamento
     const response = await fetch('https://api.openpix.com.br/api/v1/charge?return_existing=true', {
       method: 'POST',
       headers: {
-        'Authorization': `${process.env.OPENPIX_API_KEY}`,  // Use a chave de API armazenada no .env
+        'Authorization': `${process.env.OPENPIX_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        correlationID: `${userId}-${randomUUID()}`,  // ID de correlação para rastrear a transação
-        value: rechargeAmount * 100,  // O valor em centavos (OpenPix usa centavos)
+        correlationID: `${userId}-${randomUUID()}`,
+        value: rechargeAmount * 100,
         comment: '@NEXTRECARGAS - ADIÇÃO DE SALDOS!',
         additionalInfo: [
-          { key: "UserID", value: userId },
-          { key: "Product", value: "Saldo" },
-          { key: "Invoice", value: `${new Date().getTime()}` } 
-        ],payer:{
+          { key: 'UserID', value: userId },
+          { key: 'Product', value: 'Saldo' },
+          { key: 'Invoice', value: `${new Date().getTime()}` }
+        ],
+        payer: {
           name: `telegram - ${userId}`,
           email: '',
-      phone: '',
-      correlationID: userId
+          phone: '',
+          correlationID: userId
         }
       }),
     });
 
     const data = await response.json();
 
-    console.log(data)
     ctx.reply(
       `💳 Aqui está o link para recarregar R$${rechargeAmount.toFixed(2)} em seu saldo:\n\n${data.charge.paymentLinkUrl}`,
       {
         reply_markup: {
           inline_keyboard: [
-            [{
-              text: 'Clique aqui para pagar',
-              url: data.charge.paymentLinkUrl,
-            }]
+            [{ text: 'Clique aqui para pagar', url: data.charge.paymentLinkUrl }]
           ]
         }
       }
     );
-    
-    
-   
-   
-  } else if (callbackData.startsWith('filme_') || callbackData.startsWith('serie_') || callbackData.startsWith('musica_') || callbackData.startsWith('anime_')) {
-    const itemPrices = {
-      filme_hd: 29.90,
-      serie_exclusiva: 39.90,
-      musica_ilimitada: 19.90,
-      anime_premium: 24.90,
-    };
-
-    const itemName = {
-      filme_hd: 'Canal de Filmes HD',
-      serie_exclusiva: 'Canal de Séries Exclusivas',
-      musica_ilimitada: 'Canal de Música Sem Limite',
-      anime_premium: 'Canal de Anime Premium',
-    };
-
-    const price = itemPrices[callbackData];
-    const name = itemName[callbackData];
-
-    // Obter informações do usuário no banco de dados
-    const { data: userData, error } = await supabase
+  } else if (callbackData === 'voltar') {
+    sendActionButtonsInline(chatId);  // ⬅ Voltar para o menu principal
+  } else if (callbackData === 'perfil') {
+    // Recuperar os dados do usuário do Supabase
+    const { data, error } = await supabase
       .from('users')
-      .select('saldo')
-      .eq('user_id', ctx.from.id)
+      .select('id, saldo, saldo_indicacao, historico_produtos, username')
+      .eq('user_id', userId)
       .single();
 
-    if (error || !userData) {
-      ctx.reply('Erro ao acessar seus dados. Tente novamente.');
+    if (error || !data) {
+      ctx.reply("Desculpe, houve um erro ao buscar suas informações de perfil.");
       return;
     }
 
-    if (userData.saldo >= price) {
-      const newSaldo = parseFloat(userData.saldo) - price;
+    // Desestruturar dados do usuário
+    const { saldo = 0.00, saldo_indicacao = 0.00, historico_produtos, username } = data;
 
-      // Atualizar o saldo no banco de dados
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ saldo: newSaldo })
-        .eq('user_id', ctx.from.id);
+    // Calcular o total de contas adquiridas e o valor total gasto
+    const totalCompras = historico_produtos.length;
+    const totalGasto = historico_produtos.reduce((total, produto) => total + parseFloat(produto.value), 0);
 
-      if (updateError) {
-        ctx.reply('Erro ao processar a compra. Tente novamente.');
-      } else {
-        ctx.reply(
-          `✅ Compra realizada com sucesso!\n\n🎥 Você adquiriu: *${name}*.\n💵 Saldo restante: R$${newSaldo.toFixed(2)}.`,
-          { parse_mode: 'Markdown' }
-        );
-      }
-    } else {
-      ctx.reply(`❌ Saldo insuficiente para adquirir *${name}*.\n💵 Seu saldo: R$${userData.saldo.toFixed(2)}.\n\nRecarregue seu saldo para continuar.`);
-    }
-  }
-});
+    // Criar lista de compras
+    const comprasList = historico_produtos.map(produto => `🔹 ${produto.key} | R$${produto.value} | ${produto.data_compra}`).join('\n') || 'Nenhuma compra realizada ainda.';
 
-// Removido o webhook e integração com OpenPix
+    // Mensagem personalizada com a ficha do usuário
+    const message = `
+💟 **Bem-vindo(a) à Recarga Next!** 💟  
+✨ A melhor loja de streaming do Telegram! ✨
 
+🧾 **Sua Ficha de Usuário:**
+├ 👤 Username: @${username}
+├ 🆔 ID do usuário: ${userId}
+├ 💵 Saldo disponível: R$${saldo.toFixed(2)}
+└ 🔘 Saldo de Indicação: R$${saldo_indicacao.toFixed(2)}
+
+🛍 **Compras**
+🛒 Total de Contas adquiridas: ${totalCompras}
+💠 Total em depósitos: R$${totalGasto.toFixed(2)}
+
+🛍 **Histórico de Compras**
+${comprasList}
+
+🎉 **Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!**
+    `;
+
+    // Enviar mensagem com as informações do perfil
+    ctx.reply(message);
+
+    // Enviar os botões de navegação
+    sendActionButtonsInline(chatId);
+}})
+
+   
+
+
+// Bot está em execução
 bot.launch().then(() => {
   console.log('Bot está em execução...');
 });
