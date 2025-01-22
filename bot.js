@@ -14,16 +14,9 @@ const sendActionButtonsInline = (chatId) => {
   const options = {
     reply_markup: {
       inline_keyboard: [
-        [
-          { text: '💎 Contas Premium', callback_data: 'premium' },
-        ],
-        [
-          { text: '💰 Saldo', callback_data: 'saldo' },
-          { text: '👤 Perfil', callback_data: 'perfil' },
-        ],
-        [
-           { text: '🛠️ Suporte', callback_data: 'suporte' },
-        ],
+        [{ text: '💎 Contas Premium', callback_data: 'premium' }],
+        [{ text: '💰 Saldo', callback_data: 'saldo' }, { text: '👤 Perfil', callback_data: 'perfil' }],
+        [{ text: '🛠️ Suporte', callback_data: 'suporte' }],
       ],
     },
   };
@@ -35,7 +28,7 @@ bot.start(async (ctx) => {
   const chatId = ctx.chat.id;
   const username = ctx.from.username || 'None'; // Usar "None" se não houver username
   const userId = ctx.from.id;
-  
+
   // Verificar se o usuário já existe no banco de dados
   const { data, error } = await supabase
     .from('users')
@@ -64,7 +57,8 @@ bot.start(async (ctx) => {
   }
 
   // Exibir a ficha do usuário
-  const { saldo = 0.00, saldo_indicacao = 0.00 } = data || {};
+  const { saldo, saldo_indicacao } = data || {};
+  console.log(data);
 
   const message = `
 💟 Bem-vindo(a) à Recarga Next! 💟
@@ -73,14 +67,14 @@ bot.start(async (ctx) => {
 🧾 Sua Ficha de Usuário:
 ├ 👤 Username: @${username}
 ├ 🆔 ID do usuário: ${userId}
-├ 💵 Saldo disponível: R$${saldo.toFixed(2)}
-└ 🔘 Saldo de Indicação: R$${saldo_indicacao.toFixed(2)}
+├ 💵 Saldo disponível: R$${saldo}
+└ 🔘 Saldo de Indicação: R$${saldo_indicacao}
 
 🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!
 `;
 
   // Enviar mensagem de boas-vindas com a ficha do usuário
-  ctx.reply(message);
+  ctx.reply(message); // Mantendo o uso de ctx.reply aqui
 
   // Enviar os botões inline de ação
   sendActionButtonsInline(chatId);
@@ -89,21 +83,182 @@ bot.start(async (ctx) => {
 bot.on('callback_query', async (ctx) => {
   const userId = ctx.from.id;
   const chatId = ctx.chat.id;
-  const callbackData = ctx.callbackQuery.data;  // Aqui é onde callbackData é definida
+  const callbackData = ctx.callbackQuery.data;
 
   if (callbackData === 'premium') {
+    // Obter produtos do Supabase
+    const { data: produtos, error } = await supabase
+      .from('produtos')
+      .select('*'); // Busca todas as colunas
+
+    console.log("ETAPA ", produtos);
+    if (error) {
+      ctx.editMessageText("❌ Não foi possível carregar os produtos. Tente novamente mais tarde.");
+      return;
+    }
+
     const options = {
       reply_markup: {
+        inline_keyboard: produtos.map(item => [
+          { text: `${item.nome} (R$${item.valor})`, callback_data: `comprar_${item.id}` }
+        ]),
+      },
+    };
+    ctx.editMessageText('💎 Escolha um canal premium:', options);
+  } else if (callbackData.startsWith('comprar_')) {
+    const produtoId = callbackData.split('_')[1];
+    console.log(produtoId);
+    
+    // Obter detalhes do produto
+    const { data: produto, error } = await supabase
+      .from('produtos')
+      .select('*')
+      .eq('id', produtoId)
+      .single(); // Adicionando .single() para garantir que apenas um produto seja retornado
+
+    if (error || !produto) {
+      ctx.editMessageText("❌ Não foi possível encontrar o produto. Tente novamente mais tarde.");
+      return;
+    }
+    console.log(produto);
+
+    // Recuperar informações do usuário no Supabase
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('saldo')
+      .eq('user_id', userId)
+      .single();
+
+    if (userError || !userData) {
+      ctx.editMessageText("❌ Não foi possível recuperar suas informações. Tente novamente mais tarde.");
+      return;
+    }
+
+    const saldoAtual = userData.saldo;
+    const valorProduto = produto.valor;
+
+    if (saldoAtual < valorProduto) {
+      ctx.editMessageText(
+        `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
+        `💰 Recarregue seu saldo para continuar.`, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: 'Clique aqui para adicionar saldo', callback_data: 'saldo' }]
+            ]
+          }
+        }
+      );
+      return;
+    }
+
+    // Mensagem de confirmação
+    const confirmacaoOptions = {
+      reply_markup: {
         inline_keyboard: [
-          [{ text: 'Canal de Filmes HD (R$29,90)', callback_data: 'filme_hd' }],
-          [{ text: 'Canal de Séries Exclusivas (R$39,90)', callback_data: 'serie_exclusiva' }],
-          [{ text: 'Canal de Música Sem Limite (R$19,90)', callback_data: 'musica_ilimitada' }],
-          [{ text: 'Canal de Anime Premium (R$24,90)', callback_data: 'anime_premium' }],
+          [{ text: `Confirmar compra de R$${valorProduto}`, callback_data: `confirmar_compra_${produtoId}` }],
+          [{ text: 'Cancelar', callback_data: 'voltar' }],
         ],
       },
     };
-    ctx.reply('💎 Escolha um canal premium:', options);
-  } else if (callbackData === 'saldo') {
+
+    ctx.editMessageText(
+      `🛒 Você está prestes a adquirir o produto:\n\n` +
+      `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
+      `💵 Preço: R$${valorProduto}\n` +
+      `💰 Saldo atual: R$${saldoAtual}\n\n` +
+      `Deseja confirmar a compra?`,
+      confirmacaoOptions
+    );
+  } else if (callbackData.startsWith('confirmar_compra_')) {
+    const produtoId = callbackData.replace('confirmar_compra_', '');
+    const { data: produto, error } = await supabase
+      .from('produtos')
+      .select('*')
+      .eq('id', produtoId)
+      .single(); // Adicionando .single() para garantir que apenas um produto seja retornado
+
+    if (error || !produto) {
+      ctx.editMessageText("❌ Não foi possível encontrar o produto. Tente novamente mais tarde.");
+      return;
+    }
+
+    const valorProduto = produto.valor;
+
+    // Recuperar saldo novamente para evitar conflitos
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('saldo')
+      .eq('user_id', userId)
+      .single();
+
+    if (userError || !userData || userData.saldo < valorProduto) {
+      ctx.editMessageText("❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente.");
+      return;
+    }
+
+    // Atualizar saldo no Supabase
+    const novoSaldo = userData.saldo - valorProduto;
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ saldo: novoSaldo })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      ctx.editMessageText("❌ Não foi possível processar sua compra. Tente novamente mais tarde.", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'Clique aqui para adicionar saldo', callback_data: 'saldo' }]
+          ]
+        }
+      });
+      return;
+    }
+
+    // Recuperar código do produto apenas se o status for "ativo"
+    const { data: codigoData, error: codigoError } = await supabase
+      .from('codigos')
+      .select('*')
+      .eq('id_produto', produtoId)
+      .eq('status', 'ativo') // Filtrando apenas códigos ativos
+      .single();
+
+    if (codigoError || !codigoData) {
+      ctx.editMessageText("❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." + `\nSeu id:${userId}`, {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'Clique aqui para chamar o suporte', callback_data: 'suporte' }]
+          ]
+        }
+      });
+      return;
+    }
+
+    ctx.editMessageText(
+      `🎉 Compra realizada com sucesso!\n` +
+      `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
+      `💵 Preço: R$${valorProduto}\n` +
+      `💰 Saldo restante: R$${novoSaldo}\n\n` +
+      `Aproveite seu novo produto!`
+    );
+    ctx.reply(`
+      🎉 *PARABÉNS! SEU GIFT CARD ESTÁ PRONTO!* 🎉
+      
+      ✨ Aproveite agora mesmo o seu presente exclusivo! ✨  
+      Copie o código abaixo e ative para desbloquear suas recompensas:
+      
+      📜 Seu Código: ${codigoData.codigo}
+      
+      🔗 Como ativar:  
+      1️⃣ Copie o código acima.  
+      2️⃣ Acesse nosso site ou aplicativo.  
+      3️⃣ Insira o código no campo de ativação.  
+      4️⃣ Curta sua experiência ao máximo! 🎁
+      
+      ⏳ Não perca tempo! O código é válido por tempo limitado.  
+      Se tiver dúvidas, estamos aqui para ajudar. 💬
+      `);
+      
+  }else if (callbackData === 'saldo') {
     const options = {
       reply_markup: {
         inline_keyboard: [
@@ -188,7 +343,7 @@ bot.on('callback_query', async (ctx) => {
       .single();
 
     if (error || !data) {
-      ctx.reply("Desculpe, houve um erro ao buscar suas informações de perfil.");
+      ctx.editMessageText("Desculpe, houve um erro ao buscar suas informações de perfil.");
       return;
     }
 
@@ -204,34 +359,32 @@ bot.on('callback_query', async (ctx) => {
 
     // Mensagem personalizada com a ficha do usuário
     const message = `
-💟 **Bem-vindo(a) à Recarga Next!** 💟  
+💟 Bem-vindo(a) à Recarga Next! 💟  
 ✨ A melhor loja de streaming do Telegram! ✨
 
-🧾 **Sua Ficha de Usuário:**
+🧾 Sua Ficha de Usuário:
 ├ 👤 Username: @${username}
 ├ 🆔 ID do usuário: ${userId}
-├ 💵 Saldo disponível: R$${saldo.toFixed(2)}
-└ 🔘 Saldo de Indicação: R$${saldo_indicacao.toFixed(2)}
+├ 💵 Saldo disponível: R$${saldo}
+└ 🔘 Saldo de Indicação: R$${saldo_indicacao}
 
-🛍 **Compras**
+🛍 Compras
 🛒 Total de Contas adquiridas: ${totalCompras}
-💠 Total em depósitos: R$${totalGasto.toFixed(2)}
+💠 Total em depósitos: R$${totalGasto}
 
-🛍 **Histórico de Compras**
+🛍 Histórico de Compras
 ${comprasList}
 
-🎉 **Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!**
+🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!
     `;
 
     // Enviar mensagem com as informações do perfil
-    ctx.reply(message);
+    ctx.editMessageText(message);
 
     // Enviar os botões de navegação
     sendActionButtonsInline(chatId);
-}})
-
-   
-
+  }
+});
 
 // Bot está em execução
 bot.launch().then(() => {
