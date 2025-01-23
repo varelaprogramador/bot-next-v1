@@ -9,8 +9,7 @@ const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
   weight: ["400", "700"], // Especifique os pesos que você deseja usar
-});
-
+})
 
 export const metadata: Metadata = {
   title: "Kirvano Dashboard",
@@ -26,11 +25,14 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={poppins.className}>
         <SidebarProvider>
-          <div className="flex min-h-screen flex-col">
+          <div className="flex min-h-screen w-full overflow-hidden"> {/* Adicionando w-full e overflow-hidden */}
             <div className="flex flex-1">
               <MainNav />
               <ThemeProvider>
-              <main className="flex-1 p-4">{children}</main></ThemeProvider>
+                <main className="flex-1 p-4 overflow-auto"> {/* Ajustando overflow-auto no main */}
+                  {children}
+                </main>
+              </ThemeProvider>
             </div>
           </div>
         </SidebarProvider>

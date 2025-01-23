@@ -3,6 +3,7 @@
 import Link from "next/link"
 import {
   BarChart3,
+  Binary,
   Building2,
   FileText,
   Gift,
@@ -41,22 +42,17 @@ const menuItems = [
     icon: Package,
     href: "/produtos",
   },
-  {
-    title: "Finanças",
-    icon: FileText,
-    href: "/financas",
-  },
+ 
   {
     title: "Integrações",
     icon: Building2,
     href: "/integracoes",
   },
   {
-    title: "Compras",
-    icon: ShoppingCart,
-    href: "/compras",
+    title: "Codigos",
+    icon: Binary,
+    href: "/codigos",
   },
-
   {
     title: "Claro/Escuro",
     icon: SunMoon,
