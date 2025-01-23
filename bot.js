@@ -10,23 +10,9 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 // Função para enviar os botões embutidos
-const sendActionButtonsInline = (chatId) => {
-  const options = {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '💎 Contas Premium', callback_data: 'premium' }],
-        [{ text: '💰 Saldo', callback_data: 'saldo' }, { text: '👤 Perfil', callback_data: 'perfil' }],
-        [{ text: '🛠️ Suporte', callback_data: 'suporte' }],
-      ],
-    },
-  };
-  bot.telegram.sendMessage(chatId, 'Escolha uma opção:', options);
-};
-
-// Bot começa
-bot.start(async (ctx) => {
+const sendActionButtonsInline = async (ctx) => { 
   const chatId = ctx.chat.id;
-  const username = ctx.from.username || 'None'; // Usar "None" se não houver username
+  const username = ctx.from.username || 'None'; 
   const userId = ctx.from.id;
 
   // Verificar se o usuário já existe no banco de dados
@@ -74,10 +60,77 @@ bot.start(async (ctx) => {
 `;
 
   // Enviar mensagem de boas-vindas com a ficha do usuário
-  ctx.reply(message); // Mantendo o uso de ctx.reply aqui
+  bot.telegram.sendMessage(chatId,message, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '💎 Contas Premium', callback_data: 'premium' }],
+        [{ text: '💰 Saldo', callback_data: 'saldo' }, { text: '👤 Perfil', callback_data: 'perfil' }],
+        [{ text: '🛠️ Suporte', callback_data: 'suporte' }],
+      ],
+    },
+  }); 
+};
 
-  // Enviar os botões inline de ação
-  sendActionButtonsInline(chatId);
+// Bot começa
+bot.start(async (ctx) => {
+  const chatId = ctx.chat.id;
+  const username = ctx.from.username || 'None'; 
+  const userId = ctx.from.id;
+
+  // Verificar se o usuário já existe no banco de dados
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, saldo, saldo_indicacao')
+    .eq('user_id', userId)
+    .single();
+
+  // Se o usuário não existir, criar um novo registro
+  if (error || !data) {
+    const { data: insertedData, error: insertError } = await supabase
+      .from('users')
+      .insert([{
+        user_id: userId,
+        username: username,
+        saldo: 0.00, // saldo inicial
+        saldo_indicacao: 0.00, // saldo de indicação inicial
+      }])
+      .single();
+
+    if (insertError) {
+      console.error('Erro ao inserir usuário no Supabase:', insertError);
+      return ctx.reply("Desculpe, houve um erro ao registrar suas informações.");
+    }
+
+    console.log('Novo usuário inserido no Supabase:', insertedData);
+  }
+
+  // Exibir a ficha do usuário
+  const { saldo, saldo_indicacao } = data || {};
+  console.log(data);
+
+  const message = `
+💟 Bem-vindo(a) à Recarga Next! 💟
+✨ A melhor loja de streaming do Telegram! ✨
+
+🧾 Sua Ficha de Usuário:
+├ 👤 Username: @${username}
+├ 🆔 ID do usuário: ${userId}
+├ 💵 Saldo disponível: R$${saldo}
+└ 🔘 Saldo de Indicação: R$${saldo_indicacao}
+
+🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!
+`;
+
+  // Enviar mensagem de boas-vindas com a ficha do usuário
+  bot.telegram.sendMessage(chatId,message, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: '💎 Contas Premium', callback_data: 'premium' }],
+        [{ text: '💰 Saldo', callback_data: 'saldo' }, { text: '👤 Perfil', callback_data: 'perfil' }],
+        [{ text: '🛠️ Suporte', callback_data: 'suporte' }],
+      ],
+    },
+  }); 
 });
 
 bot.on('callback_query', async (ctx) => {
@@ -143,7 +196,8 @@ bot.on('callback_query', async (ctx) => {
         `💰 Recarregue seu saldo para continuar.`, {
           reply_markup: {
             inline_keyboard: [
-              [{ text: 'Clique aqui para adicionar saldo', callback_data: 'saldo' }]
+              [{ text: 'Clique aqui para adicionar saldo', callback_data: 'saldo' }],
+              [{ text: 'Voltar para o menu', callback_data: 'voltar' }]
             ]
           }
         }
@@ -156,7 +210,7 @@ bot.on('callback_query', async (ctx) => {
       reply_markup: {
         inline_keyboard: [
           [{ text: `Confirmar compra de R$${valorProduto}`, callback_data: `confirmar_compra_${produtoId}` }],
-          [{ text: 'Cancelar', callback_data: 'voltar' }],
+          [{ text: 'Voltar para o MENU', callback_data: 'voltar' }],
         ],
       },
     };
@@ -333,7 +387,7 @@ bot.on('callback_query', async (ctx) => {
       }
     );
   } else if (callbackData === 'voltar') {
-    sendActionButtonsInline(chatId);  // ⬅ Voltar para o menu principal
+    sendActionButtonsInline(ctx); 
   } else if (callbackData === 'perfil') {
     // Recuperar os dados do usuário do Supabase
     const { data, error } = await supabase
@@ -351,7 +405,7 @@ bot.on('callback_query', async (ctx) => {
     const { saldo = 0.00, saldo_indicacao = 0.00, historico_produtos, username } = data;
 
     // Calcular o total de contas adquiridas e o valor total gasto
-    const totalCompras = historico_produtos.length;
+    const totalCompras = historico_produtos.length||0;
     const totalGasto = historico_produtos.reduce((total, produto) => total + parseFloat(produto.value), 0);
 
     // Criar lista de compras
@@ -382,7 +436,7 @@ ${comprasList}
     ctx.editMessageText(message);
 
     // Enviar os botões de navegação
-    sendActionButtonsInline(chatId);
+    sendActionButtonsInline(ctx);
   }
 });
 
