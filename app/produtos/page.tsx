@@ -5,10 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRightIcon, Binary, Calendar, CircleDollarSign, Edit, FilePlus, SquareMousePointer, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { createClient } from '@supabase/supabase-js'
+// import { createClient } from '@supabase/supabase-js'
 
-// Create a single supabase client for interacting with your database
-const supabase = createClient(`${process.env.SUPABASE_URL}`, `${process.env.SUPABASE_URL}`);
+// // Create a single supabase client for interacting with your database
+// const supabase = createClient(`${process.env.SUPABASE_URL}`, `${process.env.SUPABASE_URL}`);
 
 
 export default function Produtos() {
