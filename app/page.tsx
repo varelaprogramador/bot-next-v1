@@ -110,6 +110,7 @@ export default function DashboardPage() {
     // Atualiza os dados filtrados quando a aba é alterada
     useEffect(() => {
       filterDataByRange(selectedRange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedRange, data]);
   
   return (
@@ -117,7 +118,7 @@ export default function DashboardPage() {
         <div className="flex min-h-[90vh] flex-col px-4 space-y-4">
         
             <div className="flex items-center justify-between space-y-2">
-              <h2 className="text-3xl font-bold tracking-tight">Boas-vindas, Ryan</h2>
+              <h2 className="text-3xl font-bold tracking-tight">Boas-vindas</h2>
             </div>
             <div>
               <h3 className="text-lg font-medium">RESUMO</h3>
