@@ -36,7 +36,7 @@ export default function Produtos() {
       };
   
       loadData();
-    }, []);
+    }, [supabase]);
   
     useEffect(() => {
       const subscription = supabase
