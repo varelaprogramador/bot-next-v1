@@ -35,10 +35,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { VendasProps } from "@/app/utils/vendas"
+import { CodigosProps } from "@/app/utils/codigos"
 
 
-export const columns: ColumnDef<VendasProps>[] = [
+
+export const columns: ColumnDef<CodigosProps>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -62,68 +63,40 @@ export const columns: ColumnDef<VendasProps>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "uuid",
-    header: "UUID",
+    accessorKey: "id_codigo",
+    header: "ID",
     cell: ({ row }) => (
       <div
         className="truncate max-w-[150px]"
-        title={row.getValue("uuid")} // Exibe o valor completo ao passar o mouse
+        title={row.getValue("id_codigo")} // Exibe o valor completo ao passar o mouse
       >
-        {row.getValue("uuid")}
+        {row.getValue("id_codigo")}
       </div>
     ),
   },
   {
-    accessorKey: "id_cliente",
-    header: "UUID comprador",
+    accessorKey: "id_produto",
+    header: "ID produto",
     cell: ({ row }) => (
       <div
         className="truncate max-w-[150px]"
-        title={row.getValue("id_cliente")} // Exibe o valor completo ao passar o mouse
+        title={row.getValue("id_produto")} // Exibe o valor completo ao passar o mouse
       >
-        {row.getValue("id_cliente")}
+        {row.getValue("id_produto")}
       </div>
     ),
   },
-  
-  
   {
-    accessorKey: "created_at",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Data da venda
-          <ArrowUpDown />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const rawDate = row.getValue("created_at");
-      const formattedDate = new Intl.DateTimeFormat("pt-BR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }).format(new Date(rawDate as string));
-      return <div className="lowercase flex justify-center">{formattedDate}</div>;
-    },
-  },  
-  {
-    accessorKey: "valor",
-    header: () => <div className="text-right">Valor</div>,
-    cell: ({ row }) => {
-      const Valor = parseFloat(row.getValue("valor"))
-
-      // Format the Valor as a dollar Valor
-      const formatted = new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
-      }).format(Valor)
-
-      return <div className="text-right font-medium">{formatted}</div>
-    },
+    accessorKey: "codigo",
+    header: "codigo de resgate",
+    cell: ({ row }) => (
+      <div
+        className="truncate max-w-[150px]"
+        title={row.getValue("codigo")} // Exibe o valor completo ao passar o mouse
+      >
+        {row.getValue("codigo")}
+      </div>
+    ),
   },
   {
     accessorKey: "status",
@@ -149,7 +122,7 @@ export const columns: ColumnDef<VendasProps>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(payment.id_cliente)}
+              onClick={() => navigator.clipboard.writeText(payment.codigo)}
             >
               Copy payment ID
             </DropdownMenuItem>
@@ -163,7 +136,7 @@ export const columns: ColumnDef<VendasProps>[] = [
   },
 ]
 
-export function DataTableVendas({ data }: { data: VendasProps[] }) {
+export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -195,10 +168,10 @@ export function DataTableVendas({ data }: { data: VendasProps[] }) {
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filtre pela Data da venda ou UIID/UIID comprador ..."
-          value={(table.getColumn("created_at")?.getFilterValue() as string) ?? ""}
+          placeholder="Filtre pela ID/ID  do produto ..."
+          value={(table.getColumn("id_produto")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("created_at")?.setFilterValue(event.target.value)
+            table.getColumn("id_produto")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />

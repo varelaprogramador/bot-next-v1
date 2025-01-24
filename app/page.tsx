@@ -1,3 +1,4 @@
+'use client'
 import { AlertTriangle } from "lucide-react"
 
 import { MainNav } from "@/components/main-nav"
@@ -9,8 +10,108 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { createClient } from "@/lib/supabase/client"
+import { useEffect, useState } from "react"
+import { VendasProps } from "./utils/vendas"
+import { subDays } from "date-fns"
 
 export default function DashboardPage() {
+  const supabase = createClient();
+    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<VendasProps[]>([]);
+  
+    useEffect(() => {
+      const loadData = async () => {
+        setLoading(true);
+        try {
+          const { data: vendas, error } = await supabase
+            .from('vendas')
+            .select('*');
+  
+          if (error) {
+            throw error;
+          }
+  
+          setData(vendas || []);
+        } catch (error) {
+          console.error('Erro ao carregar dados:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      loadData();
+    }, [supabase]); // Supabase não precisa estar na dependência
+  
+    useEffect(() => {
+      const subscription = supabase
+        .channel('realtime:public:vendas')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'vendas',
+          },
+          (payload) => {
+            setData((prevData) => {
+              switch (payload.eventType) {
+                case 'INSERT':
+                  return [...prevData, payload.new as VendasProps];
+                case 'UPDATE':
+                  return prevData.map((item) =>
+                    item.uuid === payload.new.uuid ? (payload.new as VendasProps) : item
+                  );
+                case 'DELETE':
+                  return prevData.filter((item) => item.uuid !== payload.old.uuid);
+                default:
+                  return prevData;
+              }
+            });
+          }
+        );
+  
+      subscription.subscribe();
+  
+      return () => {
+        subscription.unsubscribe();
+      };
+    }, [supabase]);
+    const [selectedRange, setSelectedRange] = useState("30"); // Estado para selecionar a aba (intervalo de dias)
+    const [filteredData, setFilteredData] = useState<VendasProps[]>(data);
+  
+    // Função para filtrar os dados com base no intervalo de dias
+    const filterDataByRange = (range: string) => {
+      const today = new Date();
+      let startDate = today;
+  
+      switch (range) {
+        case "7":
+          startDate = subDays(today, 7);
+          break;
+        case "15":
+          startDate = subDays(today, 15);
+          break;
+        case "30":
+          startDate = subDays(today, 30);
+          break;
+        default:
+          break;
+      }
+  
+      const filtered = data.filter((item) => {
+        const itemDate = new Date(item.created_at);
+        return itemDate >= startDate;
+      });
+  
+      setFilteredData(filtered);
+    };
+  
+    // Atualiza os dados filtrados quando a aba é alterada
+    useEffect(() => {
+      filterDataByRange(selectedRange);
+    }, [selectedRange, data]);
+  
   return (
 
         <div className="flex min-h-[90vh] flex-col px-4 space-y-4">
@@ -53,7 +154,7 @@ export default function DashboardPage() {
                   </TabsList>
                 </Tabs>
               </div>
-              <RevenueChart />
+              <RevenueChart data={filteredData} />
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <Card>

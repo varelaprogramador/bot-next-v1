@@ -2,21 +2,50 @@
 import { DataTableVendas } from '@/components/tabela-vendas';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
-import { VendasProps } from '../utils/vendas';
-
+import { VendasProps } from '@/app/utils/vendas';
+import { useParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Vendas() {
   const supabase = createClient();
+  const { id } = useParams(); // Captura o `id` da venda na URL
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<VendasProps[]>([]);
+  const [productName, setProductName] = useState<string | null>(null);
 
+  // Função para buscar o nome do produto
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const fetchProductName = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('produtos')
+        .select('nome')
+        .eq('id', id)
+        .single(); // Retorna apenas um único resultado
+
+      if (error) {
+        throw error; // Se houver um erro, ele é lançado
+      }
+
+      return data ? data.nome : null; // Retorna o nome ou null se não encontrar
+    } catch (error) {
+      console.error('Erro ao buscar produto:', error);
+      return null;
+    }
+  };
+
+  // Carrega os dados da venda
   useEffect(() => {
+    if (!id) return; // Não carrega até que o `id` esteja disponível
+
     const loadData = async () => {
       setLoading(true);
       try {
         const { data: vendas, error } = await supabase
           .from('vendas')
-          .select('*');
+          .select('*')
+          .eq('id_produto', id); // Filtra pelo `id` da venda
 
         if (error) {
           throw error;
@@ -31,17 +60,31 @@ export default function Vendas() {
     };
 
     loadData();
-  }, [supabase]); // Supabase não precisa estar na dependência
+  }, [id, supabase]); // Recarrega sempre que o `id` mudar
+
+  // Carrega o nome do produto
+  useEffect(() => {
+    if (id) {
+      const loadProductName = async () => {
+        const name = await fetchProductName(id as string);
+        setProductName(name);
+      };
+      loadProductName();
+    }
+  }, [fetchProductName, id]);
 
   useEffect(() => {
+    if (!id) return; // Não configura o canal sem um `id`
+
     const subscription = supabase
-      .channel('realtime:public:vendas')
+      .channel(`realtime:public:vendas:${id}`) // Canal específico para o `id`
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'vendas',
+          filter: `id_produto=eq.${id}`, // Filtra eventos relacionados ao `id`
         },
         (payload) => {
           setData((prevData) => {
@@ -50,10 +93,10 @@ export default function Vendas() {
                 return [...prevData, payload.new as VendasProps];
               case 'UPDATE':
                 return prevData.map((item) =>
-                  item.uuid === payload.new.uuid ? (payload.new as VendasProps) : item
+                  item.id_produto === payload.new.id_produto ? (payload.new as VendasProps) : item
                 );
               case 'DELETE':
-                return prevData.filter((item) => item.uuid !== payload.old.uuid);
+                return prevData.filter((item) => item.id_produto !== payload.old.id_produto);
               default:
                 return prevData;
             }
@@ -66,16 +109,22 @@ export default function Vendas() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [id, supabase]);
 
   // KPIs
   const totalVendas = data.reduce((acc, venda) => acc + parseFloat(venda.valor), 0);
   const vendasConcluidas = data.filter((venda) => venda.status === 'concluido').length;
-  const currentPageData =data;
+
+  if (loading) {
+    return <p>Carregando...</p>;
+  }
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Acompanhe suas Vendas</h1>
+    <div className="container mx-auto p-6 space-y-2">
+        <Button onClick={() => window.location.href = `/produtos/${id}`} className='rounded-full bg-blue-500 hover:bg-blue-400'><ArrowLeft></ArrowLeft> </Button>
+      <h1 className="text-3xl font-bold mb-6">
+        Detalhes das Vendas: {productName || 'Carregando nome do produto...'}
+      </h1>
 
       {/* Exibindo KPIs */}
       <div className="grid grid-cols-3 gap-6 mb-6">
@@ -94,9 +143,7 @@ export default function Vendas() {
       </div>
 
       {/* DataTable de vendas */}
-      <DataTableVendas data={currentPageData} />
-
-    
+      <DataTableVendas data={data} />
     </div>
   );
 }

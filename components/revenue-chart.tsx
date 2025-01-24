@@ -1,25 +1,30 @@
 "use client"
 
-import { Line, LineChart, ResponsiveContainer, XAxis } from "recharts"
+import { VendasProps } from "@/app/utils/vendas"
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts"
+import { format } from 'date-fns'
 
-const data = [
-  { date: "26 dez", value: 0 },
-  { date: "30 dez", value: 0 },
-  { date: "3 jan", value: 0 },
-  { date: "7 jan", value: 0 },
-  { date: "11 jan", value: 0 },
-  { date: "15 jan", value: 0 },
-  { date: "19 jan", value: 0 },
-]
+// Defina o componente corretamente como uma função que recebe "data" como prop
+interface RevenueChartProps {
+  data: VendasProps[];
+}
 
-export function RevenueChart() {
+export function RevenueChart({ data }: RevenueChartProps) {
+  // Formatar os dados de acordo com o que o gráfico espera
+  const formattedData = data?.map(item => ({
+    date: format(new Date(item.created_at), 'dd/MM/yy'), // Formatação da data para "DD/MM/YY"
+    value: item.valor,      // Certifique-se de que 'valor' é o campo correto
+  })) || [];
+
   return (
     <ResponsiveContainer width="100%" height={240}>
-      <LineChart data={data}>
+      <LineChart data={formattedData}>
+        <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="date" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+        <YAxis stroke="#888888" fontSize={12} />
+        <Tooltip />
         <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={{ fill: "#2563eb", r: 4 }} />
       </LineChart>
     </ResponsiveContainer>
   )
 }
-

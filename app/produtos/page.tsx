@@ -80,12 +80,22 @@ export default function Produtos() {
     if (loading) {
         return <div>Loading...</div>; // Or a more sophisticated loading indicator
     }
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleConfirmCreate = async ({ data }: any) => {
+        setLoading(true);
+    
+        // Adiciona o novo produto ao Supabase
+        const { error } = await supabase.from("produtos").insert([data]);
+    
+      console.log("criado");
+    
+        setLoading(false);
+      };
     return (
         <div className="container mx-auto p-6">
             <h1 className="text-3xl font-bold mb-6">Area de produtos</h1>
             <div className="grid grid-cols-3 gap-8">
-                <CreateProduto onConfirmCreate={() => { }} />
+            <CreateProduto onConfirmCreate={handleConfirmCreate} />
 
                 {data.map((produto) => (
                     <article key={produto.id} className="border flex flex-col justify-between pb-4 gap-12 rounded transition-all duration-300 hover:scale-110">
@@ -97,7 +107,7 @@ export default function Produtos() {
                                         <div className="p-1 font-medium text-sm border text-blue-500 border-blue-500 rounded">
                                             {produto.categoria || "categoria"} {/* Use actual data */}
                                         </div>
-                                        <Link href={''} className="hover:bg-gray-300 hover:text-black p-2 rounded">
+                                        <Link href={`/produtos/${produto.id}`}className="hover:bg-gray-300 hover:text-black p-2 rounded">
                                             <SquareMousePointer />
                                         </Link>
                                     </div>
@@ -120,7 +130,7 @@ export default function Produtos() {
                                 </div>
                             </div>
                             <div className="flex gap-2 w-full">
-                                <Button className="w-full">Acessar <ArrowRightIcon size={15} /></Button>
+                                <Button onClick={()=>window.location.href=`/produtos/${produto.id}`} className="w-full">Acessar <ArrowRightIcon size={15} /></Button>
                                 <Button><Edit /></Button>
                                 <Button variant={'destructive'}><Trash2 /></Button>
                             </div>

@@ -46,7 +46,7 @@ const menuItems = [
   {
     title: "Integrações",
     icon: Building2,
-    href: "/integracoes",
+    href: "/",
   },
   {
     title: "Codigos",
@@ -61,7 +61,7 @@ const menuItems = [
   {
     title: "Configurações",
     icon: Settings,
-    href: "/configuracoes",
+    href: "/",
   },
 ]
 

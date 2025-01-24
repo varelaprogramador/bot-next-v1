@@ -47,7 +47,10 @@ interface DialogCreateProdutoProps {
 const schema = z.object({
   nome: z.string().trim().min(1, "Campo Obrigatório!"),
   descricao: z.string().trim().min(1, "Campo Obrigatório!"),
-  valor: z.number().min(0, "Preço não pode ser negativo!"),
+  valor: z.preprocess(
+    (val) => (typeof val === "string" ? parseFloat(val) : val), // Preprocessa para número
+    z.number().min(0, "O preço não pode ser negativo!")
+  ),
   categoria: z.string().trim().min(1, "Campo Obrigatório!"),
 });
 
@@ -55,6 +58,7 @@ export const CreateProduto = ({
   onConfirmCreate,
 }: DialogCreateProdutoProps) => {
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const isDesktop = !useIsMobile();
 
   const form = useForm<z.infer<typeof schema>>({
@@ -68,117 +72,114 @@ export const CreateProduto = ({
   });
 
   const onSubmit = (values: z.infer<typeof schema>) => {
-    onConfirmCreate({
-      data: values,
-    });
-    setOpen(!open);
+    onConfirmCreate({ data: values });
+    setOpen(false);
     form.reset();
   };
 
-  React.useEffect(() => {
-    form.reset();
-  }, [form, open]);
+  const FormContent = (
+    <Form {...form}>
+      <form
+        className="grid items-start gap-4"
+        onSubmit={form.handleSubmit(onSubmit)}
+      >
+        <FormField
+          control={form.control}
+          name="nome"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome do Produto</FormLabel>
+              <FormControl>
+                <Input placeholder="Nome" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-  if (isDesktop) {
-    return (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
+        <FormField
+          control={form.control}
+          name="descricao"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Descrição</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Descrição" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="valor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Preço</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="Preço"
+                  {...field}
+                  min="0"
+                  step="0.01"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="categoria"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Categoria</FormLabel>
+              <FormControl>
+                <Input placeholder="Categoria" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" disabled={loading}>
+          {loading ? "Criando..." : "Criar Produto"}
+        </Button>
+      </form>
+    </Form>
+  );
+
+  return isDesktop ? (
+    <Dialog open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) form.reset(); }}>
+      <DialogTrigger asChild>
         <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
-            <div className="flex flex-col gap-8 justify-center items-center ">
-            <FilePlus size={80}></FilePlus>
-            <p className=" font-medium ">Criar Produto</p></div>
+          <div className="flex flex-col gap-8 justify-center items-center">
+            <FilePlus size={80} />
+            <p className="font-medium">Criar Produto</p>
+          </div>
         </div>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Criar Novo Produto</DialogTitle>
-            <DialogDescription>
-              Preencha as informações do novo produto abaixo.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...form}>
-            <form
-              className="grid items-start gap-4"
-              onSubmit={form.handleSubmit(onSubmit)}
-            >
-              <FormField
-                control={form.control}
-                name="nome"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Produto</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nome" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="descricao"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Descrição" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="valor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Preço</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Preço"
-                        {...field}
-                        min="0"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              
-
-              <FormField
-                control={form.control}
-                name="categoria"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Categoria" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button type="submit">Criar Produto</Button>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Drawer open={open} onOpenChange={setOpen}>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Criar Novo Produto</DialogTitle>
+          <DialogDescription>
+            Preencha as informações do novo produto abaixo.
+          </DialogDescription>
+        </DialogHeader>
+        {FormContent}
+      </DialogContent>
+    </Dialog>
+  ) : (
+    <Drawer open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) form.reset(); }}>
       <DrawerTrigger asChild>
-      <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
-            <div className="flex flex-col gap-8 justify-center items-center ">
-            <FilePlus size={80}></FilePlus>
-            <p className=" font-medium ">Criar Produto</p></div>
+        <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
+          <div className="flex flex-col gap-8 justify-center items-center">
+            <FilePlus size={80} />
+            <p className="font-medium">Criar Produto</p>
+          </div>
         </div>
       </DrawerTrigger>
       <DrawerContent className="p-4">
@@ -188,76 +189,7 @@ export const CreateProduto = ({
             Preencha as informações do novo produto abaixo.
           </DrawerDescription>
         </DrawerHeader>
-        <Form {...form}>
-          <form
-            className="grid items-start gap-4"
-            onSubmit={form.handleSubmit(onSubmit)}
-          >
-            <FormField
-              control={form.control}
-              name="nome"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome do Produto</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nome" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="descricao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Descrição" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="valor"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Preço</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="Preço"
-                      {...field}
-                      min="0"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-
-            <FormField
-              control={form.control}
-              name="categoria"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoria</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Categoria" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Button type="submit">Criar Produto</Button>
-          </form>
-        </Form>
+        {FormContent}
         <DrawerFooter className="flex justify-end mt-4">
           <DrawerClose asChild>
             <Button variant="outline">Cancelar</Button>
@@ -267,3 +199,4 @@ export const CreateProduto = ({
     </Drawer>
   );
 };
+
