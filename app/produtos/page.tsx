@@ -3,195 +3,131 @@
 import { CreateProduto } from "@/components/create-forms/produto";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
 import { ArrowRightIcon, Binary, Calendar, CircleDollarSign, Edit, FilePlus, SquareMousePointer, Trash2 } from "lucide-react";
 import Link from "next/link";
-// import { createClient } from '@supabase/supabase-js'
-
-// // Create a single supabase client for interacting with your database
-// const supabase = createClient(`${process.env.SUPABASE_URL}`, `${process.env.SUPABASE_URL}`);
-
+import { useEffect, useState } from "react";
+import { ProdutosProps } from "../utils/produto";
+import { createClient } from "@/lib/supabase/client";
 
 export default function Produtos() {
-
-    const vendas = [
-        {
-            id: "12345",
-            produto: "Produto A",
-            valor: 100.0,
-            status: "Concluída",
-        },
-        {
-            id: "12346",
-            produto: "Produto B",
-            valor: 50.0,
-            status: "Pendente",
-        },
-        {
-            id: "12347",
-            produto: "Produto C",
-            valor: 200.0,
-            status: "Cancelada",
-        },
-    ];
-
-
+    const supabase = createClient();
+    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<ProdutosProps[]>([]);
+  
+    useEffect(() => {
+      const loadData = async () => {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from("produtos")
+            .select("*");
+  
+          if (error) {
+            throw error;
+          }
+  
+          setData(data || []);
+        } catch (error) {
+          console.error("Erro ao carregar dados:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      loadData();
+    }, []);
+  
+    useEffect(() => {
+      const subscription = supabase
+        .channel(`realtime:public:produtos`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "produtos",
+          },
+          (payload) => {
+            // Optimized update: directly update the state based on the payload
+            setData((prevData) => {
+              switch (payload.eventType) {
+                case 'INSERT':
+                  return [...prevData, payload.new as ProdutosProps]; // Type assertion
+                case 'UPDATE':
+                  return prevData.map((item) =>
+                    item.id === payload.new.id ? payload.new as ProdutosProps : item
+                  ); // Type assertion
+                case 'DELETE':
+                  return prevData.filter((item) => item.id !== payload.old.id);
+                default:
+                  return prevData;
+              }
+            });
+          }
+        );
+  
+      subscription.subscribe();
+  
+      return () => {
+        subscription.unsubscribe();
+      };
+    }, [supabase]); // Add supabase to the dependency array
+  
+    if (loading) {
+      return <div>Loading...</div>; // Or a more sophisticated loading indicator
+    }
+    if (loading) {
+        return <div>Loading...</div>; // Or a more sophisticated loading indicator
+    }
 
     return (
         <div className="container mx-auto p-6">
             <h1 className="text-3xl font-bold mb-6">Area de produtos</h1>
-            <div className=" grid grid-cols-3 gap-8">
-                <CreateProduto onConfirmCreate={() => { }}></CreateProduto>
+            <div className="grid grid-cols-3 gap-8">
+                <CreateProduto onConfirmCreate={() => { }} />
 
-                <article className="border flex flex-col justify-between pb-4 gap-12 rounded transition-all duration-300 hover:scale-110">
-                    <header className="flex px-4 pt-4 justify-between">
-                        <div className="flex flex-col h-[150px] max-h-[90px] w-full overflow-hidden">
-                            <div className="flex justify-between"> <h1 className="text-2xl font-semibold">Produto teste</h1> 
-                            <div className="flex items-center gap-2 ">
-                            <div className="p-1 font-medium text-sm  border text-blue-500 border-blue-500 rounded ">
-                                categoria</div>
-                            <Link href={''} className="hover:bg-gray-300 hover:text-black p-2 rounded"><SquareMousePointer  /></Link> </div></div>
-                            
-                            <p className="text-sm break-words overflow-hidden text-ellipsis">
-                                
-                                dasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjsdasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjsdasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjs
-                            </p>
-                        </div>
-
-                    </header>
-
-                  
-                    
-                    <footer className="flex flex-col gap-2  w-full px-4">
-                    <div className="flex items-center gap-2 justify-start  w-full text-[0.7rem]">
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <CircleDollarSign size={20} /> R$ 2k
-                        </div>
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <Binary size={20} />0
-                        </div>
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <Calendar size={20} /> 23/01/2025
-                        </div>
-                    </div>
-                    <div className="flex  gap-2 w-full ">
-                        <Button className="w-full ">Acessar <ArrowRightIcon size={15}></ArrowRightIcon></Button><Button ><Edit></Edit></Button> <Button variant={'destructive'}><Trash2></Trash2></Button>
-                    </div></footer>
-                   
-                </article>
-
-                <article className="border flex flex-col justify-between pb-4 gap-12 rounded transition-all duration-300 hover:scale-110">
-                    <header className="flex px-4 pt-4 justify-between">
-                        <div className="flex flex-col h-[150px] max-h-[90px] w-full overflow-hidden">
-                            <div className="flex justify-between"> <h1 className="text-2xl font-semibold">Produto teste</h1> 
-                            <div className="flex items-center gap-2 ">
-                            <div className="p-1 font-medium text-sm  border text-blue-500 border-blue-500 rounded ">
-                                categoria</div>
-                            <Link href={''} className="hover:bg-gray-300 hover:text-black p-2 rounded"><SquareMousePointer  /></Link> </div></div>
-                            
-                            <p className="text-sm break-words overflow-hidden text-ellipsis">
-                                
-                                dasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjsdasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjsdasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjs
-                            </p>
-                        </div>
-
-                    </header>
-
-                  
-                    
-                    <footer className="flex flex-col gap-2  w-full px-4">
-                    <div className="flex items-center gap-2 justify-start  w-full text-[0.7rem]">
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <CircleDollarSign size={20} /> R$ 2k
-                        </div>
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <Binary size={20} />0
-                        </div>
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <Calendar size={20} /> 23/01/2025
-                        </div>
-                    </div>
-                    <div className="flex  gap-2 w-full ">
-                        <Button className="w-full ">Acessar <ArrowRightIcon size={15}></ArrowRightIcon></Button><Button ><Edit></Edit></Button> <Button variant={'destructive'}><Trash2></Trash2></Button>
-                    </div></footer>
-                   
-                </article>
-                <article className="border flex flex-col justify-between pb-4 gap-12 rounded transition-all duration-300 hover:scale-110">
-                    <header className="flex px-4 pt-4 justify-between">
-                        <div className="flex flex-col h-[150px] max-h-[90px] w-full overflow-hidden">
-                            <div className="flex justify-between"> <h1 className="text-2xl font-semibold">Produto teste</h1> 
-                            <div className="flex items-center gap-2 ">
-                            <div className="p-1 font-medium text-sm  border text-blue-500 border-blue-500 rounded ">
-                                categoria</div>
-                            <Link href={''} className="hover:bg-gray-300 hover:text-black p-2 rounded"><SquareMousePointer  /></Link> </div></div>
-                            
-                            <p className="text-sm break-words overflow-hidden text-ellipsis">
-                                
-                                dasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjsdasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjsdasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjs
-                            </p>
-                        </div>
-
-                    </header>
-
-                  
-                    
-                    <footer className="flex flex-col gap-2  w-full px-4">
-                    <div className="flex items-center gap-2 justify-start  w-full text-[0.7rem]">
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <CircleDollarSign size={20} /> R$ 2k
-                        </div>
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <Binary size={20} />0
-                        </div>
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <Calendar size={20} /> 23/01/2025
-                        </div>
-                    </div>
-                    <div className="flex  gap-2 w-full ">
-                        <Button className="w-full ">Acessar <ArrowRightIcon size={15}></ArrowRightIcon></Button><Button ><Edit></Edit></Button> <Button variant={'destructive'}><Trash2></Trash2></Button>
-                    </div></footer>
-                   
-                </article>
-                <article className="border flex flex-col justify-between pb-4 gap-12 rounded transition-all duration-300 hover:scale-110">
-                    <header className="flex px-4 pt-4 justify-between">
-                        <div className="flex flex-col h-[150px] max-h-[90px] w-full overflow-hidden">
-                            <div className="flex justify-between"> <h1 className="text-2xl font-semibold">Produto teste</h1> 
-                            <div className="flex items-center gap-2 ">
-                            <div className="p-1 font-medium text-sm  border text-blue-500 border-blue-500 rounded ">
-                                categoria</div>
-                            <Link href={''} className="hover:bg-gray-300 hover:text-black p-2 rounded"><SquareMousePointer  /></Link> </div></div>
-                            
-                            <p className="text-sm break-words overflow-hidden text-ellipsis">
-                                
-                                dasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjsdasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjsdasdansdnbnjdasçfdnaçdsfnsanfdçndsjnfjsafkjs
-                            </p>
-                        </div>
-
-                    </header>
-
-                  
-                    
-                    <footer className="flex flex-col gap-2  w-full px-4">
-                    <div className="flex items-center gap-2 justify-start  w-full text-[0.7rem]">
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <CircleDollarSign size={20} /> R$ 2k
-                        </div>
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <Binary size={20} />0
-                        </div>
-                        <div className="flex items-center justify-center gap-2 text-gray-800 ">
-                            <Calendar size={20} /> 23/01/2025
-                        </div>
-                    </div>
-                    <div className="flex  gap-2 w-full ">
-                        <Button className="w-full ">Acessar <ArrowRightIcon size={15}></ArrowRightIcon></Button><Button ><Edit></Edit></Button> <Button variant={'destructive'}><Trash2></Trash2></Button>
-                    </div></footer>
-                   
-                </article>
-
-
+                {data.map((produto) => (
+                    <article key={produto.id} className="border flex flex-col justify-between pb-4 gap-12 rounded transition-all duration-300 hover:scale-110">
+                        <header className="flex px-4 pt-4 justify-between">
+                            <div className="flex flex-col h-[150px] max-h-[90px] w-full overflow-hidden">
+                                <div className="flex justify-between">
+                                    <h1 className="text-2xl font-semibold">{produto.nome || "Produto teste"}</h1> {/* Use actual data */}
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1 font-medium text-sm border text-blue-500 border-blue-500 rounded">
+                                            {produto.categoria || "categoria"} {/* Use actual data */}
+                                        </div>
+                                        <Link href={''} className="hover:bg-gray-300 hover:text-black p-2 rounded">
+                                            <SquareMousePointer />
+                                        </Link>
+                                    </div>
+                                </div>
+                                <p className="text-sm break-words overflow-hidden text-ellipsis">
+                                    {produto.descricao || "No description provided"} {/* Use actual data */}
+                                </p>
+                            </div>
+                        </header>
+                        <footer className="flex flex-col gap-2 w-full px-4">
+                            <div className="flex items-center gap-2 justify-start w-full text-[0.7rem]">
+                                <div className="flex items-center justify-center gap-2 text-gray-800">
+                                    <CircleDollarSign size={20} /> R$ {produto.valor || "0"} {/* Use actual data */}
+                                </div>
+                                <div className="flex items-center justify-center gap-2 text-gray-800">
+                                    <Binary size={20} /> {"0"} {/* Use actual data */}
+                                </div>
+                                <div className="flex items-center justify-center gap-2 text-gray-800">
+                                    <Calendar size={20} /> {produto.created_at?.split('T')[0] || "No date"} {/* Format date if needed */}
+                                </div>
+                            </div>
+                            <div className="flex gap-2 w-full">
+                                <Button className="w-full">Acessar <ArrowRightIcon size={15} /></Button>
+                                <Button><Edit /></Button>
+                                <Button variant={'destructive'}><Trash2 /></Button>
+                            </div>
+                        </footer>
+                    </article>
+                ))}
             </div>
-
-            
         </div>
     );
 }

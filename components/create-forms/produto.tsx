@@ -26,12 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-interface ProdutosProps{
-    nome:string,
-    descricao:string,
-    preco:number,
-    categoria:string,
-}
+
 
 import {
   Form,
@@ -43,6 +38,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { FilePlus } from "lucide-react";
+import { ProdutosProps } from "@/app/utils/produto";
 
 interface DialogCreateProdutoProps {
   onConfirmCreate: (args: { data: ProdutosProps }) => void;
@@ -51,7 +47,7 @@ interface DialogCreateProdutoProps {
 const schema = z.object({
   nome: z.string().trim().min(1, "Campo Obrigatório!"),
   descricao: z.string().trim().min(1, "Campo Obrigatório!"),
-  preco: z.number().min(0, "Preço não pode ser negativo!"),
+  valor: z.number().min(0, "Preço não pode ser negativo!"),
   categoria: z.string().trim().min(1, "Campo Obrigatório!"),
 });
 
@@ -66,7 +62,7 @@ export const CreateProduto = ({
     defaultValues: {
       nome: "",
       descricao: "",
-      preco: 0,
+      valor: 0,
       categoria: "",
     },
   });
@@ -135,7 +131,7 @@ export const CreateProduto = ({
 
               <FormField
                 control={form.control}
-                name="preco"
+                name="valor"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Preço</FormLabel>
@@ -227,7 +223,7 @@ export const CreateProduto = ({
 
             <FormField
               control={form.control}
-              name="preco"
+              name="valor"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Preço</FormLabel>
