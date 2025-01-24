@@ -5,10 +5,10 @@
 body {
   font-family: 'Poppins', sans-serif;
 }
-[data-theme='dark'] {
+/* [data-theme='dark'] {
   --background: #121212;
   --foreground: white;
-}
+} */
 @layer base {
   :root {
     --background: 0 0% 100%;
