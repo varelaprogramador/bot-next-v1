@@ -1,6 +1,5 @@
 "use client";
 import { AlertTriangle } from "lucide-react";
-
 import { MainNav } from "@/components/main-nav";
 import { RevenueChart } from "@/components/revenue-chart";
 import { SummaryCard } from "@/components/summary-card";
@@ -19,6 +18,8 @@ export default function DashboardPage() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<VendasProps[]>([]);
+  const [selectedRange, setSelectedRange] = useState("30");
+  const [filteredData, setFilteredData] = useState<VendasProps[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -27,11 +28,7 @@ export default function DashboardPage() {
         const { data: vendas, error } = await supabase
           .from("vendas")
           .select("*");
-
-        if (error) {
-          throw error;
-        }
-
+        if (error) throw error;
         setData(vendas || []);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
@@ -41,7 +38,7 @@ export default function DashboardPage() {
     };
 
     loadData();
-  }, [supabase]); // Supabase não precisa estar na dependência
+  }, [supabase]);
 
   useEffect(() => {
     const subscription = supabase.channel("realtime:public:vendas").on(
@@ -72,13 +69,10 @@ export default function DashboardPage() {
     );
 
     subscription.subscribe();
-
     return () => {
       subscription.unsubscribe();
     };
   }, [supabase]);
-  const [selectedRange, setSelectedRange] = useState("30"); // Estado para selecionar a aba (intervalo de dias)
-  const [filteredData, setFilteredData] = useState<VendasProps[]>(data);
 
   // Função para filtrar os dados com base no intervalo de dias
   const filterDataByRange = (range: string) => {
@@ -110,10 +104,18 @@ export default function DashboardPage() {
   // Atualiza os dados filtrados quando a aba é alterada
   useEffect(() => {
     filterDataByRange(selectedRange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRange, data]);
 
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setSelectedRange(value);
+  };
+
   const vendashoje = data.reduce(
+    (acc, venda) => acc + parseFloat(venda.valor),
+    0
+  );
+  const vendastotal = data.reduce(
     (acc, venda) => acc + parseFloat(venda.valor),
     0
   );
@@ -124,6 +126,9 @@ export default function DashboardPage() {
   const vendasfeitas = data.filter(
     (venda) => venda.status === "concluido"
   ).length;
+  const vendaspix =
+    (data.filter((venda) => venda.tipo_pagamento === "pix").length * 100) /
+    data.length;
 
   return (
     <div className="flex min-h-[90vh] flex-col px-4 space-y-4">
@@ -160,25 +165,44 @@ export default function DashboardPage() {
               NÍVEL 1
             </div>
             <span className="text-sm text-muted-foreground">
-              R$ 0,00 em vendas
+              R$ {vendastotal.toFixed(2)} em vendas
             </span>
           </div>
           <div className="text-sm text-muted-foreground">
-            <span>0</span>
+            <span> R$ {vendastotal.toFixed(2)}</span>
             <span className="mx-1">/</span>
             <span>10k</span>
           </div>
         </div>
-        <Progress value={0} className="h-2" />
+        <Progress value={(vendastotal * 100) / 10000} className="h-2" />
       </div>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium">GRÁFICO DE FATURAMENTO</h3>
-          <Tabs defaultValue="30" className="space-y-4">
+          <Tabs
+            defaultValue="30"
+            className="space-y-4"
+            onValueChange={handleTabChange}
+          >
             <TabsList>
-              <TabsTrigger value="7">7 dias</TabsTrigger>
-              <TabsTrigger value="15">15 dias</TabsTrigger>
-              <TabsTrigger value="30">30 dias</TabsTrigger>
+              <TabsTrigger
+                value="7"
+                aria-label="Filter data for the last 7 days"
+              >
+                7 dias
+              </TabsTrigger>
+              <TabsTrigger
+                value="15"
+                aria-label="Filter data for the last 15 days"
+              >
+                15 dias
+              </TabsTrigger>
+              <TabsTrigger
+                value="30"
+                aria-label="Filter data for the last 30 days"
+              >
+                30 dias
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -199,9 +223,9 @@ export default function DashboardPage() {
             <Progress value={0} className="h-2" />
             <div className="flex items-center justify-between text-sm">
               <span>PIX</span>
-              <span>0%</span>
+              <span>{vendaspix}%</span>
             </div>
-            <Progress value={0} className="h-2" />
+            <Progress value={vendaspix} className="h-2" />
             <div className="flex items-center justify-between text-sm">
               <span>Boleto</span>
               <span>0%</span>
