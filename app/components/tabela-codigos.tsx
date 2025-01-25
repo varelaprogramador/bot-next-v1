@@ -36,6 +36,7 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import { CodigosProps } from "@/app/utils/codigos";
+import { CreateOrUpdateCodigo } from "./edit-form/codigo-edit";
 
 export const columns: ColumnDef<CodigosProps>[] = [
   {
@@ -103,35 +104,6 @@ export const columns: ColumnDef<CodigosProps>[] = [
       <div className="capitalize">{row.getValue("status")}</div>
     ),
   },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const payment = row.original;
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(payment.codigo)}
-            >
-              Copy payment ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
 ];
 
 export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
@@ -164,7 +136,7 @@ export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-4">
         <Input
           placeholder="Filtre pela ID/ID  do produto ..."
           value={
@@ -201,6 +173,7 @@ export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        <CreateOrUpdateCodigo onConfirm={() => {}}></CreateOrUpdateCodigo>
       </div>
       <div className="rounded-md border">
         <Table>
