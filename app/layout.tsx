@@ -1,42 +1,37 @@
-import type { Metadata } from "next"
-import { Poppins } from 'next/font/google'
-import "./globals.css"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { MainNav } from "@/components/main-nav"
-import { ThemeProvider } from "next-themes"
+import { ClerkProvider } from "@clerk/nextjs";
+
+import { Poppins } from "next/font/google";
+import { ptBR } from "@clerk/localizations";
+
+import NextTopLoader from "nextjs-toploader";
 
 const poppins = Poppins({
-  variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "700"], // Especifique os pesos que você deseja usar
-})
+  variable: "--font-poppins",
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
+import "./globals.css";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Kirvano Dashboard",
-  description: "Dashboard for Kirvano platform",
-}
+  title: "NEXTRECARGAS",
+  applicationName: "NEXT RECARGAS",
+  metadataBase: new URL("https://firebank.vercel.app"),
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
-      <body className={poppins.className}>
-        <SidebarProvider>
-          <div className="flex min-h-screen w-full overflow-hidden"> {/* Adicionando w-full e overflow-hidden */}
-            <div className="flex flex-1">
-              <MainNav />
-              <ThemeProvider>
-                <main className="flex-1 p-4 overflow-auto"> {/* Ajustando overflow-auto no main */}
-                  {children}
-                </main>
-              </ThemeProvider>
-            </div>
-          </div>
-        </SidebarProvider>
-      </body>
-    </html>
-  )
+    <ClerkProvider localization={ptBR} dynamic>
+      <html lang="pt" className={poppins.variable}>
+        <body>
+          <NextTopLoader color="blue" />
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
+  );
 }
