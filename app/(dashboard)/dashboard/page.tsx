@@ -153,18 +153,21 @@ export default function DashboardPage() {
             value={`R$${vendashoje.toFixed(2)}`}
             previousValue="R$ 0,00"
             previousLabel="De ontem"
+            colortitle="text-blue-500"
           />
           <SummaryCard
             title="Vendas feitas"
             value={`R$${vendasfeitas.toFixed(2)}`}
             previousValue="30 dias"
             previousLabel="Dos últimos"
+             colortitle="text-green-700"
           />
           <SummaryCard
             title="Pendente"
             value="R$ 0,00"
             previousValue="24 horas"
             previousLabel="Das últimas"
+             colortitle="text-yellow-600"
           />
         </div>
       </div>
@@ -184,19 +187,20 @@ export default function DashboardPage() {
             <span>10k</span>
           </div>
         </div>
-        <Progress value={(vendastotal * 100) / 10000} className="h-2" />
+        <Progress value={(vendastotal * 100) / 10000} className="h-2 progress-night" />
       </div>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-medium">GRÁFICO DE FATURAMENTO</h3>
           <Tabs
             defaultValue="30"
-            className="space-y-4"
+            className="space-y-4 "
             onValueChange={handleTabChange}
           >
-            <TabsList>
+            <TabsList className="filter-category-night">
               <TabsTrigger
                 value="7"
+              
                 aria-label="Filter data for the last 7 days"
               >
                 7 dias
@@ -230,17 +234,17 @@ export default function DashboardPage() {
               <span>Cartão</span>
               <span>0%</span>
             </div>
-            <Progress value={0} className="h-2" />
+            <Progress value={30} className="h-2 progress-night" />
             <div className="flex items-center justify-between text-sm">
               <span>PIX</span>
-              <span>{vendaspix}%</span>
+              <span>{vendaspix||"0"}%</span>
             </div>
-            <Progress value={vendaspix} className="h-2" />
+            <Progress value={vendaspix} className="h-2 progress-night" />
             <div className="flex items-center justify-between text-sm">
               <span>Boleto</span>
               <span>0%</span>
             </div>
-            <Progress value={0} className="h-2" />
+            <Progress value={0} className="h-2 progress-night" />
           </CardContent>
         </Card>
         <Card>

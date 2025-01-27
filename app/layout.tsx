@@ -1,17 +1,16 @@
 import { ClerkProvider } from "@clerk/nextjs";
-
 import { Poppins } from "next/font/google";
 import { ptBR } from "@clerk/localizations";
-
 import NextTopLoader from "nextjs-toploader";
+import { ThemeProvider } from "next-themes";
+import "./globals.css";
+import { Metadata } from "next";
 
 const poppins = Poppins({
   subsets: ["latin"],
   variable: "--font-poppins",
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
-import "./globals.css";
-import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "NEXTRECARGAS",
@@ -25,11 +24,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider localization={ptBR} dynamic>
+    <ClerkProvider localization={ptBR}>
       <html lang="pt" className={poppins.variable}>
         <body>
-          <NextTopLoader color="blue" />
-          {children}
+          {/* Ensure default theme is applied */}
+          <ThemeProvider defaultTheme="light">
+            <NextTopLoader color="blue" />
+            {children}
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

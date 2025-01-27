@@ -10,6 +10,7 @@ interface SummaryCardProps {
   value: string;
   previousValue?: string;
   previousLabel?: string;
+  colortitle?:string;
 }
 
 export function SummaryCard({
@@ -17,14 +18,15 @@ export function SummaryCard({
   value,
   previousValue,
   previousLabel,
+  colortitle
 }: SummaryCardProps) {
   return (
-    <Card className="bg-transparent text-theme">
+    <Card className="bg-transparent text-theme  shadow-none ">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className={`text-2xl font-semibold ${colortitle ? colortitle:"text-white"}`}>{value}</div>
         {previousValue && (
           <p className="text-xs text-muted-foreground ">
             {previousLabel} {previousValue}

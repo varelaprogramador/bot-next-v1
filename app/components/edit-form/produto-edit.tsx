@@ -184,12 +184,9 @@ export const EditProduto = ({
       }}
     >
       <DrawerTrigger asChild>
-        <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
-          <div className="flex flex-col gap-8 justify-center items-center">
-            <FilePlus size={80} />
-            <p className="font-medium">Editar Produto</p>
-          </div>
-        </div>
+      <Button>
+          <Edit></Edit>
+        </Button>
       </DrawerTrigger>
       <DrawerContent className="p-4">
         <DrawerHeader>

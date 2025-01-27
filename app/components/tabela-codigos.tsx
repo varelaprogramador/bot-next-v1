@@ -38,6 +38,8 @@ import {
 import { CodigosProps } from "@/app/utils/codigos";
 import { CreateOrUpdateCodigo } from "./edit-form/codigo-edit";
 
+import { createClient } from "@/lib/supabase/client";
+
 export const columns: ColumnDef<CodigosProps>[] = [
   {
     id: "select",
@@ -114,7 +116,40 @@ export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+const supabase=createClient()
+ const handleConfirmCreate = async ({ data }: { data: CodigosProps }) => {   
+    const { error } = await supabase.from("codigos").insert(data);
+    if (error) {
+      console.error("Erro ao criar codigo:", error);
+      console.log(data);
+    } else {
+      console.log("codigo criado com sucesso");
+    }
+ 
+  };
 
+ 
+   const handleConfirmEdit = async ({ data }: { data: CodigosProps }) => {
+    const { error } = await supabase
+    .from("codigos")
+    .update(data)
+    .eq("id_codigo", data.id_codigo);
+  if (error) {
+    console.error("Erro ao atualizar registro:", error);
+  } else {
+    console.log("registro atualizado com sucesso");
+  }
+   
+    };
+    const handleDelete = async (id: string) => {
+      const { error } = await supabase.from("codigos").delete().eq("id_codigo", id);
+  
+      if (error) {
+        console.error("Erro ao deletar codigos:", error);
+      } else {
+        console.log("Codigo deletado com sucesso");
+      }
+    };
   const table = useReactTable({
     data,
     columns,
@@ -173,7 +208,7 @@ export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        <CreateOrUpdateCodigo onConfirm={() => {}}></CreateOrUpdateCodigo>
+        <CreateOrUpdateCodigo onConfirm={handleConfirmCreate}></CreateOrUpdateCodigo>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -210,6 +245,19 @@ export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
                       )}
                     </TableCell>
                   ))}
+                  <TableCell>
+                                    <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                              <Button variant="ghost" size="sm">
+                                                <MoreHorizontal />
+                                              </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                             <CreateOrUpdateCodigo codigo={data.find(item=>item.id_codigo==row.getValue("id_codigo")) } onConfirm={handleConfirmEdit}></CreateOrUpdateCodigo>
+                                              <DropdownMenuItem onClick={()=>handleDelete(row.getValue('id_codigo'))}>Deletar</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                          </DropdownMenu>
+                                    </TableCell>
                 </TableRow>
               ))
             ) : (

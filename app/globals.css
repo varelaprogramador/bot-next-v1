@@ -5,10 +5,23 @@
 body {
   font-family: 'Poppins', sans-serif;
 }
-/* [data-theme='dark'] {
-  --background: #121212;
+ [data-theme='dark']  {
+  --background: #171717;
   --foreground: white;
-} */
+} 
+[data-theme='dark'] .progress-night, [data-theme='dark']  .filter-category-night {
+ background-color: rgb(66, 66, 66);
+ border: #7a7979 solid 1px;
+ color: white;
+ padding: 4px;
+ 
+} 
+[data-theme='dark'] .filter-category-night button[aria-selected="true"] {
+  background-color: rgb(255, 255, 255);
+  color: black;
+}
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;

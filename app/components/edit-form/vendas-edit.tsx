@@ -33,18 +33,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/app/components/ui/form";
-import { CodigosProps } from "@/app/utils/codigos";
-import { Edit, Plus } from "lucide-react";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/app/components/ui/select"; // Importando o componente Select
 import { createClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "@/app/utils/produto";
-import { v4 } from "uuid";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Edit, Plus } from "lucide-react";
+import { VendasProps } from "@/app/utils/vendas";
+import { v4 as uuidv4 } from 'uuid'; 
 
 // Supondo que você tenha uma função para buscar produtos
 const fetchProducts = async () => {
@@ -63,21 +57,26 @@ const fetchProducts = async () => {
   }
 };
 
-interface DialogCreateOrUpdateCodigoProps {
-  codigo?: CodigosProps; // Se fornecido, será um formulário de atualização
-  onConfirm: (args: { data: CodigosProps }) => void;
+interface DialogCreateOrUpdateVendaProps {
+  venda?: VendasProps; // Se fornecido, será um formulário de atualização
+  onConfirm: (args: { data: VendasProps }) => void;
 }
 
 const schema = z.object({
   id_produto: z.string().trim().min(1, "Campo Obrigatório!"),
-  codigo: z.string().trim().min(1, "Campo Obrigatório!"),
+  id_cliente: z.string().trim().min(1, "Campo Obrigatório!"),
+  valor:z.preprocess(
+    (val) => (typeof val === "string" ? parseFloat(val) : val),
+    z.number().min(0, "O preço não pode ser negativo!")
+  ),
   status: z.string().trim().min(1, "Campo Obrigatório!"),
+  tipo_pagamento: z.string().optional(),
 });
 
-export const CreateOrUpdateCodigo = ({
-  codigo,
+export const CreateOrUpdateVenda = ({
+  venda,
   onConfirm,
-}: DialogCreateOrUpdateCodigoProps) => {
+}: DialogCreateOrUpdateVendaProps) => {
   const [open, setOpen] = useState(false);
   const [products, setProducts] = useState<ProdutosProps[]>([]);
   const isDesktop = !useIsMobile();
@@ -85,9 +84,11 @@ export const CreateOrUpdateCodigo = ({
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      id_produto: codigo?.id_produto ||"",
-      codigo: codigo?.codigo || "",
-      status: codigo?.status || "",
+      id_produto: venda?.id_produto || "",
+      id_cliente: venda?.id_cliente || "",
+      valor: venda?.valor||0,
+      status: venda?.status || "",
+      tipo_pagamento: venda?.tipo_pagamento || "",
     },
   });
 
@@ -100,7 +101,11 @@ export const CreateOrUpdateCodigo = ({
   }, []);
 
   const onSubmit = (values: z.infer<typeof schema>) => {
-    onConfirm({ data: { ...values, id_codigo: codigo?.id_codigo || v4() } });
+    onConfirm({ data: {
+      ...values,
+      uuid: venda?.uuid ? venda.uuid : uuidv4(), // Adiciona o uuid apenas se a venda existir
+      created_at: venda?.created_at ? venda.created_at : new Date().toISOString(), // Adiciona created_at se for uma nova venda
+    } });
     setOpen(false);
     form.reset();
   };
@@ -120,8 +125,7 @@ export const CreateOrUpdateCodigo = ({
               <FormControl>
                 <Select
                   onValueChange={field.onChange}
-                  value={field.value} // Use 'value' em vez de 'defaultValue'
-                  // Definindo largura máxima
+                  value={field.value}
                 >
                   <SelectTrigger className="w-full max-w-xs">
                     <SelectValue placeholder="Selecione um produto" />
@@ -142,12 +146,26 @@ export const CreateOrUpdateCodigo = ({
 
         <FormField
           control={form.control}
-          name="codigo"
+          name="id_cliente"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Código</FormLabel>
+              <FormLabel>ID do Cliente</FormLabel>
               <FormControl>
-                <Input placeholder="Código" {...field} />
+                <Input placeholder="ID do Cliente" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="valor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Valor</FormLabel>
+              <FormControl>
+                <Input placeholder="Valor" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -161,28 +179,21 @@ export const CreateOrUpdateCodigo = ({
             <FormItem>
               <FormLabel>Status</FormLabel>
               <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value} // Use 'value' em vez de 'defaultValue'
-                  // Definindo largura máxima
-                >
-                  <SelectTrigger >
-                    <SelectValue placeholder="Selecione um status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                   
-                      <SelectItem value="Ativo" >
-                        Ativo
-                      </SelectItem>
-                      <SelectItem value="Inativo" >
-                        Inativo
-                      </SelectItem>
-                      <SelectItem value="Resgatado" >
-                        Resgatado
-                      </SelectItem>
-                    
-                  </SelectContent>
-                </Select>
+                <Input placeholder="Status" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="tipo_pagamento"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Pagamento</FormLabel>
+              <FormControl>
+                <Input placeholder="Tipo de Pagamento" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -190,7 +201,7 @@ export const CreateOrUpdateCodigo = ({
         />
 
         <Button type="submit">
-          {codigo ? "Atualizar Código" : "Criar Código"}
+          {venda ? "Atualizar Venda" : "Criar Venda"}
         </Button>
       </form>
     </Form>
@@ -206,17 +217,17 @@ export const CreateOrUpdateCodigo = ({
     >
       <DialogTrigger asChild>
         <Button variant="default">
-          {codigo ? <Edit size={16} /> : <Plus size={16}></Plus>}
-          {codigo ? " Atualizar Código" : " Criar Código"}
+          {venda ? <Edit size={16} /> : <Plus size={16}></Plus>}
+          {venda ? " Atualizar Venda" : " Criar Venda"}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {codigo ? "Atualizar Código" : "Criar Código"}
+            {venda ? "Atualizar Venda" : "Criar Venda"}
           </DialogTitle>
           <DialogDescription>
-            Preencha as informações do código abaixo.
+            Preencha as informações da venda abaixo.
           </DialogDescription>
         </DialogHeader>
         {FormContent}
@@ -232,17 +243,17 @@ export const CreateOrUpdateCodigo = ({
     >
       <DrawerTrigger asChild>
         <Button variant={"default"}>
-          {codigo ? <Edit size={16} /> : <Plus size={16}></Plus>}
-          {codigo ? " Atualizar Código" : " Criar Código"}
+          {venda ? <Edit size={16} /> : <Plus size={16}></Plus>}
+          {venda ? " Atualizar Venda" : " Criar Venda"}
         </Button>
       </DrawerTrigger>
       <DrawerContent className="p-4">
         <DrawerHeader>
           <DrawerTitle>
-            {codigo ? "Atualizar Código" : "Criar Código"}
+            {venda ? "Atualizar Venda" : "Criar Venda"}
           </DrawerTitle>
           <DrawerDescription>
-            Preencha as informações do código abaixo.
+            Preencha as informações da venda abaixo.
           </DrawerDescription>
         </DrawerHeader>
         {FormContent}
