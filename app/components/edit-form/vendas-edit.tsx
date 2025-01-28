@@ -86,7 +86,7 @@ export const CreateOrUpdateVenda = ({
     defaultValues: {
       id_produto: venda?.id_produto || "",
       id_cliente: venda?.id_cliente || "",
-      valor: venda?.valor||0,
+      valor:  venda?.valor||0,
       status: venda?.status || "",
       tipo_pagamento: venda?.tipo_pagamento || "",
     },

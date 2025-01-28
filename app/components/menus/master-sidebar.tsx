@@ -2,13 +2,6 @@
 
 import * as React from "react";
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  Banknote,
-  Home,
   Settings,
   SunMoon,
   Binary,
@@ -16,6 +9,7 @@ import {
   Package,
   BarChart3,
   LayoutDashboard,
+  ShoppingBag,
 } from "lucide-react";
 
 import { NavMain } from "./_components/nav-main";
@@ -68,6 +62,12 @@ const data = {
       icon: Binary,
       isActive: false,
       items: [],
+    },  {
+      title: "Combos",
+      url: "/combos",
+      icon: ShoppingBag,
+      isActive: false,
+      items: [],
     },
     {
       title: "Claro/Escuro",
@@ -76,6 +76,7 @@ const data = {
       isActive: false,
       items: [],
     },
+  
     {
       title: "Configurações",
       url: "/dashboard",

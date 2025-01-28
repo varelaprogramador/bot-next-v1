@@ -2,9 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
+ body {
   font-family: 'Poppins', sans-serif;
 }
+[data-theme='light'] body {
+  font-family: 'Poppins', sans-serif;
+} 
  [data-theme='dark']  {
   --background: #171717;
   --foreground: white;

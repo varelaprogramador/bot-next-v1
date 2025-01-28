@@ -6,6 +6,6 @@ export interface CombosProps{
     produtos:ProdutosProps[];
     descricao:string;
     status:string;
-    created_at:string;
+    created_at?:string;
     valor:number;
 }

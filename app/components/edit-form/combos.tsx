@@ -36,10 +36,9 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "@/app/utils/produto";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { Edit, Plus, X } from "lucide-react";
+import { Edit, Plus, ShoppingBasket, X } from "lucide-react";
 import { CombosProps } from "@/app/utils/combos"; // Importando a interface CombosProps
 import { v4 as uuidv4 } from 'uuid';
-
 
 // Função para buscar produtos
 const fetchProducts = async () => {
@@ -62,16 +61,24 @@ interface DialogCreateOrUpdateComboProps {
     combo?: CombosProps; // Se fornecido, será um formulário de atualização
     onConfirm: (args: { data: CombosProps }) => void;
 }
-
+const produtoSchema = z.object({
+    id: z.string().optional(),
+    nome: z.string().min(1, "O nome do produto é obrigatório"),
+    descricao: z.string().min(1, "A descrição do produto é obrigatória"),
+    valor: z.number().min(0, "O valor do produto deve ser maior que zero"),
+    categoria: z.string().min(1, "A categoria do produto é obrigatória"),
+    created_at: z.string().optional(),
+  });
+  
 const schema = z.object({
     nome: z.string().trim().min(1, "Campo Obrigatório!"),
     descricao: z.string().trim().min(1, "Campo Obrigatório!"),
     status: z.string().trim().min(1, "Campo Obrigatório!"),
-    produtos: z.array(z.string()).min(1, "Selecione pelo menos um produto!"),
-    valor:z.preprocess(
+    produtos: z.array(produtoSchema).min(1,"Selecione pelo menos um produto"),
+    valor: z.preprocess(
         (val) => (typeof val === "string" ? parseFloat(val) : val),
         z.number().min(0, "O preço não pode ser negativo!")
-      ),
+    ),
 });
 
 export const CreateOrUpdateCombo = ({
@@ -79,7 +86,7 @@ export const CreateOrUpdateCombo = ({
     onConfirm,
 }: DialogCreateOrUpdateComboProps) => {
     const [open, setOpen] = useState(false);
-    const [products, setProducts] = useState<ProdutosProps[]>([]);
+    const [products, setProducts ] = useState<ProdutosProps[]>([]);
     const [productSelecionados, setProductSelecionados] = useState('');
     const [listProductSelecionados, setListProductSelecionados] = useState<ProdutosProps[]>([]);
     const isDesktop = !useIsMobile();
@@ -91,7 +98,7 @@ export const CreateOrUpdateCombo = ({
             descricao: "",
             status: "",
             produtos: [],
-            valor:0
+            valor: 0
         },
     });
 
@@ -104,19 +111,20 @@ export const CreateOrUpdateCombo = ({
     }, []);
 
     const onSubmit = (values: z.infer<typeof schema>) => {
-        console.log(values)
+        console.log(values);
         onConfirm({
             data: {
                 ...values,
                 id: combo?.id || uuidv4(),
                 produtos: listProductSelecionados,
-                created_at: ""
             }
         });
         setOpen(false);
         form.reset();
     };
-
+    useEffect(()=>{
+        form.setValue("produtos",listProductSelecionados);
+    },[form, listProductSelecionados]);
     const FormContent = (
         <Form {...form}>
             <form
@@ -124,7 +132,7 @@ export const CreateOrUpdateCombo = ({
                 onSubmit={form.handleSubmit((data) => {
                     console.log(data);
                     onSubmit(data); 
-                  })}
+                })}
             >
                 <FormField
                     control={form.control}
@@ -161,35 +169,27 @@ export const CreateOrUpdateCombo = ({
                         <FormItem>
                             <FormLabel>Status</FormLabel>
                             <FormControl>
-                            <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione um status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                         
-                                <SelectItem value={"ativo"}>
-                                  Ativo
-                                </SelectItem>
-                                <SelectItem value={"desativado"}>
-                                  Desativado
-                                </SelectItem>
-                        </SelectContent>
-                    </Select>
+                                <Select
+                                    onValueChange={field.onChange}
+                                    value={field.value}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Selecione um status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={"ativo"}>Ativo</SelectItem>
+                                        <SelectItem value={"desativado"}>Desativado</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
-                /><FormLabel>Produtos</FormLabel>
+                />
+                
+                <FormLabel>Produtos</FormLabel>
                 <div className="flex gap-4">
-
-
-
-                    <Select
-                        onValueChange={setProductSelecionados}
-                    >
+                    <Select onValueChange={setProductSelecionados}>
                         <SelectTrigger className="w-full max-w-xs">
                             <SelectValue placeholder="Selecione um produto" />
                         </SelectTrigger>
@@ -202,16 +202,18 @@ export const CreateOrUpdateCombo = ({
                         </SelectContent>
                     </Select>
                     <Button onClick={(e) => {
-                        e.preventDefault(); if (listProductSelecionados.find(produtoV => produtoV.id == productSelecionados)) {
-
-
-                          window.alert('Dentro deste Combo ja existe esse produto, escolha outro.');
-                          return;
-                        } setListProductSelecionados((prevProducts) => [
+                        e.preventDefault();
+                        if (listProductSelecionados.find(produtoV => produtoV.id === productSelecionados)) {
+                            window.alert('Dentro deste Combo já existe esse produto, escolha outro.');
+                            return;
+                        }
+                        setListProductSelecionados((prevProducts) => [
                             ...prevProducts,
-                            products.find(product => product.id == productSelecionados) as ProdutosProps
+                            products.find(product => product.id === productSelecionados) as ProdutosProps
                         ]);
-                    }}><Plus></Plus></Button>
+                    }}>
+                        <Plus />
+                    </Button>
                 </div>
                 <div className="border bg-yellow-50 min-h-[50px] max-h-[130px] overflow-y-auto grid grid-cols-4 p-2 gap-4">
                     {listProductSelecionados.length >= 1 ? (
@@ -222,14 +224,12 @@ export const CreateOrUpdateCombo = ({
                             >
                                 <p
                                     className="m-0 overflow-hidden whitespace-nowrap text-ellipsis"
-                                    style={{ maxWidth: '120px' }} // Ajuste a largura conforme necessário
+                                    style={{ maxWidth: '120px' }}
                                 >
                                     {item.nome}
                                 </p>
-
                                 <Button
                                     onClick={() => {
-                                        console.log(item.id);
                                         setListProductSelecionados((prevProducts) =>
                                             prevProducts.filter((product2) => product2.id !== item.id)
                                         );
@@ -246,25 +246,22 @@ export const CreateOrUpdateCombo = ({
                         </div>
                     )}
                 </div>
-  <FormField
-          control={form.control}
-          name="valor"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Valor</FormLabel>
-              <FormControl>
-                <Input placeholder="Valor" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                <FormField
+                    control={form.control}
+                    name="valor"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Valor</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="Valor" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-
-
-
-                <Button type="submit">
-                    {combo ? "Atualizar Combo" : "Criar Combo"}
+                <Button type="submit" onClick={()=>{  console.log(form.getValues())}}>
+                     Criar Combo
                 </Button>
             </form>
         </Form>
@@ -279,10 +276,12 @@ export const CreateOrUpdateCombo = ({
             }}
         >
             <DialogTrigger asChild>
-                <Button variant="default">
-                    {combo ? <Edit size={16} /> : <Plus size={16}></Plus>}
-                    {combo ? " Atualizar Combo" : " Criar Combo"}
-                </Button>
+            <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
+          <div className="flex flex-col gap-8 justify-center items-center">
+            <ShoppingBasket size={80} />
+            <p className="font-medium">Criar Combo</p>
+          </div>
+        </div>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
@@ -305,10 +304,12 @@ export const CreateOrUpdateCombo = ({
             }}
         >
             <DrawerTrigger asChild>
-                <Button type="submit" >
-                    {combo ? <Edit size={16} /> : <Plus size={16}></Plus>}
-                    {combo ? " Atualizar Combo" : " Criar Combo"}
-                </Button>
+            <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
+          <div className="flex flex-col gap-8 justify-center items-center">
+            <ShoppingBasket size={80} />
+            <p className="font-medium">Criar Combo</p>
+          </div>
+        </div>
             </DrawerTrigger>
             <DrawerContent className="p-4">
                 <DrawerHeader>

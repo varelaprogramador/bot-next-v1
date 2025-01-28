@@ -117,7 +117,7 @@ export default function Vendas() {
 
   // KPIs
   const totalVendas = data.reduce(
-    (acc, venda) => acc + parseFloat(venda.valor),
+    (acc, venda) => acc + venda.valor,
     0
   );
   const vendasConcluidas = data.filter(

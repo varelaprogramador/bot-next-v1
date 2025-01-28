@@ -137,7 +137,7 @@ export const columns: ColumnDef<VendasProps>[] = [
   },
 ];
 
-export function DataTableVendas({ data}: { data: VendasProps[]; setData: React.Dispatch<React.SetStateAction<VendasProps[]>> }) {
+export function DataTableVendas({ data}: { data: VendasProps[];}) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});

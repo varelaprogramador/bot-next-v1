@@ -146,21 +146,9 @@ if (filterText && data) {
       <h1 className="text-3xl font-bold mb-6">Área de Produtos</h1>
       <div className="flex gap-2 justify-center items-center">
         <Input type="text" placeholder="Filtre seus produtos por aqui ..." className="my-4" onChange={(e) => setfilterText(e.target.value)} value={filterText}></Input>
-        <Select onValueChange={setFilterCategoria}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Selecione uma categoria" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Categoria</SelectLabel>
-              <SelectItem value="mensal">Mensal</SelectItem>
-              <SelectItem value="anual">Anual</SelectItem>
-              <SelectItem value="geral">Geral</SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select></div>
+        </div>
       <div className="grid grid-cols-3 gap-8 max-md:grid-cols-1 max-lg:grid-cols-2">
-        <CreateOrUpdateCombo onConfirm={()=>{handleConfirmCreate}}></CreateOrUpdateCombo>
+        <CreateOrUpdateCombo onConfirm={handleConfirmCreate}></CreateOrUpdateCombo>
 
         {filterData.map((combo) => (
           <article
@@ -204,7 +192,7 @@ if (filterText && data) {
               <div className="flex gap-2 w-full">
                 <Button
                   onClick={() =>
-                    (window.location.href = `/produtos/${combo.id}`)
+                    (window.location.href = `/combos/${combo.id}`)
                   }
                   className="w-full"
                 >

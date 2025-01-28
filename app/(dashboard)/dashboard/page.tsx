@@ -1,10 +1,10 @@
 "use client";
 import { AlertTriangle } from "lucide-react";
 import { MainNav } from "@/app/components/main-nav";
-import { RevenueChart } from "@/app/components/revenue-chart";
+import { RevenueChart, ChartProps } from "@/app/components/revenue-chart";
 import { SummaryCard } from "@/app/components/summary-card";
 import { Alert, AlertDescription } from "@/app/components/ui/alert";
-import { Button } from "@/app/components/ui/button";
+
 import { Progress } from "@/app/components/ui/progress";
 import {
   Tabs,
@@ -12,7 +12,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import { SidebarInset, SidebarProvider } from "@/app/components/ui/sidebar";
+
 import {
   Card,
   CardContent,
@@ -22,14 +22,19 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { VendasProps } from "../../utils/vendas";
-import { subDays } from "date-fns";
+import { eachDayOfInterval, endOfDay, format, startOfDay, subDays } from "date-fns";
+import { number } from "zod";
+import MetaProgress from "@/app/components/meta";
 
 export default function DashboardPage() {
+
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<VendasProps[]>([]);
   const [selectedRange, setSelectedRange] = useState("30");
-  const [filteredData, setFilteredData] = useState<VendasProps[]>([]);
+  const [filteredData, setFilteredData] = useState<ChartProps[]>([]);
+
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -88,6 +93,7 @@ export default function DashboardPage() {
   const filterDataByRange = (range: string) => {
     const today = new Date();
     let startDate = today;
+    const endDate = today;
 
     switch (range) {
       case "7":
@@ -103,12 +109,29 @@ export default function DashboardPage() {
         break;
     }
 
+    const allDates = eachDayOfInterval({ start: startOfDay(startDate), end: endOfDay(endDate) });
+
     const filtered = data.filter((item) => {
       const itemDate = new Date(item.created_at);
-      return itemDate >= startDate;
+      return itemDate >= startDate && itemDate <= endDate && !isNaN(itemDate.getTime());
     });
 
-    setFilteredData(filtered);
+    const dataMap = filtered.reduce((acc, curr) => {
+      const formattedDate = format(new Date(curr.created_at), "dd/MM/yy");
+      // Atribui o valor como número, usando parseFloat para garantir que seja um número
+      acc[formattedDate] =curr.valor  || 0; // Se curr.valor não for um número, atribui 0
+      return acc;
+    }, {} as Record<string, number>);
+
+    const finalFilteredData = allDates.map(date => {
+      const formattedDate = format(date, "dd/MM/yy");
+      return {
+        date: formattedDate,
+        value: dataMap[formattedDate] || 0,
+      };
+    });
+
+    setFilteredData(finalFilteredData);
   };
 
   // Atualiza os dados filtrados quando a aba é alterada
@@ -120,25 +143,79 @@ export default function DashboardPage() {
   const handleTabChange = (value: string) => {
     setSelectedRange(value);
   };
+  const today = new Date();
+  const startOfToday = startOfDay(today);
+  const endOfToday = endOfDay(today);
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1); // Subtrai um dia
+  const startOfYesterday = startOfDay(yesterday);
+  const endOfYesterday = endOfDay(yesterday);
 
-  const vendashoje = data.reduce(
-    (acc, venda) => acc + parseFloat(venda.valor),
-    0
-  );
+  // Calculando o total de vendas
+  const vendashoje = data
+    .filter((venda) => {
+      const itemDate = new Date(venda.created_at);
+      return itemDate >= startOfToday && itemDate <= endOfToday;
+    })
+    .reduce((acc, venda) => acc + venda.valor || 0, 0);
+
   const vendastotal = data.reduce(
-    (acc, venda) => acc + parseFloat(venda.valor),
+    (acc, venda) => acc + venda.valor,
     0
   );
-  const vendasontem = data.reduce(
-    (acc, venda) => acc + parseFloat(venda.valor),
-    0
-  );
-  const vendasfeitas = data.filter(
-    (venda) => venda.status === "concluido"
-  ).length;
+
+  const vendasontem = data
+    .filter((venda) => {
+      const itemDate = new Date(venda.created_at);
+      return itemDate >= startOfYesterday && itemDate <= endOfYesterday;
+    })
+    .reduce((acc, venda) => acc + venda.valor || 0, 0);
+
+    const trintaDiasAtras = new Date(today);
+    trintaDiasAtras.setDate(today.getDate() - 30);
+    
+    // Filtra as vendas que têm o status 'concluido' e foram feitas nos últimos 30 dias
+    const vendasfeitas = data
+      .filter((venda) => {
+        const dataVenda = new Date(venda.created_at); // Converte a data de criação da venda para o formato Date
+        return (
+          venda.status.toLowerCase() === "concluido" &&
+          dataVenda >= trintaDiasAtras // Verifica se a venda é dos últimos 30 dias
+        );
+      })
+      .reduce((acc, venda) => acc + venda.valor || 0, 0); // Soma os valores das vendas
+    
+  const vendaspendentes = data
+    .filter(
+      (venda) =>
+        venda.status.toLowerCase() !== "concluido" &&
+        new Date(venda.created_at) >= startOfToday &&
+        new Date(venda.created_at) <= endOfToday
+    )
+    .reduce((acc, venda) => acc + venda.valor || 0, 0);
+
   const vendaspix =
     (data.filter((venda) => venda.tipo_pagamento === "pix").length * 100) /
     data.length;
+
+  const [valorAtual, setValorAtual] = useState(0); 
+  const [meta, setMeta] = useState(10000); 
+  const [nivel, setNivel] = useState(1);
+
+  // Função que é chamada quando a meta é atingida
+  const handleMetaConcluida = () => {
+    setNivel((prevNivel) => prevNivel + 1); // Avança para o próximo nível
+    setMeta((prevMeta) => prevMeta * 10); // Multiplica a meta por 10
+
+  };
+useEffect(()=>{
+setValorAtual(vendashoje);
+},[vendashoje])
+  useEffect(() => {
+    if (valorAtual >= meta) {
+      handleMetaConcluida();
+    }
+  }, [valorAtual, meta]);
 
   return (
     <div className="flex min-h-[90vh] flex-col px-4 space-y-4">
@@ -151,7 +228,7 @@ export default function DashboardPage() {
           <SummaryCard
             title="Vendas hoje"
             value={`R$${vendashoje.toFixed(2)}`}
-            previousValue="R$ 0,00"
+            previousValue={`R$${vendasontem.toFixed(2)}`}
             previousLabel="De ontem"
             colortitle="text-blue-500"
           />
@@ -160,34 +237,25 @@ export default function DashboardPage() {
             value={`R$${vendasfeitas.toFixed(2)}`}
             previousValue="30 dias"
             previousLabel="Dos últimos"
-             colortitle="text-green-700"
+            colortitle="text-green-700"
           />
           <SummaryCard
-            title="Pendente"
-            value="R$ 0,00"
+            title="Vendas Pendentes"
+            value={`R$${vendaspendentes.toFixed(2)}`}
             previousValue="24 horas"
             previousLabel="Das últimas"
-             colortitle="text-yellow-600"
+            colortitle="text-yellow-600"
           />
         </div>
       </div>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold">
-              NÍVEL 1
-            </div>
-            <span className="text-sm text-muted-foreground">
-              R$ {vendastotal.toFixed(2)} em vendas
-            </span>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <span> R$ {vendastotal.toFixed(2)}</span>
-            <span className="mx-1">/</span>
-            <span>10k</span>
-          </div>
-        </div>
-        <Progress value={(vendastotal * 100) / 10000} className="h-2 progress-night" />
+      <div className="space-y-6">
+        <MetaProgress
+          nivel={`NÍVEL ${nivel}`}
+          valorAtual={valorAtual}
+          meta={meta}
+          onMetaConcluida={handleMetaConcluida}
+        />
+        
       </div>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -200,7 +268,7 @@ export default function DashboardPage() {
             <TabsList className="filter-category-night">
               <TabsTrigger
                 value="7"
-              
+
                 aria-label="Filter data for the last 7 days"
               >
                 7 dias
@@ -234,10 +302,10 @@ export default function DashboardPage() {
               <span>Cartão</span>
               <span>0%</span>
             </div>
-            <Progress value={30} className="h-2 progress-night" />
+            <Progress value={0} className="h-2 progress-night" />
             <div className="flex items-center justify-between text-sm">
               <span>PIX</span>
-              <span>{vendaspix||"0"}%</span>
+              <span>{vendaspix || "0"}%</span>
             </div>
             <Progress value={vendaspix} className="h-2 progress-night" />
             <div className="flex items-center justify-between text-sm">
