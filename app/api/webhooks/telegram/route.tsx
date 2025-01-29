@@ -1,20 +1,61 @@
-require("dotenv").config(); // Carregar variáveis de ambiente do .env
-const { Telegraf } = require("telegraf");
-const { createClient } = require("@supabase/supabase-js");
-const { randomUUID } = require("crypto");
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// pages/api/webhooks/telegram/route.ts
+
+import { Telegraf } from 'telegraf';
+import { createClient } from '@supabase/supabase-js';
+import { randomUUID } from 'crypto';
+import { NextResponse } from 'next/server';
 
 // Inicializando o Supabase
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_KEY!
 );
 
 // Inicializando o Bot do Telegram
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
+
+// Configurar a resposta para o método GET
+export async function GET(req: Request) {
+  try {
+    return new NextResponse(
+      JSON.stringify({ message: 'Webhook configurado corretamente!' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Erro no GET:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+// Método POST para receber as atualizações do Telegram
+export async function POST(req: Request) {
+  try {
+    const data = await req.json(); // Receber a atualização do Telegram
+    console.log('Atualização recebida:', data);
+
+    // Passar a atualização para o Telegraf processar
+    await bot.handleUpdate(data);
+
+    return new NextResponse(
+      JSON.stringify({ message: 'Webhook POST processado com sucesso!' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Erro no POST:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
 
 
-// Função para enviar os botões embutidos
-const sendActionButtonsInline = async (ctx) => {
+// Função para enviar botões
+const sendActionButtonsInline = async (ctx: any) => {
   const chatId = ctx.chat.id;
   const username = ctx.from.username || "None";
   const userId = ctx.from.id;
@@ -26,36 +67,28 @@ const sendActionButtonsInline = async (ctx) => {
     .eq("user_id", userId)
     .single();
 
-  // Se o usuário não existir, criar um novo registro
+  // Se o usuário não existir, criar um novo
   if (error || !data) {
     const { data: insertedData, error: insertError } = await supabase
       .from("users")
-      .insert([
-        {
-          user_id: userId,
-          username: username,
-          saldo: 0.0, // saldo inicial
-          saldo_indicacao: 0.0, // saldo de indicação inicial
-        },
-      ])
+      .insert([{
+        user_id: userId,
+        username: username,
+        saldo: 0.0,
+        saldo_indicacao: 0.0,
+      }])
       .single();
 
     if (insertError) {
       console.error("Erro ao inserir usuário no Supabase:", insertError);
-      return ctx.reply(
-        "Desculpe, houve um erro ao registrar suas informações."
-      );
+      return ctx.reply("Desculpe, houve um erro ao registrar suas informações.");
     }
-
-    console.log("Novo usuário inserido no Supabase:", insertedData);
   }
 
-  // Exibir a ficha do usuário
+  // Mensagem com a ficha do usuário
   const { saldo, saldo_indicacao } = data || {};
-  console.log(data);
 
-  const message = `
-💟 Bem-vindo(a) à Recarga Next! 💟
+  const message = `💟 Bem-vindo(a) à Recarga Next! 💟
 ✨ A melhor loja de streaming do Telegram! ✨
 
 🧾 Sua Ficha de Usuário:
@@ -64,98 +97,31 @@ const sendActionButtonsInline = async (ctx) => {
 ├ 💵 Saldo disponível: R$${saldo}
 └ 🔘 Saldo de Indicação: R$${saldo_indicacao}
 
-🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!
-`;
+🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!`;
 
-  // Enviar mensagem de boas-vindas com a ficha do usuário
-  bot.telegram.sendMessage(chatId, message, {
+  return bot.telegram.sendMessage(chatId, message, {
     reply_markup: {
       inline_keyboard: [
         [{ text: "💎 Contas Premium", callback_data: "premium" }],
-        [
-          { text: "💰 Saldo", callback_data: "saldo" },
-          { text: "👤 Perfil", callback_data: "perfil" },
-        ],
+        [{ text: "💰 Saldo", callback_data: "saldo" }, { text: "👤 Perfil", callback_data: "perfil" }],
         [{ text: "🛠️ Suporte", callback_data: "suporte" }],
       ],
     },
   });
 };
 
-// Bot começa
-bot.start(async (ctx) => {
-  const chatId = ctx.chat.id;
-  const username = ctx.from.username || "None";
-  const userId = ctx.from.id;
-
-  // Verificar se o usuário já existe no banco de dados
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, saldo, saldo_indicacao")
-    .eq("user_id", userId)
-    .single();
-
-  // Se o usuário não existir, criar um novo registro
-  if (error || !data) {
-    const { data: insertedData, error: insertError } = await supabase
-      .from("users")
-      .insert([
-        {
-          user_id: userId,
-          username: username,
-          saldo: 0.0, // saldo inicial
-          saldo_indicacao: 0.0, // saldo de indicação inicial
-        },
-      ])
-      .single();
-
-    if (insertError) {
-      console.error("Erro ao inserir usuário no Supabase:", insertError);
-      return ctx.reply(
-        "Desculpe, houve um erro ao registrar suas informações."
-      );
-    }
-
-    console.log("Novo usuário inserido no Supabase:", insertedData);
-  }
-
-  // Exibir a ficha do usuário
-  const { saldo, saldo_indicacao } = data || {};
-  console.log(data);
-
-  const message = `
-💟 Bem-vindo(a) à Recarga Next! 💟
-✨ A melhor loja de streaming do Telegram! ✨
-
-🧾 Sua Ficha de Usuário:
-├ 👤 Username: @${username}
-├ 🆔 ID do usuário: ${userId}
-├ 💵 Saldo disponível: R$${saldo}
-└ 🔘 Saldo de Indicação: R$${saldo_indicacao}
-
-🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!
-`;
-
-  // Enviar mensagem de boas-vindas com a ficha do usuário
-  bot.telegram.sendMessage(chatId, message, {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "💎 Contas Premium", callback_data: "premium" }],
-        [
-          { text: "💰 Saldo", callback_data: "saldo" },
-          { text: "👤 Perfil", callback_data: "perfil" },
-        ],
-        [{ text: "🛠️ Suporte", callback_data: "suporte" }],
-      ],
-    },
-  });
+// Configurar comandos do bot
+bot.command('start', async (ctx) => {
+  await sendActionButtonsInline(ctx);
 });
 
+// Configurar handlers de callback_query
 bot.on("callback_query", async (ctx) => {
   const userId = ctx.from.id;
-  const chatId = ctx.chat.id;
-  const callbackData = ctx.callbackQuery.data;
-
+  const chatId = ctx.chat?.id;
+  if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {
+    const callbackData = ctx.callbackQuery.data;
+  
   if (callbackData === "premium") {
     const mensagem = `
     🛍️ Escolha o que você deseja comprar no momento:
@@ -274,7 +240,7 @@ bot.on("callback_query", async (ctx) => {
           .map((combo) => {
             return `🔹 ${combo.nome} \n${combo.produtos.length > 0
               ? combo.produtos
-                  .map((item) => (item.nome ? ` 🔸 ${item.nome} \n ${item.descricao}\n` : "❌ Produto sem nome"))
+                  .map((item: { nome: any; descricao: any; }) => (item.nome ? ` 🔸 ${item.nome} \n ${item.descricao}\n` : "❌ Produto sem nome"))
                   .join("\n")
               : "❌ Nenhum produto disponível."}`;
           })
@@ -700,7 +666,7 @@ bot.on("callback_query", async (ctx) => {
 
     const mensagensCodigos = codigosAtivos
   .map((codigo) => {
-    const produto = produtosCombo.find((item) => codigo.id_produto === item.id);
+    const produto = produtosCombo.find((item: { id: any; }) => codigo.id_produto === item.id);
     return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${codigo.codigo}`;
   })
   .join("\n");
@@ -847,7 +813,7 @@ bot.on("callback_query", async (ctx) => {
     // Calcular o total de contas adquiridas e o valor total gasto
     const totalCompras = historico_produtos.length || 0;
     const totalGasto = historico_produtos.reduce(
-      (total, produto) => total + parseFloat(produto.value),
+      (total: number, produto: { value: string; }) => total + parseFloat(produto.value),
       0
     );
 
@@ -855,7 +821,7 @@ bot.on("callback_query", async (ctx) => {
     const comprasList =
       historico_produtos
         .map(
-          (produto) =>
+          (produto: { key: any; value: any; data_compra: any; }) =>
             `🔹 ${produto.key} | R$${produto.value} | ${produto.data_compra}`
         )
         .join("\n") || "Nenhuma compra realizada ainda.";
@@ -886,10 +852,8 @@ ${comprasList}
 
     // Enviar os botões de navegação
     sendActionButtonsInline(ctx);
+  }}else {
+    console.error('CallbackQuery sem dados ou tipo inválido');
   }
 });
 
-// Bot está em execução
-bot.launch().then(() => {
-  console.log("Bot está em execução...");
-});
