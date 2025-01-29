@@ -213,20 +213,22 @@ bot.on("callback_query", async (ctx) => {
       ]);
     };
 
-    const mensagem = `🎖️ PERFIL | PREMIUM  🎖️
-    ${produtos.map((item) => {
-      return `🔹 ${item.nome}`;
-    })}
+    const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
+    ${produtos
+      .map((item) => {
+        return `🔹 ${item.nome}\n`; // Corrigido para usar \n
+      })
+      .join("")} // Usando join para concatenar os itens em uma única string
+    
+    =====================
+    
+    🏷️ Garantia Total:
+    
+    Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
+    
+    💎 Experiência Premium, feita para você!`;
 
-=====================
-
-🏷️ Garantia Total:
-
-Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
-
-💎 Experiência Premium, feita para você!`;
-
-    ctx.editMessageText("💎 Escolha um canal premium:", {
+    ctx.editMessageText(mensagem, {
       reply_markup: {
         inline_keyboard: [
           ...options(), // Espalha os arrays gerados pela função options
@@ -259,8 +261,26 @@ Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
         ],
       },
     };
+    const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
+    ${
+      Array.isArray(combos.produtos)
+        ? combos.produtos
+            .map((item) => {
+              return `🔹 ${item.nome}\n`;
+            })
+            .join("")
+        : "❌ Nenhum produto disponível."
+    }
+    
+    =====================
+    
+    🏷️ Garantia Total:
+    
+    Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
+    
+    💎 Experiência Premium, feita para você!`;
 
-    ctx.editMessageText("💎 Escolha um combo premium:", options);
+    ctx.editMessageText(mensagem, options);
   } else if (callbackData.startsWith("comprar_")) {
     const produtoId = callbackData.split("_")[1];
     console.log(produtoId);
