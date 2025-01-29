@@ -20,20 +20,26 @@ import { createClient } from "@/lib/supabase/client";
 import { EditProduto } from "@/app/components/edit-form/produto-edit";
 import { Input } from "@/app/components/ui/input";
 import { set } from "date-fns";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { CreateOrUpdateCombo } from "@/app/components/edit-form/combos";
 import { CombosProps } from "@/app/utils/combos";
-
 
 export default function Combos() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<CombosProps[]>([]);
-  const [filterText, setfilterText] = useState('');
+  const [filterText, setfilterText] = useState("");
   const [filterData, setFilterData] = useState<CombosProps[]>([]);
 
   const [filterCategoria, setFilterCategoria] = useState(""); // default to empty string
-
 
   useEffect(() => {
     const loadData = async () => {
@@ -71,9 +77,7 @@ export default function Combos() {
               return [...prevData, payload.new as CombosProps];
             case "UPDATE":
               return prevData.map((item) =>
-                item.id === payload.new.id
-                  ? (payload.new as CombosProps)
-                  : item
+                item.id === payload.new.id ? (payload.new as CombosProps) : item
               );
             case "DELETE":
               return prevData.filter((item) => item.id !== payload.old.id);
@@ -91,18 +95,16 @@ export default function Combos() {
     };
   }, [supabase]);
   useEffect(() => {
-if (filterText && data) {
-
-      setFilterData(data.filter(item => 
-        item.nome.toLowerCase().includes(filterText.toLowerCase())
-      ));
+    if (filterText && data) {
+      setFilterData(
+        data.filter((item) =>
+          item.nome.toLowerCase().includes(filterText.toLowerCase())
+        )
+      );
     } else {
-     
       setFilterData(data);
     }
   }, [filterText, filterCategoria, data]);
-  
-
 
   const handleConfirmCreate = async ({ data }: { data: CombosProps }) => {
     setLoading(true);
@@ -126,7 +128,7 @@ if (filterText && data) {
       console.log("Produto atualizado com sucesso");
     }
   };
-  const handleDeleteProduto = async (id: string) => {
+  const handleDeleteCombo = async (id: string) => {
     const { error } = await supabase.from("combos").delete().eq("id", id);
 
     if (error) {
@@ -143,12 +145,20 @@ if (filterText && data) {
 
   return (
     <div className="container mx-auto p-6 gap">
-      <h1 className="text-3xl font-bold mb-6">Área de Produtos</h1>
+      <h1 className="text-3xl font-bold mb-6">Área de Combos</h1>
       <div className="flex gap-2 justify-center items-center">
-        <Input type="text" placeholder="Filtre seus produtos por aqui ..." className="my-4" onChange={(e) => setfilterText(e.target.value)} value={filterText}></Input>
-        </div>
+        <Input
+          type="text"
+          placeholder="Filtre seus produtos por aqui ..."
+          className="my-4"
+          onChange={(e) => setfilterText(e.target.value)}
+          value={filterText}
+        ></Input>
+      </div>
       <div className="grid grid-cols-3 gap-8 max-md:grid-cols-1 max-lg:grid-cols-2">
-        <CreateOrUpdateCombo onConfirm={handleConfirmCreate}></CreateOrUpdateCombo>
+        <CreateOrUpdateCombo
+          onConfirm={handleConfirmCreate}
+        ></CreateOrUpdateCombo>
 
         {filterData.map((combo) => (
           <article
@@ -162,7 +172,6 @@ if (filterText && data) {
                     {combo.nome || "Produto teste"}
                   </h1>
                   <div className="flex items-center gap-2">
-                  
                     <Link
                       href={`/combos/${combo.id}`}
                       className="hover:bg-gray-300 hover:text-black p-2 rounded"
@@ -191,16 +200,19 @@ if (filterText && data) {
               </div>
               <div className="flex gap-2 w-full">
                 <Button
-                  onClick={() =>
-                    (window.location.href = `/combos/${combo.id}`)
-                  }
+                  onClick={() => (window.location.href = `/combos/${combo.id}`)}
                   className="w-full"
                 >
                   Acessar <ArrowRightIcon size={15} />
                 </Button>
-                
+                <Button>
+                  <CreateOrUpdateCombo
+                    combo={combo}
+                    onConfirm={handleConfirmEdit}
+                  ></CreateOrUpdateCombo>
+                </Button>
                 <Button
-                  onClick={() => {}}
+                  onClick={() => handleDeleteCombo(combo.id as string)}
                   variant={"destructive"}
                 >
                   <Trash2 />
