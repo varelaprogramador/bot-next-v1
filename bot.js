@@ -213,6 +213,19 @@ bot.on("callback_query", async (ctx) => {
       ]);
     };
 
+    const mensagem = `🎖️ PERFIL | PREMIUM  🎖️
+    ${produtos.map((item) => {
+      return `🔹 ${item.nome}`;
+    })}
+
+=====================
+
+🏷️ Garantia Total:
+
+Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
+
+💎 Experiência Premium, feita para você!`;
+
     ctx.editMessageText("💎 Escolha um canal premium:", {
       reply_markup: {
         inline_keyboard: [
