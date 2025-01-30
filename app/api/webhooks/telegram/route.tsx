@@ -121,9 +121,9 @@ bot.on("callback_query", async (ctx) => {
   const chatId = ctx.chat?.id;
   if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {
     const callbackData = ctx.callbackQuery.data;
-  
-  if (callbackData === "premium") {
-    const mensagem = `
+
+    if (callbackData === "premium") {
+      const mensagem = `
     🛍️ Escolha o que você deseja comprar no momento:
     
    🎁 Produtos
@@ -138,54 +138,54 @@ bot.on("callback_query", async (ctx) => {
     Estamos aqui para ajudar você a encontrar a melhor opção para suas necessidades! 😊
     `;
 
-    ctx.editMessageText(mensagem, {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: "Ver produtos |PREMIUM|",
-              callback_data: "produtos",
-            },
+      ctx.editMessageText(mensagem, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: "Ver produtos |PREMIUM|",
+                callback_data: "produtos",
+              },
+            ],
+            [
+              {
+                text: "Ver combos |PREMIUM|",
+                callback_data: "combos",
+              },
+            ],
+            [{ text: "Voltar para o menu", callback_data: "voltar" }],
           ],
-          [
-            {
-              text: "Ver combos |PREMIUM|",
-              callback_data: "combos",
-            },
-          ],
-          [{ text: "Voltar para o menu", callback_data: "voltar" }],
-        ],
-      },
-    });
-  } else if (callbackData === "produtos") {
-    // Obter produtos do Supabase
-    const { data: produtos, error } = await supabase
-      .from("produtos")
-      .select("*"); // Busca todas as colunas
-
-    console.log("ETAPA ", produtos);
-    if (error) {
-      ctx.editMessageText(
-        "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
-      );
-      return;
-    }
-
-    const options = () => {
-      return produtos.map((item) => [
-        {
-          text: `${item.nome} (R$${item.valor})`,
-          callback_data: `comprar_${item.id}`,
         },
-      ]);
-    };
+      });
+    } else if (callbackData === "produtos") {
+      // Obter produtos do Supabase
+      const { data: produtos, error } = await supabase
+        .from("produtos")
+        .select("*"); // Busca todas as colunas
 
-    const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
+      console.log("ETAPA ", produtos);
+      if (error) {
+        ctx.editMessageText(
+          "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
+        );
+        return;
+      }
+
+      const options = () => {
+        return produtos.map((item) => [
+          {
+            text: `${item.nome} - ${item.categoria} - (R$${item.valor})`,
+            callback_data: `comprar_${item.id}`,
+          },
+        ]);
+      };
+
+      const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
     ${produtos
-      .map((item) => {
-        return `🔹 ${item.nome}\n`; // Corrigido para usar \n
-      })
-      .join("\n",)} // Usando join para concatenar os itens em uma única string
+          .map((item) => {
+            return `🔹 ${item.nome}\n`; // Corrigido para usar \n
+          })
+          .join("\n",)} // Usando join para concatenar os itens em uma única string
     
     =====================
     
@@ -195,57 +195,57 @@ bot.on("callback_query", async (ctx) => {
     
     💎 Experiência Premium, feita para você!`;
 
-    ctx.editMessageText(mensagem, {
-      reply_markup: {
-        inline_keyboard: [
-          ...options(), // Espalha os arrays gerados pela função options
-          [{ text: "Voltar para o menu", callback_data: "voltar" }],
-        ],
-      },
-    });
-  } else if (callbackData === "combos") {
-    // Obter produtos do Supabase
-    const { data: combos, error } = await supabase.from("combos").select("*"); // Busca todas as colunas
+      ctx.editMessageText(mensagem, {
+        reply_markup: {
+          inline_keyboard: [
+            ...options(), // Espalha os arrays gerados pela função options
+            [{ text: "Voltar para o menu", callback_data: "voltar" }],
+          ],
+        },
+      });
+    } else if (callbackData === "combos") {
+      // Obter produtos do Supabase
+      const { data: combos, error } = await supabase.from("combos").select("*"); // Busca todas as colunas
 
-    console.log("ETAPA ", combos);
-    if (error) {
-      ctx.editMessageText(
-        "❌ Não foi possível carregar os combos. Tente novamente mais tarde."
-      );
-      return;
-    }
+      console.log("ETAPA ", combos);
+      if (error) {
+        ctx.editMessageText(
+          "❌ Não foi possível carregar os combos. Tente novamente mais tarde."
+        );
+        return;
+      }
 
-    const options = {
-      reply_markup: {
-        inline_keyboard: [
-          ...combos.map((item) => [
-            {
-              text: `${item.nome} (R$${item.valor})`,
-              callback_data: `2comprar_${item.id}`,
-            },
-          ]),
-          [{ text: "Voltar para o menu", callback_data: "voltar" }],
-        ],
-      },
-    };
-    console.log(combos, "TESTE");
- 
-    
-   const produtos = combos.flatMap((item) => {return item.produtos});
-   console.log(produtos);
+      const options = {
+        reply_markup: {
+          inline_keyboard: [
+            ...combos.map((item) => [
+              {
+                text: `${item.nome} (R$${item.valor})`,
+                callback_data: `2comprar_${item.id}`,
+              },
+            ]),
+            [{ text: "Voltar para o menu", callback_data: "voltar" }],
+          ],
+        },
+      };
+      console.log(combos, "TESTE");
 
 
-    const mensagem = `🎖️ PERFIL | PREMIUM 🎖️\n${produtos.length > 0
-      ? combos
+      const produtos = combos.flatMap((item) => { return item.produtos });
+      console.log(produtos);
+
+
+      const mensagem = `🎖️ PERFIL | PREMIUM 🎖️\n${produtos.length > 0
+        ? combos
           .map((combo) => {
             return `🔹 ${combo.nome} \n${combo.produtos.length > 0
               ? combo.produtos
-                  .map((item: { nome: any; descricao: any; }) => (item.nome ? ` 🔸 ${item.nome} \n ${item.descricao}\n` : "❌ Produto sem nome"))
-                  .join("\n")
+                .map((item: { nome: any; descricao: any; }) => (item.nome ? ` 🔸 ${item.nome} \n ${item.descricao}\n` : "❌ Produto sem nome"))
+                .join("\n")
               : "❌ Nenhum produto disponível."}`;
           })
           .join("\n\n")
-      : "❌ Nenhum combo disponível."}
+        : "❌ Nenhum combo disponível."}
     
     =====================
     
@@ -254,425 +254,437 @@ bot.on("callback_query", async (ctx) => {
     Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
     
     💎 Experiência Premium, feita para você!`;
-    
-    ctx.editMessageText(mensagem, options);
-    
-  } else if (callbackData.startsWith("comprar_")) {
-    const produtoId = callbackData.split("_")[1];
-    console.log(produtoId);
 
-    // Obter detalhes do produto
-    const { data: produto, error } = await supabase
-      .from("produtos")
-      .select("*")
-      .eq("id", produtoId)
-      .single(); // Adicionando .single() para garantir que apenas um produto seja retornado
+      ctx.editMessageText(mensagem, options);
 
-    if (error || !produto) {
-      ctx.editMessageText(
-        "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
+    } else if (callbackData.startsWith("comprar_")) {
+      const produtoId = callbackData.split("_")[1];
+      console.log(produtoId);
+
+      // Obter detalhes do produto
+      const { data: produto, error } = await supabase
+        .from("produtos")
+        .select("*")
+        .eq("id", produtoId)
+        .single(); // Adicionando .single() para garantir que apenas um produto seja retornado
+
+      if (error || !produto) {
+        ctx.editMessageText(
+          "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
+        );
+        return;
+      }
+      console.log(produto);
+
+      // Verificar se há códigos disponíveis para o produto
+      const { data: codigos, error: codigosError } = await supabase
+        .from("codigos")
+        .select("*")
+        .eq("produto_id", produtoId);
+
+      // Verificar se há códigos disponíveis e se estão ativos
+      if (codigosError) {
+        ctx.editMessageText(
+          "❌ Não foi possível verificar a disponibilidade de códigos. Tente novamente mais tarde."
+        );
+        return;
+      }
+
+      // Filtrar códigos ativos
+      const codigosAtivos = codigos.filter(
+        (codigo) => codigo.status.toLowerCase() === "ativo"
       );
-      return;
-    }
-    console.log(produto);
 
-    // Verificar se há códigos disponíveis para o produto
-    const { data: codigos, error: codigosError } = await supabase
-      .from("codigos")
-      .select("*")
-      .eq("produto_id", produtoId);
+      if (codigosAtivos.length < 1) {
+        ctx.editMessageText(
+          "❌ Não há códigos ativos disponíveis para este produto no momento. Tente novamente mais tarde."
+        );
+        return;
+      }
 
-    // Verificar se há códigos disponíveis e se estão ativos
-    if (codigosError) {
-      ctx.editMessageText(
-        "❌ Não foi possível verificar a disponibilidade de códigos. Tente novamente mais tarde."
-      );
-      return;
-    }
+      // Recuperar informações do usuário no Supabase
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("saldo")
+        .eq("user_id", userId)
+        .single();
 
-    // Filtrar códigos ativos
-    const codigosAtivos = codigos.filter(
-      (codigo) => codigo.status.toLowerCase() === "ativo"
-    );
+      if (userError || !userData) {
+        ctx.editMessageText(
+          "❌ Não foi possível recuperar suas informações. Tente novamente mais tarde."
+        );
+        return;
+      }
 
-    if (codigosAtivos.length < 1) {
-      ctx.editMessageText(
-        "❌ Não há códigos ativos disponíveis para este produto no momento. Tente novamente mais tarde."
-      );
-      return;
-    }
+      const saldoAtual = userData.saldo;
+      const valorProduto = produto.valor;
 
-    // Recuperar informações do usuário no Supabase
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("saldo")
-      .eq("user_id", userId)
-      .single();
-
-    if (userError || !userData) {
-      ctx.editMessageText(
-        "❌ Não foi possível recuperar suas informações. Tente novamente mais tarde."
-      );
-      return;
-    }
-
-    const saldoAtual = userData.saldo;
-    const valorProduto = produto.valor;
-
-    if (saldoAtual < valorProduto) {
-      ctx.editMessageText(
-        `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
+      if (saldoAtual < valorProduto) {
+        ctx.editMessageText(
+          `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
           `💰 Recarregue seu saldo para continuar.`,
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "Clique aqui para adicionar saldo",
-                  callback_data: "saldo",
-                },
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Clique aqui para adicionar saldo",
+                    callback_data: "saldo",
+                  },
+                ],
+                [{ text: "Voltar para o menu", callback_data: "voltar" }],
               ],
-              [{ text: "Voltar para o menu", callback_data: "voltar" }],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // Mensagem de confirmação
-    const confirmacaoOptions = {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: `Confirmar compra de R$${valorProduto}`,
-              callback_data: `confirmar_compra_${produtoId}`,
             },
-          ],
-          [{ text: "Voltar para o MENU", callback_data: "voltar" }],
-        ],
-      },
-    };
+          }
+        );
+        return;
+      }
 
-    ctx.editMessageText(
-      `🛒 Você está prestes a adquirir o produto:\n\n` +
+      // Mensagem de confirmação
+      const confirmacaoOptions = {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: `Confirmar compra de R$${valorProduto}`,
+                callback_data: `confirmar_compra_${produtoId}`,
+              },
+            ],
+            [{ text: "Voltar para o MENU", callback_data: "voltar" }],
+          ],
+        },
+      };
+
+      ctx.editMessageText(
+        `🛒 Você está prestes a adquirir o produto:\n\n` +
         `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
         `💵 Preço: R$${valorProduto}\n` +
         `💰 Saldo atual: R$${saldoAtual}\n\n` +
         `Deseja confirmar a compra?`,
-      confirmacaoOptions
-    );
-  } else if (callbackData.startsWith("2comprar_")) {
-    const produtoId = callbackData.split("_")[1];
-    console.log(produtoId);
-
-    // Obter detalhes do produto
-    const { data: combo, error } = await supabase
-      .from("combos")
-      .select("*")
-      .eq("id", produtoId)
-      .single();
-    if (error || !combo) {
-      ctx.editMessageText(
-        "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
+        confirmacaoOptions
       );
-      return;
-    }
-    console.log(combo);
+    } else if (callbackData.startsWith("2comprar_")) {
+      const produtoId = callbackData.split("_")[1];
+      console.log(produtoId);
 
-    // Verificar se há códigos disponíveis para o produto
-    // Verificar se todos os produtos do combo têm códigos ativos
-    const produtosCombo = combo.produtos; // Acessando a lista de produtos do combo
-    const codigosAtivos = [];
-
-    for (const produto of produtosCombo) {
-      const { data: codigos, error: codigosError } = await supabase
-        .from("codigos")
+      // Obter detalhes do produto
+      const { data: combo, error } = await supabase
+        .from("combos")
         .select("*")
-        .eq("id_produto", produto.id) // Supondo que id_produto se refere ao produto
-        .eq("status", "ativo"); // Filtrando apenas códigos ativos
-
-      if (codigosError || !codigos || codigos.length === 0) {
+        .eq("id", produtoId)
+        .single();
+      if (error || !combo) {
         ctx.editMessageText(
-          `❌ O produto ${produto.nome} não possui códigos ativos disponíveis. Tente novamente mais tarde.`
+          "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
+        );
+        return;
+      }
+      console.log(combo);
+
+      // Verificar se há códigos disponíveis para o produto
+      // Verificar se todos os produtos do combo têm códigos ativos
+      const produtosCombo = combo.produtos; // Acessando a lista de produtos do combo
+      const codigosAtivos = [];
+
+      for (const produto of produtosCombo) {
+        const { data: codigos, error: codigosError } = await supabase
+          .from("codigos")
+          .select("*")
+          .eq("id_produto", produto.id) // Supondo que id_produto se refere ao produto
+          .eq("status", "ativo"); // Filtrando apenas códigos ativos
+
+        if (codigosError || !codigos || codigos.length === 0) {
+          ctx.editMessageText(
+            `❌ O produto ${produto.nome} não possui códigos ativos disponíveis. Tente novamente mais tarde.`
+          );
+          return;
+        }
+
+        // Adiciona o primeiro código ativo à lista
+        codigosAtivos.push(codigos[0]);
+      }
+
+      // Recuperar informações do usuário no Supabase
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("saldo")
+        .eq("user_id", userId)
+        .single();
+
+      if (userError || !userData) {
+        ctx.editMessageText(
+          "❌ Não foi possível recuperar suas informações. Tente novamente mais tarde."
         );
         return;
       }
 
-      // Adiciona o primeiro código ativo à lista
-      codigosAtivos.push(codigos[0]);
-    }
+      const saldoAtual = userData.saldo;
+      const valorProduto = combo.valor;
 
-    // Recuperar informações do usuário no Supabase
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("saldo")
-      .eq("user_id", userId)
-      .single();
-
-    if (userError || !userData) {
-      ctx.editMessageText(
-        "❌ Não foi possível recuperar suas informações. Tente novamente mais tarde."
-      );
-      return;
-    }
-
-    const saldoAtual = userData.saldo;
-    const valorProduto = combo.valor;
-
-    if (saldoAtual < valorProduto) {
-      ctx.editMessageText(
-        `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
+      if (saldoAtual < valorProduto) {
+        ctx.editMessageText(
+          `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
           `💰 Recarregue seu saldo para continuar.`,
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "Clique aqui para adicionar saldo",
-                  callback_data: "saldo",
-                },
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Clique aqui para adicionar saldo",
+                    callback_data: "saldo",
+                  },
+                ],
+                [{ text: "Voltar para o menu", callback_data: "voltar" }],
               ],
-              [{ text: "Voltar para o menu", callback_data: "voltar" }],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // Mensagem de confirmação
-    const confirmacaoOptions = {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: `Confirmar compra de R$${valorProduto}`,
-              callback_data: `2confirmar_compra_${produtoId}`,
             },
-          ],
-          [{ text: "Voltar para o MENU", callback_data: "voltar" }],
-        ],
-      },
-    };
+          }
+        );
+        return;
+      }
 
-    ctx.editMessageText(
-      `🛒 Você está prestes a adquirir o produto:\n\n` +
+      // Mensagem de confirmação
+      const confirmacaoOptions = {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: `Confirmar compra de R$${valorProduto}`,
+                callback_data: `2confirmar_compra_${produtoId}`,
+              },
+            ],
+            [{ text: "Voltar para o MENU", callback_data: "voltar" }],
+          ],
+        },
+      };
+
+      ctx.editMessageText(
+        `🛒 Você está prestes a adquirir o produto:\n\n` +
         `🔹 ${combo.nome}\n\n` + // Corrigido para exibir o nome do produto
         `💵 Preço: R$${valorProduto}\n` +
         `💰 Saldo atual: R$${saldoAtual}\n\n` +
         `Deseja confirmar a compra?`,
-      confirmacaoOptions
-    );
-  } else if (callbackData.startsWith("confirmar_compra_")) {
-    const produtoId = callbackData.replace("confirmar_compra_", "");
-    const { data: produto, error } = await supabase
-      .from("produtos")
-      .select("*")
-      .eq("id", produtoId)
-      .single(); // Adicionando .single() para garantir que apenas um produto seja retornado
-
-    if (error || !produto) {
-      ctx.editMessageText(
-        "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
+        confirmacaoOptions
       );
-      return;
-    }
-
-    const valorProduto = produto.valor;
-
-    // Recuperar saldo novamente para evitar conflitos
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("saldo")
-      .eq("user_id", userId)
-      .single();
-
-    if (userError || !userData || userData.saldo < valorProduto) {
-      ctx.editMessageText(
-        "❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente."
-      );
-      return;
-    }
-
-    // Atualizar saldo no Supabase
-    const novoSaldo = userData.saldo - valorProduto;
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({ saldo: novoSaldo })
-      .eq("user_id", userId);
-
-    if (updateError) {
-      ctx.editMessageText(
-        "❌ Não foi possível processar sua compra. Tente novamente mais tarde.",
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "Clique aqui para adicionar saldo",
-                  callback_data: "saldo",
-                },
-              ],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // Recuperar código do produto apenas se o status for "ativo"
-    const { data: codigoData, error: codigoError } = await supabase
-      .from("codigos")
-      .select("*")
-      .eq("id_produto", produtoId)
-      .eq("status", "ativo") // Filtrando apenas códigos ativos
-      .single();
-
-    if (codigoError || !codigoData) {
-      ctx.editMessageText(
-        "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." +
-          `\nSeu id:${userId}`,
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "Clique aqui para chamar o suporte",
-                  callback_data: "suporte",
-                },
-              ],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    ctx.editMessageText(
-      `🎉 Compra realizada com sucesso!\n` +
-        `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo restante: R$${novoSaldo}\n\n` +
-        `Aproveite seu novo produto!`
-    );
-    ctx.reply(`
-      🎉 PARABÉNS! SEU GIFT CARD ESTÁ PRONTO! 🎉
-      
-      ✨ Aproveite agora mesmo o seu presente exclusivo! ✨  
-      Copie o código abaixo e ative para desbloquear suas recompensas:
-      
-      📜 Seu Código: ${codigoData.codigo}
-      
-      🔗 Como ativar:  
-      1️⃣ Copie o código acima.  
-      2️⃣ Acesse nosso site ou aplicativo.  
-      3️⃣ Insira o código no campo de ativação.  
-      4️⃣ Curta sua experiência ao máximo! 🎁
-      
-      ⏳ Não perca tempo! O código é válido por tempo limitado.  
-      Se tiver dúvidas, estamos aqui para ajudar. 💬
-      `);
-  } else if (callbackData.startsWith("2confirmar_compra_")) {
-    const produtoId = callbackData.replace("2confirmar_compra_", "");
-
-    // Obter detalhes do combo
-    const { data: combo, error } = await supabase
-      .from("combos")
-      .select("*")
-      .eq("id", produtoId)
-      .single();
-
-    if (error || !combo) {
-      ctx.editMessageText(
-        "❌ Não foi possível encontrar o combo. Tente novamente mais tarde."
-      );
-      return;
-    }
-
-    const valorProduto = combo.valor;
-
-    // Recuperar saldo do usuário
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("saldo")
-      .eq("user_id", userId)
-      .single();
-
-    if (userError || !userData || userData.saldo < valorProduto) {
-      ctx.editMessageText(
-        "❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente."
-      );
-      return;
-    }
-
-    // Atualizar saldo no Supabase
-    const novoSaldo = userData.saldo - valorProduto;
-    const { error: updateError } = await supabase
-      .from("users")
-      .update({ saldo: novoSaldo })
-      .eq("user_id", userId);
-
-    if (updateError) {
-      ctx.editMessageText(
-        "❌ Não foi possível processar sua compra. Tente novamente mais tarde.",
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "Clique aqui para adicionar saldo",
-                  callback_data: "saldo",
-                },
-              ],
-            ],
-          },
-        }
-      );
-      return;
-    }
-
-    // Verificar se todos os produtos do combo têm códigos ativos
-    const produtosCombo = combo.produtos; // Acessando a lista de produtos do combo
-    const codigosAtivos = [];
-
-    for (const produto of produtosCombo) {
-      const { data: codigos, error: codigosError } = await supabase
-        .from("codigos")
+    } else if (callbackData.startsWith("confirmar_compra_")) {
+      const produtoId = callbackData.replace("confirmar_compra_", "");
+      const { data: produto, error } = await supabase
+        .from("produtos")
         .select("*")
-        .eq("id_produto", produto.id) // Supondo que id_produto se refere ao produto
-        .eq("status", "ativo"); // Filtrando apenas códigos ativos
+        .eq("id", produtoId)
+        .single();
 
-      if (codigosError || !codigos || codigos.length === 0) {
+      if (error || !produto) {
         ctx.editMessageText(
-          `❌ O produto ${produto.nome} não possui códigos ativos disponíveis. Tente novamente mais tarde.`
+          "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
         );
         return;
       }
 
-      // Adiciona o primeiro código ativo à lista
-      codigosAtivos.push(codigos[0]);
-    }
+      const valorProduto = produto.valor;
 
-    // Se todos os códigos estão ativos, prosseguir com a compra
-    ctx.editMessageText(
-      `🎉 Compra realizada com sucesso!\n` +
+      // Recuperar saldo novamente para evitar conflitos
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("saldo")
+        .eq("user_id", userId)
+        .single();
+
+      if (userError || !userData || userData.saldo < valorProduto) {
+        ctx.editMessageText(
+          "❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente."
+        );
+        return;
+      }
+
+      // Atualizar saldo no Supabase
+      const novoSaldo = userData.saldo - valorProduto;
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ saldo: novoSaldo })
+        .eq("user_id", userId);
+
+      if (updateError) {
+        ctx.editMessageText(
+          "❌ Não foi possível processar sua compra. Tente novamente mais tarde.",
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Clique aqui para adicionar saldo",
+                    callback_data: "saldo",
+                  },
+                ],
+              ],
+            },
+          }
+        );
+        return;
+      }
+
+      // Recuperar código do produto apenas se o status for "ativo"
+      const { data: codigoData, error: codigoError } = await supabase
+        .from("codigos")
+        .select("*")
+        .eq("id_produto", produtoId)
+        .eq("status", "ativo") // Filtrando apenas códigos ativos
+        .single();
+
+      if (codigoError || !codigoData) {
+        ctx.editMessageText(
+          "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." +
+          `\nSeu id:${userId}`,
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Clique aqui para chamar o suporte",
+                    callback_data: "suporte",
+                  },
+                ],
+              ],
+            },
+          }
+        );
+        return;
+      }
+
+      // Atualizar o status do código para "resgatado"
+      const { error: updateCodigoError } = await supabase
+        .from("codigos")
+        .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
+        .eq("id", codigoData.id); // Atualizando pelo ID do código
+
+      if (updateCodigoError) {
+        console.error(`Erro ao atualizar o código ${codigoData.codigo}:`, updateCodigoError);
+        // Você pode optar por notificar o usuário ou registrar o erro
+      }
+
+      ctx.editMessageText(
+        `🎉 Compra realizada com sucesso!\n` +
+        `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
+        `💵 Preço: R$${valorProduto}\n` +
+        `💰 Saldo restante: R$${novoSaldo}\n\n` +
+        `Aproveite seu novo produto!`
+      );
+
+      ctx.reply(`
+          🎉 PARABÉNS! SEU GIFT CARD ESTÁ PRONTO! 🎉
+          
+          ✨ Aproveite agora mesmo o seu presente exclusivo! ✨  
+          Copie o código abaixo e ative para desbloquear suas recompensas:
+          
+          📜 Seu Código: ${codigoData.codigo}
+          
+          🔗 Como ativar:  
+          1️⃣ Copie o código acima.  
+          2️⃣ Acesse nosso site ou aplicativo.  
+          3️⃣ Insira o código no campo de ativação.  
+          4️⃣ Curta sua experiência ao máximo! 🎁
+          
+          ⏳ Não perca tempo! O código é válido por tempo limitado.  
+          Se tiver dúvidas, estamos aqui para ajudar. 💬
+        `);
+    } else if (callbackData.startsWith("2confirmar_compra_")) {
+      const produtoId = callbackData.replace("2confirmar_compra_", "");
+
+      // Obter detalhes do combo
+      const { data: combo, error } = await supabase
+        .from("combos")
+        .select("*")
+        .eq("id", produtoId)
+        .single();
+
+      if (error || !combo) {
+        ctx.editMessageText(
+          "❌ Não foi possível encontrar o combo. Tente novamente mais tarde."
+        );
+        return;
+      }
+
+      const valorProduto = combo.valor;
+
+      // Recuperar saldo do usuário
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .select("saldo")
+        .eq("user_id", userId)
+        .single();
+
+      if (userError || !userData || userData.saldo < valorProduto) {
+        ctx.editMessageText(
+          "❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente."
+        );
+        return;
+      }
+
+      // Atualizar saldo no Supabase
+      const novoSaldo = userData.saldo - valorProduto;
+      const { error: updateError } = await supabase
+        .from("users")
+        .update({ saldo: novoSaldo })
+        .eq("user_id", userId);
+
+      if (updateError) {
+        ctx.editMessageText(
+          "❌ Não foi possível processar sua compra. Tente novamente mais tarde.",
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Clique aqui para adicionar saldo",
+                    callback_data: "saldo",
+                  },
+                ],
+              ],
+            },
+          }
+        );
+        return;
+      }
+
+      // Verificar se todos os produtos do combo têm códigos ativos
+      const produtosCombo = combo.produtos; // Acessando a lista de produtos do combo
+      const codigosAtivos = [];
+
+      for (const produto of produtosCombo) {
+        const { data: codigos, error: codigosError } = await supabase
+          .from("codigos")
+          .select("*")
+          .eq("id_produto", produto.id) // Supondo que id_produto se refere ao produto
+          .eq("status", "ativo"); // Filtrando apenas códigos ativos
+
+        if (codigosError || !codigos || codigos.length === 0) {
+          ctx.editMessageText(
+            `❌ O produto ${produto.nome} não possui códigos ativos disponíveis. Tente novamente mais tarde.`
+          );
+          return;
+        }
+
+        // Adiciona o primeiro código ativo à lista
+        codigosAtivos.push(codigos[0]);
+      }
+
+      // Se todos os códigos estão ativos, prosseguir com a compra
+      ctx.editMessageText(
+        `🎉 Compra realizada com sucesso!\n` +
         `🔹 Combo: ${combo.nome}\n` + // Exibindo o nome do combo
         `💵 Preço: R$${valorProduto}\n` +
         `💰 Saldo restante: R$${novoSaldo}\n\n` +
         `Aproveite seu novo combo!`
-    );
+      );
 
-    const mensagensCodigos = codigosAtivos
-  .map((codigo) => {
-    const produto = produtosCombo.find((item: { id: any; }) => codigo.id_produto === item.id);
-    return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${codigo.codigo}`;
-  })
-  .join("\n");
+      const mensagensCodigos = codigosAtivos
+        .map((codigo) => {
+          const produto = produtosCombo.find((item: { id: any; }) => codigo.id_produto === item.id);
+          return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${codigo.codigo}`;
+        })
+        .join("\n");
 
 
-    ctx.reply(`
+      ctx.reply(`
       🎉 PARABÉNS! SEUS CÓDIGOS ESTÃO PRONTOS! 🎉
       
       ✨ Aproveite agora mesmo os seus presentes exclusivos! ✨  
@@ -689,145 +701,158 @@ bot.on("callback_query", async (ctx) => {
       ⏳ Não perca tempo! O código é válido por tempo limitado.  
       Se tiver dúvidas, estamos aqui para ajudar. 💬
     `);
-  } else if (callbackData === "saldo") {
-    const options = {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "Gerar Pix 💠", callback_data: "gerar_pix" }],
-          [{ text: "⬅ Voltar", callback_data: "voltar" }],
-        ],
-      },
-    };
+      // Atualizar o status dos códigos resgatados
+      for (const codigo of codigosAtivos) {
+        const { error: updateCodigoError } = await supabase
+          .from("codigos")
+          .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
+          .eq("id", codigo.id); // Atualizando pelo ID do código
 
-    ctx.reply("💰 Escolha o valor para recarregar seu saldo💰", options);
-  } else if (callbackData === "gerar_pix") {
-    // Solicitar ao usuário que insira o valor para recarga
-    ctx.reply("Digite o valor da recarga (de R$1 a R$999):");
+        if (updateCodigoError) {
+          console.error(`Erro ao atualizar o código ${codigo.codigo}:`, updateCodigoError);
+          // Você pode optar por notificar o usuário ou registrar o erro
+        }
+      }
+    } else if (callbackData === "saldo") {
+      const options = {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "Gerar Pix 💠", callback_data: "gerar_pix" }],
+            [{ text: "⬅ Voltar", callback_data: "voltar" }],
+          ],
+        },
+      };
 
-    // Espera pelo texto da resposta
-    bot.on("text", async (messageCtx) => {
-      const valorInput = parseFloat(messageCtx.message.text);
-      if (isNaN(valorInput) || valorInput < 1 || valorInput > 999) {
+      ctx.reply("💰 Escolha o valor para recarregar seu saldo💰", options);
+
+    } else if (callbackData === "gerar_pix") {
+      // Solicitar ao usuário que insira o valor para recarga
+      ctx.reply("Digite o valor da recarga (de R$1 a R$999):");
+
+      // Espera pelo texto da resposta
+      bot.on("text", async (messageCtx) => {
+        const valorInput = parseFloat(messageCtx.message.text);
+        if (isNaN(valorInput) || valorInput < 1 || valorInput > 999) {
+          messageCtx.reply(
+            "⚠️ Valor inválido. Por favor, insira um valor entre R$1 e R$999."
+          );
+          return;
+        }
+
+        // Pergunta de confirmação
+        const confirmationOptions = {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: `Confirmar recargar de R$${valorInput.toFixed(2)}`,
+                  callback_data: `confirmar_pix_${valorInput}`,
+                },
+              ],
+              [{ text: "Cancelar", callback_data: "voltar" }],
+            ],
+          },
+        };
         messageCtx.reply(
-          "⚠️ Valor inválido. Por favor, insira um valor entre R$1 e R$999."
+          `Você escolheu R$${valorInput.toFixed(
+            2
+          )}. Confirme o valor para gerar o link de pagamento:`,
+          confirmationOptions
+        );
+      });
+    } else if (callbackData.startsWith("confirmar_pix_")) {
+      const rechargeAmount = parseFloat(callbackData.split("_")[2]);
+
+      // Fazer a requisição para o OpenPix para gerar o link de pagamento
+      const response = await fetch(
+        "https://api.openpix.com.br/api/v1/charge?return_existing=true",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `${process.env.OPENPIX_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            correlationID: `${userId}-${randomUUID()}`,
+            value: rechargeAmount * 100,
+            comment: "ADIÇÃO DE SALDOS - NEXT",
+            additionalInfo: [
+              { key: "UserID", value: userId },
+              { key: "Product", value: "Saldo" },
+              { key: "Invoice", value: `${new Date().getTime()}` },
+            ],
+            payer: {
+              name: `telegram - ${userId}`,
+              email: "",
+              phone: "",
+              correlationID: userId,
+            },
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      ctx.reply(
+        `💳 Aqui está o link para recarregar R$${rechargeAmount.toFixed(
+          2
+        )} em seu saldo:\n\n${data.charge.paymentLinkUrl}`,
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "Clique aqui para pagar",
+                  url: data.charge.paymentLinkUrl,
+                },
+              ],
+            ],
+          },
+        }
+      );
+    } else if (callbackData === "voltar") {
+      sendActionButtonsInline(ctx);
+    } else if (callbackData === "perfil") {
+      // Recuperar os dados do usuário do Supabase
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, saldo, saldo_indicacao, historico_produtos, username")
+        .eq("user_id", userId)
+        .single();
+
+      if (error || !data) {
+        ctx.editMessageText(
+          "Desculpe, houve um erro ao buscar suas informações de perfil."
         );
         return;
       }
 
-      // Pergunta de confirmação
-      const confirmationOptions = {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: `Confirmar recargar de R$${valorInput.toFixed(2)}`,
-                callback_data: `confirmar_pix_${valorInput}`,
-              },
-            ],
-            [{ text: "Cancelar", callback_data: "voltar" }],
-          ],
-        },
-      };
-      messageCtx.reply(
-        `Você escolheu R$${valorInput.toFixed(
-          2
-        )}. Confirme o valor para gerar o link de pagamento:`,
-        confirmationOptions
+      // Desestruturar dados do usuário
+      const {
+        saldo = 0.0,
+        saldo_indicacao = 0.0,
+        historico_produtos,
+        username,
+      } = data;
+
+      // Calcular o total de contas adquiridas e o valor total gasto
+      const totalCompras = historico_produtos.length || 0;
+      const totalGasto = historico_produtos.reduce(
+        (total: number, produto: { value: string; }) => total + parseFloat(produto.value),
+        0
       );
-    });
-  } else if (callbackData.startsWith("confirmar_pix_")) {
-    const rechargeAmount = parseFloat(callbackData.split("_")[2]);
 
-    // Fazer a requisição para o OpenPix para gerar o link de pagamento
-    const response = await fetch(
-      "https://api.openpix.com.br/api/v1/charge?return_existing=true",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `${process.env.OPENPIX_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          correlationID: `${userId}-${randomUUID()}`,
-          value: rechargeAmount * 100,
-          comment: "ADIÇÃO DE SALDOS - NEXT",
-          additionalInfo: [
-            { key: "UserID", value: userId },
-            { key: "Product", value: "Saldo" },
-            { key: "Invoice", value: `${new Date().getTime()}` },
-          ],
-          payer: {
-            name: `telegram - ${userId}`,
-            email: "",
-            phone: "",
-            correlationID: userId,
-          },
-        }),
-      }
-    );
+      // Criar lista de compras
+      const comprasList =
+        historico_produtos
+          .map(
+            (produto: { key: any; value: any; data_compra: any; }) =>
+              `🔹 ${produto.key} | R$${produto.value} | ${produto.data_compra}`
+          )
+          .join("\n") || "Nenhuma compra realizada ainda.";
 
-    const data = await response.json();
-
-    ctx.reply(
-      `💳 Aqui está o link para recarregar R$${rechargeAmount.toFixed(
-        2
-      )} em seu saldo:\n\n${data.charge.paymentLinkUrl}`,
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              {
-                text: "Clique aqui para pagar",
-                url: data.charge.paymentLinkUrl,
-              },
-            ],
-          ],
-        },
-      }
-    );
-  } else if (callbackData === "voltar") {
-    sendActionButtonsInline(ctx);
-  } else if (callbackData === "perfil") {
-    // Recuperar os dados do usuário do Supabase
-    const { data, error } = await supabase
-      .from("users")
-      .select("id, saldo, saldo_indicacao, historico_produtos, username")
-      .eq("user_id", userId)
-      .single();
-
-    if (error || !data) {
-      ctx.editMessageText(
-        "Desculpe, houve um erro ao buscar suas informações de perfil."
-      );
-      return;
-    }
-
-    // Desestruturar dados do usuário
-    const {
-      saldo = 0.0,
-      saldo_indicacao = 0.0,
-      historico_produtos,
-      username,
-    } = data;
-
-    // Calcular o total de contas adquiridas e o valor total gasto
-    const totalCompras = historico_produtos.length || 0;
-    const totalGasto = historico_produtos.reduce(
-      (total: number, produto: { value: string; }) => total + parseFloat(produto.value),
-      0
-    );
-
-    // Criar lista de compras
-    const comprasList =
-      historico_produtos
-        .map(
-          (produto: { key: any; value: any; data_compra: any; }) =>
-            `🔹 ${produto.key} | R$${produto.value} | ${produto.data_compra}`
-        )
-        .join("\n") || "Nenhuma compra realizada ainda.";
-
-    // Mensagem personalizada com a ficha do usuário
-    const message = `
+      // Mensagem personalizada com a ficha do usuário
+      const message = `
 💟 Bem-vindo(a) à Recarga Next! 💟  
 ✨ A melhor loja de streaming do Telegram! ✨
 
@@ -847,12 +872,13 @@ ${comprasList}
 🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!
     `;
 
-    // Enviar mensagem com as informações do perfil
-    ctx.editMessageText(message);
+      // Enviar mensagem com as informações do perfil
+      ctx.editMessageText(message);
 
-    // Enviar os botões de navegação
-    sendActionButtonsInline(ctx);
-  }}else {
+      // Enviar os botões de navegação
+      sendActionButtonsInline(ctx);
+    }
+  } else {
     console.error('CallbackQuery sem dados ou tipo inválido');
   }
 });

@@ -192,7 +192,7 @@ bot.on("callback_query", async (ctx) => {
       },
     });
   } else if (callbackData === "produtos") {
-    // Obter produtos do Supabase
+   
     const { data: produtos, error } = await supabase
       .from("produtos")
       .select("*"); // Busca todas as colunas
@@ -505,7 +505,7 @@ bot.on("callback_query", async (ctx) => {
       .from("produtos")
       .select("*")
       .eq("id", produtoId)
-      .single(); // Adicionando .single() para garantir que apenas um produto seja retornado
+      .single();
 
     if (error || !produto) {
       ctx.editMessageText(
@@ -584,6 +584,17 @@ bot.on("callback_query", async (ctx) => {
       return;
     }
 
+    // Atualizar o status do código para "resgatado"
+    const { error: updateCodigoError } = await supabase
+      .from("codigos")
+      .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
+      .eq("id", codigoData.id); // Atualizando pelo ID do código
+
+    if (updateCodigoError) {
+      console.error(`Erro ao atualizar o código ${codigoData.codigo}:`, updateCodigoError);
+      // Você pode optar por notificar o usuário ou registrar o erro
+    }
+
     ctx.editMessageText(
       `🎉 Compra realizada com sucesso!\n` +
         `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
@@ -591,6 +602,7 @@ bot.on("callback_query", async (ctx) => {
         `💰 Saldo restante: R$${novoSaldo}\n\n` +
         `Aproveite seu novo produto!`
     );
+
     ctx.reply(`
       🎉 PARABÉNS! SEU GIFT CARD ESTÁ PRONTO! 🎉
       
@@ -607,8 +619,8 @@ bot.on("callback_query", async (ctx) => {
       
       ⏳ Não perca tempo! O código é válido por tempo limitado.  
       Se tiver dúvidas, estamos aqui para ajudar. 💬
-      `);
-  } else if (callbackData.startsWith("2confirmar_compra_")) {
+    `);
+} else if (callbackData.startsWith("2confirmar_compra_")) {
     const produtoId = callbackData.replace("2confirmar_compra_", "");
 
     // Obter detalhes do combo
@@ -723,6 +735,18 @@ bot.on("callback_query", async (ctx) => {
       ⏳ Não perca tempo! O código é válido por tempo limitado.  
       Se tiver dúvidas, estamos aqui para ajudar. 💬
     `);
+    // Atualizar o status dos códigos resgatados
+for (const codigo of codigosAtivos) {
+  const { error: updateCodigoError } = await supabase
+    .from("codigos")
+    .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
+    .eq("id", codigo.id); // Atualizando pelo ID do código
+
+  if (updateCodigoError) {
+    console.error(`Erro ao atualizar o código ${codigo.codigo}:`, updateCodigoError);
+    // Você pode optar por notificar o usuário ou registrar o erro
+  }
+}
   } else if (callbackData === "saldo") {
     const options = {
       reply_markup: {
