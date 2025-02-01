@@ -527,7 +527,7 @@ bot.on("callback_query", async (ctx) => {
         .from("codigos")
         .select("*")
         .eq("id_produto", produtoId)
-        .eq("status", "ativo") // Filtrando apenas códigos ativos
+        .eq("status", "Ativo") // Filtrando apenas códigos ativos
         .single();
 
       if (codigoError || !codigoData) {
@@ -654,7 +654,7 @@ bot.on("callback_query", async (ctx) => {
           .from("codigos")
           .select("*")
           .eq("id_produto", produto.id) // Supondo que id_produto se refere ao produto
-          .eq("status", "ativo"); // Filtrando apenas códigos ativos
+          .eq("status", "Ativo"); // Filtrando apenas códigos ativos
 
         if (codigosError || !codigos || codigos.length === 0) {
           ctx.editMessageText(
