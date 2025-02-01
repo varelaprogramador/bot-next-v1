@@ -295,9 +295,9 @@ bot.on("callback_query", async (ctx) => {
         (codigo) => codigo.status.toLowerCase() === "ativo"
       );
 
-      if (codigosAtivos.length < 1) {
+      if (codigosAtivos.length <= 0) {
         ctx.editMessageText(
-          "❌ Não há códigos ativos disponíveis para este produto no momento. Tente novamente mais tarde."
+          "❌ Não há códigos ativos disponíveis para este produto no momento. Tente novamente mais tarde.",codigosAtivos
         );
         return;
       }
