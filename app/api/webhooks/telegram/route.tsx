@@ -140,7 +140,7 @@ const sendActionButtonsInline = async (ctx: any) => {
   // Mensagem com a ficha do usuário
   const { saldo, saldo_indicacao } = data || {};
 
-  const message = `💟OLAAA Bem-vindo(a) à Recarga Next! 💟
+  const message = `💟 Bem-vindo(a) à Recarga Next! 💟
 ✨ A melhor loja de streaming do Telegram! ✨
 
 🧾 Sua Ficha de Usuário:
@@ -570,12 +570,12 @@ bot.on("callback_query", async (ctx) => {
       }
     
       // Recuperar código do produto apenas se o status for "ativo"
-      const { data: codigoData, error: codigoError } = await supabase
-        .from("codigos")
-        .select("*")
-        .eq("id_produto", produtoId)
-        .eq("status", "Ativo") // Filtrando apenas códigos ativos
-        .single();
+      const { data: codigoData, error: codigoError }: { data: Codigos | null; error: Error | null } = await supabase
+  .from("codigos")
+  .select("*")
+  .eq("id_produto", produto.id)
+  .eq("status", "Ativo") // Filtrando apenas códigos ativos
+  .single();
     
       if (codigoError || !codigoData) {
         await ctx.editMessageText(
