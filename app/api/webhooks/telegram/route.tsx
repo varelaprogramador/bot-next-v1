@@ -410,8 +410,8 @@ bot.on("callback_query", async (ctx) => {
       ctx.editMessageText(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
         `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo atual: R$${saldoAtual}\n\n` +
+        `💵 Preço: R$${valorProduto.tofixed(2)}\n` +
+        `💰 Saldo atual: R$${saldoAtual.toFixed(2)}\n\n` +
         `Deseja confirmar a compra?`,
         confirmacaoOptions
       );
@@ -702,18 +702,27 @@ bot.on("callback_query", async (ctx) => {
         const { data: codigos, error: codigosError } = await supabase
           .from("codigos")
           .select("*")
-          .eq("id_produto", produto.id) // Supondo que id_produto se refere ao produto
-          .eq("status", "Ativo"); // Filtrando apenas códigos ativos
-
+          .eq("id_produto", produto.id); // Supondo que id_produto se refere ao produto
+      
         if (codigosError || !codigos || codigos.length === 0) {
-          ctx.editMessageText(
-            `❌ O produto ${produto.nome} não possui códigos ativos disponíveis. Tente novamente mais tarde.`
+          await ctx.editMessageText(
+            `❌ O produto ${produto.nome} não possui códigos disponíveis. Tente novamente mais tarde.`
           );
           return;
         }
-
+      
+        // Filtrar códigos ativos antes de adicionar
+        const codigosAtivosFiltrados = codigos.filter(codigo => codigo.status.toLowerCase() === "ativo");
+      
+        if (codigosAtivosFiltrados.length === 0) {
+          await ctx.editMessageText(
+            `❌ O produto ${produto.nome}não possui códigos ativos disponíveis. Tente novamente mais tarde.`
+          );
+          return;
+        }
+      
         // Adiciona o primeiro código ativo à lista
-        codigosAtivos.push(codigos[0]);
+        codigosAtivos.push(codigosAtivosFiltrados[0]);
       }
 
       // Se todos os códigos estão ativos, prosseguir com a compra
@@ -755,7 +764,7 @@ bot.on("callback_query", async (ctx) => {
         const { error: updateCodigoError } = await supabase
           .from("codigos")
           .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
-          .eq("id", codigo.id); // Atualizando pelo ID do código
+          .eq("id_codigo", codigo.id); // Atualizando pelo ID do código
 
         if (updateCodigoError) {
           console.error(`Erro ao atualizar o código ${codigo.codigo}:`, updateCodigoError);
@@ -811,7 +820,7 @@ bot.on("callback_query", async (ctx) => {
       });
     } else if (callbackData.startsWith("confirmar_pix_")) {
       const rechargeAmount = parseFloat(callbackData.split("_")[2]);
-
+      const id_transacao=randomUUID();
       // Fazer a requisição para o OpenPix para gerar o link de pagamento
       const response = await fetch(
         "https://api.openpix.com.br/api/v1/charge?return_existing=true",
@@ -822,11 +831,12 @@ bot.on("callback_query", async (ctx) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            correlationID: `${userId}-${randomUUID()}`,
+            correlationID: `${userId}-${id_transacao}`,
             value: rechargeAmount * 100,
             comment: "ADIÇÃO DE SALDOS - NEXT",
             additionalInfo: [
               { key: "UserID", value: userId },
+              { key: "ID", value: id_transacao },
               { key: "Product", value: "Saldo" },
               { key: "Invoice", value: `${new Date().getTime()}` },
             ],
@@ -859,6 +869,21 @@ bot.on("callback_query", async (ctx) => {
           },
         }
       );
+      const novaVenda = {
+        id_cliente:userId, // Usando o user_id como id_cliente
+        id_transacao:id_transacao,
+        valor: rechargeAmount,
+        status: "pendente", // Status da venda
+        tipo_pagamento: "pix", // Tipo de pagamento
+      };
+    
+      const { error: vendaError } = await supabase
+        .from('vendas')
+        .insert([novaVenda]);
+    
+      if (vendaError) {
+        console.error("Erro ao inserir nova venda:", vendaError);
+      }
     } else if (callbackData === "voltar") {
       sendActionButtonsInline(ctx);
     } else if (callbackData === "perfil") {
