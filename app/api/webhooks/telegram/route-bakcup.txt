@@ -105,61 +105,42 @@ export async function POST(req: Request) {
   }
 }
 
-// Configurar comandos do bot
-bot.command('start', async (ctx) => {
-  ctx.reply("✨ Olá, seja Bem vindo ao canal de vendas da next recargas! ✨", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: `Iniciar atendimento`,
-            callback_data: `bemvindos`,
-          },
-        ],
-      ],
-    },
-  })
-});
 
-// Configurar handlers de callback_query
-bot.on("callback_query", async (ctx) => {
+// Função para enviar botões
+const sendActionButtonsInline = async (ctx: any) => {
+  const chatId = ctx.chat.id;
+  const username = ctx.from.username || "None";
   const userId = ctx.from.id;
-  const chatId = ctx.chat?.id;
-  const username = ctx.from.username;
 
+  // Verificar se o usuário já existe no banco de dados
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, saldo, saldo_indicacao")
+    .eq("user_id", userId)
+    .single();
 
-  if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {
-    const callbackData = ctx.callbackQuery.data;
-    if (callbackData === "bemvindos") {
-      // Verificar se o usuário já existe no banco de dados
-      const { data, error } = await supabase
-        .from("users")
-        .select("id, saldo, saldo_indicacao")
-        .eq("user_id", userId)
-        .single();
+  // Se o usuário não existir, criar um novo
+  if (error || !data) {
+    const { data: insertedData, error: insertError } = await supabase
+      .from("users")
+      .insert([{
+        user_id: userId,
+        username: username,
+        saldo: 0.0,
+        saldo_indicacao: 0.0,
+      }])
+      .single();
 
-      // Se o usuário não existir, criar um novo
-      if (error || !data) {
-        const { data: insertedData, error: insertError } = await supabase
-          .from("users")
-          .insert([{
-            user_id: userId,
-            username: username,
-            saldo: 0.0,
-            saldo_indicacao: 0.0,
-          }])
-          .single();
+    if (insertError) {
+      console.error("Erro ao inserir usuário no Supabase:", insertError);
+      return ctx.reply("Desculpe, houve um erro ao registrar suas informações.");
+    }
+  }
 
-        if (insertError) {
-          console.error("Erro ao inserir usuário no Supabase:", insertError);
-          return ctx.reply("Desculpe, houve um erro ao registrar suas informações.");
-        }
-      }
+  // Mensagem com a ficha do usuário
+  const { saldo, saldo_indicacao } = data || {};
 
-      // Mensagem com a ficha do usuário
-      const { saldo, saldo_indicacao } = data || {};
-
-      const message = `💟 Bem-vindo(a) à Recarga Next! 💟
+  const message = `💟 Bem-vindo(a) à Recarga Next! 💟
 ✨ A melhor loja de streaming do Telegram! ✨
 
 🧾 Sua Ficha de Usuário:
@@ -170,17 +151,30 @@ bot.on("callback_query", async (ctx) => {
 
 🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!`;
 
-      ctx.editMessageText(message, {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "💎 Contas Premium", callback_data: "premium" }],
-            [{ text: "💰 Saldo", callback_data: "saldo" }, { text: "👤 Perfil", callback_data: "perfil" }],
-            [{ text: "🛠️ Suporte", callback_data: "suporte" }],
-          ],
-        },
-      });
-    }
-    else if (callbackData === "premium") {
+  return bot.telegram.sendMessage(chatId, message, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "💎 Contas Premium", callback_data: "premium" }],
+        [{ text: "💰 Saldo", callback_data: "saldo" }, { text: "👤 Perfil", callback_data: "perfil" }],
+        [{ text: "🛠️ Suporte", callback_data: "suporte" }],
+      ],
+    },
+  });
+};
+
+// Configurar comandos do bot
+bot.command('start', async (ctx) => {
+  await sendActionButtonsInline(ctx);
+});
+
+// Configurar handlers de callback_query
+bot.on("callback_query", async (ctx) => {
+  const userId = ctx.from.id;
+  const chatId = ctx.chat?.id;
+  if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {
+    const callbackData = ctx.callbackQuery.data;
+
+    if (callbackData === "premium") {
       const mensagem = `
     🛍️ Escolha o que você deseja comprar no momento:
     
@@ -211,7 +205,7 @@ bot.on("callback_query", async (ctx) => {
                 callback_data: "combos",
               },
             ],
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            [{ text: "Voltar para o menu", callback_data: "voltar" }],
           ],
         },
       });
@@ -237,17 +231,13 @@ bot.on("callback_query", async (ctx) => {
           },
         ]);
       };
-      const produtosUnique = produtos.filter((item, index, self) => 
-        index === self.findIndex((t) => t.nome === item.nome)
-      );
-      
 
       const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
-${produtosUnique
+    ${produtos
           .map((item) => {
-            return `🔹 ${item.nome}`; // Corrigido para usar \n
+            return `🔹 ${item.nome}\n`; // Corrigido para usar \n
           })
-          .join("\n",)}
+          .join("\n",)} // Usando join para concatenar os itens em uma única string
     
     =====================
     
@@ -261,7 +251,7 @@ ${produtosUnique
         reply_markup: {
           inline_keyboard: [
             ...options(), // Espalha os arrays gerados pela função options
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            [{ text: "⬅ Voltar", callback_data: "voltar" }],
           ],
         },
       });
@@ -286,7 +276,7 @@ ${produtosUnique
                 callback_data: `2comprar_${item.id}`,
               },
             ]),
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            [{ text: "⬅ Voltar", callback_data: "voltar" }],
           ],
         },
       };
@@ -394,7 +384,7 @@ ${produtosUnique
                     callback_data: "saldo",
                   },
                 ],
-                [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+                [{ text: "⬅ Voltar", callback_data: "voltar" }],
               ],
             },
           }
@@ -412,7 +402,7 @@ ${produtosUnique
                 callback_data: `confirmar_compra_${produtoId}`,
               },
             ],
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            [{ text: "⬅ Voltar", callback_data: "voltar" }],
           ],
         },
       };
@@ -496,7 +486,7 @@ ${produtosUnique
                     callback_data: "saldo",
                   },
                 ],
-                [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+                [{ text: "⬅ Voltar", callback_data: "voltar" }],
               ],
             },
           }
@@ -514,7 +504,7 @@ ${produtosUnique
                 callback_data: `2confirmar_compra_${produtoId}`,
               },
             ],
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            [{ text: "⬅ Voltar", callback_data: "voltar" }],
           ],
         },
       };
@@ -529,40 +519,40 @@ ${produtosUnique
       );
     } else if (callbackData.startsWith("confirmar_compra_")) {
       const produtoId = callbackData.replace("confirmar_compra_", "");
-
+    
       // Recuperar o produto
       const { data: produto, error: produtoError } = await supabase
         .from("produtos")
         .select("*")
         .eq("id", produtoId)
         .single();
-
+    
       if (produtoError || !produto) {
         await ctx.editMessageText("❌ Não foi possível encontrar o produto. Tente novamente mais tarde.");
         return;
       }
-
+    
       const valorProduto = produto.valor;
-
+    
       // Recuperar saldo do usuário
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("saldo")
         .eq("user_id", userId)
         .single();
-
+    
       if (userError || !userData || userData.saldo < valorProduto) {
         await ctx.editMessageText("❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente.");
         return;
       }
-
+    
       // Atualizar saldo no Supabase
       const novoSaldo = userData.saldo - valorProduto;
       const { error: updateError } = await supabase
         .from("users")
         .update({ saldo: novoSaldo })
         .eq("user_id", userId);
-
+    
       if (updateError) {
         await ctx.editMessageText("❌ Não foi possível processar sua compra. Tente novamente mais tarde.", {
           reply_markup: {
@@ -578,16 +568,16 @@ ${produtosUnique
         });
         return;
       }
-
+    
       // Recuperar códigos do produto apenas se o status for "ativo"
       const { data: codigos, error: codigoError } = await supabase
         .from("codigos")
         .select("*")
         .eq("id_produto", produtoId);
-
+    
       // Filtrar códigos ativos
       const codigosAtivos = codigos?.filter(codigo => codigo.status.toLowerCase() === "ativo");
-
+    
       if (codigoError || !codigosAtivos || codigosAtivos.length === 0) {
         await ctx.editMessageText(
           "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." +
@@ -607,19 +597,19 @@ ${produtosUnique
         );
         return;
       }
-
+    
       // Atualizar o status do primeiro código ativo para "resgatado"
       const codigoData = codigosAtivos[0]; // Usar o primeiro código ativo
       const { error: updateCodigoError } = await supabase
         .from("codigos")
         .update({ status: "Resgatado" }) // Ou "inativo", dependendo da sua lógica
         .eq("id_codigo", codigoData.id_codigo); // Atualizando pelo ID do código
-
+    
       if (updateCodigoError) {
         console.error(`Erro ao atualizar o código ${codigoData.codigo}:`, updateCodigoError);
         // Você pode optar por notificar o usuário ou registrar o erro
       }
-
+    
       await ctx.editMessageText(
         `🎉 Compra realizada com sucesso!\n` +
         `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
@@ -627,7 +617,7 @@ ${produtosUnique
         `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
         `Aproveite seu novo produto!`
       );
-
+    
       await ctx.reply(`
           🎉 PARABÉNS! SEU GIFT CARD ESTÁ PRONTO! 🎉
           
@@ -645,7 +635,7 @@ ${produtosUnique
           ⏳ Não perca tempo! O código é válido por tempo limitado.  
           Se tiver dúvidas, estamos aqui para ajudar. 💬
         `);
-    } else if (callbackData.startsWith("2confirmar_compra_")) {
+     }else if (callbackData.startsWith("2confirmar_compra_")) {
       const produtoId = callbackData.replace("2confirmar_compra_", "");
 
       // Obter detalhes do combo
@@ -713,24 +703,24 @@ ${produtosUnique
           .from("codigos")
           .select("*")
           .eq("id_produto", produto.id); // Supondo que id_produto se refere ao produto
-
+      
         if (codigosError || !codigos || codigos.length === 0) {
           await ctx.editMessageText(
             `❌ O produto ${produto.nome} não possui códigos disponíveis. Tente novamente mais tarde.`
           );
           return;
         }
-
+      
         // Filtrar códigos ativos antes de adicionar
         const codigosAtivosFiltrados = codigos.filter(codigo => codigo.status.toLowerCase() === "ativo");
-
+      
         if (codigosAtivosFiltrados.length === 0) {
           await ctx.editMessageText(
             `❌ O produto ${produto.nome}não possui códigos ativos disponíveis. Tente novamente mais tarde.`
           );
           return;
         }
-
+      
         // Adiciona o primeiro código ativo à lista
         codigosAtivos.push(codigosAtivosFiltrados[0]);
       }
@@ -750,7 +740,7 @@ ${produtosUnique
           return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${codigo.codigo}`;
         })
         .join("\n");
-      for (const codigo of codigosAtivos) {
+ for (const codigo of codigosAtivos) {
         const { error: updateCodigoError } = await supabase
           .from("codigos")
           .update({ status: "Resgatado" }) // Ou "inativo", dependendo da sua lógica
@@ -780,13 +770,13 @@ ${produtosUnique
       Se tiver dúvidas, estamos aqui para ajudar. 💬
     `);
       // Atualizar o status dos códigos resgatados
-
+     
     } else if (callbackData === "saldo") {
       const options = {
         reply_markup: {
           inline_keyboard: [
             [{ text: "Gerar Pix 💠", callback_data: "gerar_pix" }],
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            [{ text: "⬅ Voltar", callback_data: "voltar" }],
           ],
         },
       };
@@ -817,7 +807,7 @@ ${produtosUnique
                   callback_data: `confirmar_pix_${valorInput}`,
                 },
               ],
-              [{ text: "Cancelar", callback_data: "bemvindos" }],
+              [{ text: "Cancelar", callback_data: "voltar" }],
             ],
           },
         };
@@ -830,7 +820,7 @@ ${produtosUnique
       });
     } else if (callbackData.startsWith("confirmar_pix_")) {
       const rechargeAmount = parseFloat(callbackData.split("_")[2]);
-      const id_transacao = randomUUID();
+      const id_transacao=randomUUID();
       // Fazer a requisição para o OpenPix para gerar o link de pagamento
       const response = await fetch(
         "https://api.openpix.com.br/api/v1/charge?return_existing=true",
@@ -880,20 +870,22 @@ ${produtosUnique
         }
       );
       const novaVenda = {
-        id_cliente: userId, // Usando o user_id como id_cliente
-        id_transacao: id_transacao,
+        id_cliente:userId, // Usando o user_id como id_cliente
+        id_transacao:id_transacao,
         valor: rechargeAmount,
         status: "pendente", // Status da venda
         tipo_pagamento: "pix", // Tipo de pagamento
       };
-
+    
       const { error: vendaError } = await supabase
         .from('vendas')
         .insert([novaVenda]);
-
+    
       if (vendaError) {
         console.error("Erro ao inserir nova venda:", vendaError);
       }
+    } else if (callbackData === "voltar") {
+      sendActionButtonsInline(ctx);
     } else if (callbackData === "perfil") {
       // Recuperar os dados do usuário do Supabase
       const { data, error } = await supabase
@@ -921,7 +913,7 @@ ${produtosUnique
       // Calcular o total de contas adquiridas e o valor total gasto
       const totalCompras = historico_produtos.length || 0;
       const totalGasto = historico_deposito.reduce(
-        (total: number, deposito: any) => total + parseFloat(deposito.valor),
+        (total: number, deposito:any) => total + parseFloat(deposito.valor),
         0
       );
 
@@ -933,13 +925,13 @@ ${produtosUnique
               `🔹 ${produto.nome} | R$${produto.valor} | ${produto.data_compra}`
           )
           .join("\n") || "Nenhuma compra realizada ainda.";
-      const depositoList =
-        historico_deposito
-          .map(
-            (deposito: { tipo: any; valor: any; data_compra: any; }) =>
-              `🔹 ${deposito.tipo} | R$${deposito.valor} | ${deposito.data_compra}`
-          )
-          .join("\n") || "Nenhuma deposito realizado ainda.";
+          const depositoList =
+          historico_deposito
+            .map(
+              (deposito: { tipo: any; valor: any; data_compra: any; }) =>
+                `🔹 ${deposito.tipo} | R$${deposito.valor} | ${deposito.data_compra}`
+            )
+            .join("\n") || "Nenhuma deposito realizado ainda.";
 
       // Mensagem personalizada com a ficha do usuário
       const message = `
@@ -966,13 +958,10 @@ ${depositoList}
     `;
 
       // Enviar mensagem com as informações do perfil
-      ctx.editMessageText(message,{
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
-          ],
-        },
-      });
+      ctx.editMessageText(message);
+
+      // Enviar os botões de navegação
+      sendActionButtonsInline(ctx);
     }
   } else {
     console.error('CallbackQuery sem dados ou tipo inválido');
