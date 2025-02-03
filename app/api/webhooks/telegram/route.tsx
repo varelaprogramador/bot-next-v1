@@ -835,11 +835,17 @@ bot.on("callback_query", async (ctx) => {
         },
       };
 
-      ctx.reply("💰 Escolha o valor para recarregar seu saldo💰", options);
+      ctx.editMessageText("💰 Escolha o valor para recarregar seu saldo💰", options);
 
     } else if (callbackData === "gerar_pix") {
       // Solicitar ao usuário que insira o valor para recarga
-      ctx.reply("Digite o valor da recarga (de R$1 a R$999):");
+      ctx.editMessageText("Digite o valor da recarga (de R$1 a R$999):",{
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+          ],
+        },
+      });
 
       // Espera pelo texto da resposta
       bot.on("text", async (messageCtx) => {
