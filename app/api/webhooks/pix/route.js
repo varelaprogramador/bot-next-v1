@@ -35,7 +35,7 @@ export async function POST(req) {
       console.log("Campos adicionais:", JSON.stringify(additionalInfo, null, 2)); // Log para verificar os campos adicionais
 
       // Encontrar o user_id nos campos adicionais
-      const userIdField = additionalInfo.find(info => info.key === "User ID");
+      const userIdField = additionalInfo.find(info => info.key === "UserID");
       if (!userIdField) {
         throw new Error("User  ID não encontrado nos campos adicionais.");
       }
