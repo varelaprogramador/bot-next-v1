@@ -146,7 +146,7 @@ const sendActionButtonsInline = async (ctx: any) => {
 🧾 Sua Ficha de Usuário:
 ├ 👤 Username: @${username}
 ├ 🆔 ID do usuário: ${userId}
-├ 💵 Saldo disponível: R$${saldo}
+├ 💵 Saldo disponível: R$${saldo.toFixed(2)}
 └ 🔘 Saldo de Indicação: R$${saldo_indicacao}
 
 🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!`;
@@ -519,7 +519,7 @@ bot.on("callback_query", async (ctx) => {
       );
     } else if (callbackData.startsWith("confirmar_compra_")) {
       const produtoId = callbackData.replace("confirmar_compra_", "");
-      
+    
       // Recuperar o produto
       const { data: produto, error: produtoError } = await supabase
         .from("produtos")
@@ -569,19 +569,19 @@ bot.on("callback_query", async (ctx) => {
         return;
       }
     
-      // Recuperar código do produto apenas se o status for "ativo"
-      const { data: codigoData, error: codigoError }: { data: Codigos | null; error: Error | null } = await supabase
-  .from("codigos")
-  .select("*")
-  .eq("id_produto", produto.id)
-  .eq("status", "Ativo") // Filtrando apenas códigos ativos
-  .single();
+      // Recuperar códigos do produto apenas se o status for "ativo"
+      const { data: codigos, error: codigoError } = await supabase
+        .from("codigos")
+        .select("*")
+        .eq("id_produto", produtoId);
     
-      if (codigoError || !codigoData) {
+      // Filtrar códigos ativos
+      const codigosAtivos = codigos?.filter(codigo => codigo.status.toLowerCase() === "ativo");
+    
+      if (codigoError || !codigosAtivos || codigosAtivos.length === 0) {
         await ctx.editMessageText(
           "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." +
-          `\nSeu id: ${userId}`+
-          `Data:${codigoData}`,
+          `\nSeu id: ${userId}`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -598,7 +598,8 @@ bot.on("callback_query", async (ctx) => {
         return;
       }
     
-      // Atualizar o status do código para "resgatado"
+      // Atualizar o status do primeiro código ativo para "resgatado"
+      const codigoData = codigosAtivos[0]; // Usar o primeiro código ativo
       const { error: updateCodigoError } = await supabase
         .from("codigos")
         .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
@@ -613,7 +614,7 @@ bot.on("callback_query", async (ctx) => {
         `🎉 Compra realizada com sucesso!\n` +
         `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
         `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo restante: R$${novoSaldo}\n\n` +
+        `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
         `Aproveite seu novo produto!`
       );
     
@@ -634,7 +635,7 @@ bot.on("callback_query", async (ctx) => {
           ⏳ Não perca tempo! O código é válido por tempo limitado.  
           Se tiver dúvidas, estamos aqui para ajudar. 💬
         `);
-    }else if (callbackData.startsWith("2confirmar_compra_")) {
+     }else if (callbackData.startsWith("2confirmar_compra_")) {
       const produtoId = callbackData.replace("2confirmar_compra_", "");
 
       // Obter detalhes do combo
@@ -720,7 +721,7 @@ bot.on("callback_query", async (ctx) => {
         `🎉 Compra realizada com sucesso!\n` +
         `🔹 Combo: ${combo.nome}\n` + // Exibindo o nome do combo
         `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo restante: R$${novoSaldo}\n\n` +
+        `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
         `Aproveite seu novo combo!`
       );
 
@@ -907,7 +908,7 @@ bot.on("callback_query", async (ctx) => {
 🧾 Sua Ficha de Usuário:
 ├ 👤 Username: @${username}
 ├ 🆔 ID do usuário: ${userId}
-├ 💵 Saldo disponível: R$${saldo}
+├ 💵 Saldo disponível: R$${saldo.toFixed(2)}
 └ 🔘 Saldo de Indicação: R$${saldo_indicacao}
 
 🛍 Compras
