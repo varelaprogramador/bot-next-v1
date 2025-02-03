@@ -5,7 +5,59 @@ import { Telegraf } from 'telegraf';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
+// props: {"title": "Interfaces for public tables", "runQuery": "false"}
 
+// Interface para a tabela codigos
+interface Codigos {
+  id_codigo: string; // UUID
+  id_produto?: string; // Texto
+  codigo?: string; // Texto
+  status?: string; // Texto
+}
+
+// Interface para a tabela combos
+interface Combos {
+  id: string; // UUID
+  nome?: string; // Texto
+  descricao?: string; // Texto
+  valor?: number; // Numérico
+  produtos?: object; // JSON
+  created_at: string; // Timestamp com fuso horário
+  status?: string; // Texto
+}
+
+// Interface para a tabela produtos
+interface Produtos {
+  id: string; // UUID
+  nome?: string; // Texto
+  valor?: number; // Numérico
+  created_at: string; // Timestamp com fuso horário
+  categoria?: string; // Texto
+  descricao?: string; // Texto
+}
+
+// Interface para a tabela users
+interface Users {
+  id: number; // Serial
+  user_id?: string; // Texto
+  username?: string; // Texto
+  saldo?: number; // Numérico
+  saldo_indicacao?: number; // Numérico
+  created_at?: string; // Timestamp sem fuso horário
+  historico_produtos?: object; // JSON
+  historico_de_depositos?: object; // JSON
+}
+
+// Interface para a tabela vendas
+interface Vendas {
+  uuid: string; // UUID
+  id_cliente?: string; // Texto
+  valor?: number; // Numérico
+  status?: string; // Texto
+  created_at: string; // Timestamp com fuso horário
+  id_produto?: string; // Texto
+  tipo_pagamento?: string; // Texto
+}
 // Inicializando o Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -88,7 +140,7 @@ const sendActionButtonsInline = async (ctx: any) => {
   // Mensagem com a ficha do usuário
   const { saldo, saldo_indicacao } = data || {};
 
-  const message = `💟 Bem-vindo(a) à Recarga Next! 💟
+  const message = `💟OLAAA Bem-vindo(a) à Recarga Next! 💟
 ✨ A melhor loja de streaming do Telegram! ✨
 
 🧾 Sua Ficha de Usuário:
@@ -467,61 +519,56 @@ bot.on("callback_query", async (ctx) => {
       );
     } else if (callbackData.startsWith("confirmar_compra_")) {
       const produtoId = callbackData.replace("confirmar_compra_", "");
-      const { data: produto, error } = await supabase
+      
+      // Recuperar o produto
+      const { data: produto, error: produtoError } = await supabase
         .from("produtos")
         .select("*")
         .eq("id", produtoId)
         .single();
-
-      if (error || !produto) {
-        ctx.editMessageText(
-          "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
-        );
+    
+      if (produtoError || !produto) {
+        await ctx.editMessageText("❌ Não foi possível encontrar o produto. Tente novamente mais tarde.");
         return;
       }
-
+    
       const valorProduto = produto.valor;
-
-      // Recuperar saldo novamente para evitar conflitos
+    
+      // Recuperar saldo do usuário
       const { data: userData, error: userError } = await supabase
         .from("users")
         .select("saldo")
         .eq("user_id", userId)
         .single();
-
+    
       if (userError || !userData || userData.saldo < valorProduto) {
-        ctx.editMessageText(
-          "❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente."
-        );
+        await ctx.editMessageText("❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente.");
         return;
       }
-
+    
       // Atualizar saldo no Supabase
       const novoSaldo = userData.saldo - valorProduto;
       const { error: updateError } = await supabase
         .from("users")
         .update({ saldo: novoSaldo })
         .eq("user_id", userId);
-
+    
       if (updateError) {
-        ctx.editMessageText(
-          "❌ Não foi possível processar sua compra. Tente novamente mais tarde.",
-          {
-            reply_markup: {
-              inline_keyboard: [
-                [
-                  {
-                    text: "Clique aqui para adicionar saldo",
-                    callback_data: "saldo",
-                  },
-                ],
+        await ctx.editMessageText("❌ Não foi possível processar sua compra. Tente novamente mais tarde.", {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "Clique aqui para adicionar saldo",
+                  callback_data: "saldo",
+                },
               ],
-            },
-          }
-        );
+            ],
+          },
+        });
         return;
       }
-
+    
       // Recuperar código do produto apenas se o status for "ativo"
       const { data: codigoData, error: codigoError } = await supabase
         .from("codigos")
@@ -529,11 +576,12 @@ bot.on("callback_query", async (ctx) => {
         .eq("id_produto", produtoId)
         .eq("status", "Ativo") // Filtrando apenas códigos ativos
         .single();
-
+    
       if (codigoError || !codigoData) {
-        ctx.editMessageText(
+        await ctx.editMessageText(
           "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." +
-          `\nSeu id:${userId}`,
+          `\nSeu id: ${userId}`+
+          `Data:${codigoData}`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -549,27 +597,27 @@ bot.on("callback_query", async (ctx) => {
         );
         return;
       }
-
+    
       // Atualizar o status do código para "resgatado"
       const { error: updateCodigoError } = await supabase
         .from("codigos")
         .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
-        .eq("id", codigoData.id); // Atualizando pelo ID do código
-
+        .eq("id_codigo", codigoData.id_codigo); // Atualizando pelo ID do código
+    
       if (updateCodigoError) {
         console.error(`Erro ao atualizar o código ${codigoData.codigo}:`, updateCodigoError);
         // Você pode optar por notificar o usuário ou registrar o erro
       }
-
-      ctx.editMessageText(
+    
+      await ctx.editMessageText(
         `🎉 Compra realizada com sucesso!\n` +
         `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
         `💵 Preço: R$${valorProduto}\n` +
         `💰 Saldo restante: R$${novoSaldo}\n\n` +
         `Aproveite seu novo produto!`
       );
-
-      ctx.reply(`
+    
+      await ctx.reply(`
           🎉 PARABÉNS! SEU GIFT CARD ESTÁ PRONTO! 🎉
           
           ✨ Aproveite agora mesmo o seu presente exclusivo! ✨  
@@ -586,7 +634,7 @@ bot.on("callback_query", async (ctx) => {
           ⏳ Não perca tempo! O código é válido por tempo limitado.  
           Se tiver dúvidas, estamos aqui para ajudar. 💬
         `);
-    } else if (callbackData.startsWith("2confirmar_compra_")) {
+    }else if (callbackData.startsWith("2confirmar_compra_")) {
       const produtoId = callbackData.replace("2confirmar_compra_", "");
 
       // Obter detalhes do combo
