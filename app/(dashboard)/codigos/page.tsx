@@ -72,7 +72,7 @@ export default function Codigos() {
   // KPIs
   const totalcodigos = data.length;
   const codigosConcluidas = data.filter(
-    (venda) => venda.status.toLowerCase() === "resgatado"
+    (venda) => venda.status.toLowerCase() === "Resgatado"
   ).length;
   const currentPageData = data;
 

@@ -112,7 +112,7 @@ export default function Codigos() {
   // KPIs
   const totalCodigos = data.length;
   const codigosResgatados = data.filter(
-    (codigo) => codigo.status === "resgatado"
+    (codigo) => codigo.status === "Resgatado"
   ).length;
 
   // Dados a serem exibidos na tabela
