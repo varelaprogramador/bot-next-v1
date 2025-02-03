@@ -410,7 +410,7 @@ bot.on("callback_query", async (ctx) => {
       ctx.editMessageText(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
         `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto.tofixed(2)}\n` +
+        `💵 Preço: R$${valorProduto.toFixed(2)}\n` +
         `💰 Saldo atual: R$${saldoAtual.toFixed(2)}\n\n` +
         `Deseja confirmar a compra?`,
         confirmacaoOptions
