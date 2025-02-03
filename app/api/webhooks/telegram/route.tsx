@@ -280,7 +280,7 @@ bot.on("callback_query", async (ctx) => {
       const { data: codigos, error: codigosError } = await supabase
         .from("codigos")
         .select("*")
-        .eq("produto_id", produtoId);
+        .eq("id_produto", produtoId);
 
       // Verificar se há códigos disponíveis e se estão ativos
       if (codigosError) {
