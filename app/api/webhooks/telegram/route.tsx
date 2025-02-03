@@ -602,7 +602,7 @@ bot.on("callback_query", async (ctx) => {
       const codigoData = codigosAtivos[0]; // Usar o primeiro código ativo
       const { error: updateCodigoError } = await supabase
         .from("codigos")
-        .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
+        .update({ status: "Resgatado" }) // Ou "inativo", dependendo da sua lógica
         .eq("id_codigo", codigoData.id_codigo); // Atualizando pelo ID do código
     
       if (updateCodigoError) {
