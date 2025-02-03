@@ -890,7 +890,7 @@ bot.on("callback_query", async (ctx) => {
       // Recuperar os dados do usuário do Supabase
       const { data, error } = await supabase
         .from("users")
-        .select("id, saldo, saldo_indicacao, historico_produtos, username")
+        .select("id, saldo, saldo_indicacao, historico_produtos,historico_deposito, username")
         .eq("user_id", userId)
         .single();
 
@@ -906,13 +906,14 @@ bot.on("callback_query", async (ctx) => {
         saldo = 0.0,
         saldo_indicacao = 0.0,
         historico_produtos,
+        historico_deposito,
         username,
       } = data;
 
       // Calcular o total de contas adquiridas e o valor total gasto
       const totalCompras = historico_produtos.length || 0;
-      const totalGasto = historico_produtos.reduce(
-        (total: number, produto: { value: string; }) => total + parseFloat(produto.value),
+      const totalGasto = historico_deposito.reduce(
+        (total: number, deposito:any) => total + parseFloat(deposito.valor),
         0
       );
 
@@ -920,10 +921,17 @@ bot.on("callback_query", async (ctx) => {
       const comprasList =
         historico_produtos
           .map(
-            (produto: { key: any; value: any; data_compra: any; }) =>
-              `🔹 ${produto.key} | R$${produto.value} | ${produto.data_compra}`
+            (produto: { nome: any; valor: any; data_compra: any; }) =>
+              `🔹 ${produto.nome} | R$${produto.valor} | ${produto.data_compra}`
           )
           .join("\n") || "Nenhuma compra realizada ainda.";
+          const depositoList =
+          historico_deposito
+            .map(
+              (deposito: { tipo: any; valor: any; data_compra: any; }) =>
+                `🔹 ${deposito.tipo} | R$${deposito.valor} | ${deposito.data_compra}`
+            )
+            .join("\n") || "Nenhuma deposito realizado ainda.";
 
       // Mensagem personalizada com a ficha do usuário
       const message = `
@@ -942,6 +950,9 @@ bot.on("callback_query", async (ctx) => {
 
 🛍 Histórico de Compras
 ${comprasList}
+
+💠 Histórico de Deposito
+${depositoList}
 
 🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!
     `;
