@@ -740,7 +740,17 @@ bot.on("callback_query", async (ctx) => {
           return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${codigo.codigo}`;
         })
         .join("\n");
+ for (const codigo of codigosAtivos) {
+        const { error: updateCodigoError } = await supabase
+          .from("codigos")
+          .update({ status: "Resgatado" }) // Ou "inativo", dependendo da sua lógica
+          .eq("id_codigo", codigo.id_codigo); // Atualizando pelo ID do código
 
+        if (updateCodigoError) {
+          console.error(`Erro ao atualizar o código ${codigo.codigo}:`, updateCodigoError);
+          // Você pode optar por notificar o usuário ou registrar o erro
+        }
+      }
 
       ctx.reply(`
       🎉 PARABÉNS! SEUS CÓDIGOS ESTÃO PRONTOS! 🎉
@@ -760,17 +770,7 @@ bot.on("callback_query", async (ctx) => {
       Se tiver dúvidas, estamos aqui para ajudar. 💬
     `);
       // Atualizar o status dos códigos resgatados
-      for (const codigo of codigosAtivos) {
-        const { error: updateCodigoError } = await supabase
-          .from("codigos")
-          .update({ status: "resgatado" }) // Ou "inativo", dependendo da sua lógica
-          .eq("id_codigo", codigo.id); // Atualizando pelo ID do código
-
-        if (updateCodigoError) {
-          console.error(`Erro ao atualizar o código ${codigo.codigo}:`, updateCodigoError);
-          // Você pode optar por notificar o usuário ou registrar o erro
-        }
-      }
+     
     } else if (callbackData === "saldo") {
       const options = {
         reply_markup: {
