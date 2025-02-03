@@ -215,57 +215,101 @@ bot.on("callback_query", async (ctx) => {
           ],
         },
       });
-    } else if (callbackData === "produtos") {
-      // Obter produtos do Supabase
-      const { data: produtos, error } = await supabase
-        .from("produtos")
-        .select("*"); // Busca todas as colunas
-
-      console.log("ETAPA ", produtos);
-      if (error) {
-        ctx.editMessageText(
-          "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
-        );
-        return;
-      }
-
-      const options = () => {
-        return produtos.map((item) => [
-          {
-            text: `${item.nome} - ${item.categoria} - (R$${item.valor})`,
-            callback_data: `comprar_${item.id}`,
-          },
-        ]);
-      };
-      const produtosUnique = produtos.filter((item, index, self) => 
-        index === self.findIndex((t) => t.nome === item.nome)
-      );
+    }else if (callbackData === "produtos") {
+        // Obter produtos do Supabase
+        const { data: produtos, error } = await supabase
+          .from("produtos")
+          .select("*"); // Busca todas as colunas
       
-
-      const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
-${produtosUnique
-          .map((item) => {
-            return `🔹 ${item.nome}`; // Corrigido para usar \n
-          })
-          .join("\n",)}
-    
-    =====================
-    
-    🏷️ Garantia Total:
-    
-    Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
-    
-    💎 Experiência Premium, feita para você!`;
-
-      ctx.editMessageText(mensagem, {
-        reply_markup: {
-          inline_keyboard: [
-            ...options(), // Espalha os arrays gerados pela função options
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
-          ],
-        },
-      });
-    } else if (callbackData === "combos") {
+        console.log("ETAPA ", produtos);
+        if (error) {
+          ctx.editMessageText(
+            "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
+          );
+          return;
+        }
+      
+        const produtosUnique = produtos.filter((item, index, self) => 
+          index === self.findIndex((t) => t.nome === item.nome)
+        );
+      
+        const options = () => {
+          return produtosUnique.map((item) => [
+            {
+              text: `${item.nome}`,
+              callback_data: `confirma_produto_${item.nome}`,
+            },
+          ]);
+        };
+      
+        const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
+      Escolha um produto para confirmar a compra:\n\n${produtosUnique
+          .map((item) => `🔹 ${item.nome}`)
+          .join("\n")}
+      
+      =====================
+      
+      🏷️ Garantia Total:
+      Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
+      
+      💎 Experiência Premium, feita para você!`;
+      
+        await ctx.editMessageText(mensagem, {
+          reply_markup: {
+            inline_keyboard: [
+              ...options(), // Espalha os arrays gerados pela função options
+              [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            ],
+          },
+        });
+      
+      } else if (callbackData.startsWith("confirma_produto_")) {
+        const produtoNome = callbackData.replace("confirma_produto_", "");
+        
+        // Obter produtos do Supabase
+        const { data: produtos, error } = await supabase
+          .from("produtos")
+          .select("*")
+          .eq("nome", produtoNome);
+      
+        console.log("ETAPA ", produtos);
+        if (error) {
+          ctx.editMessageText(
+            "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
+          );
+          return;
+        }
+      
+        const options = () => {
+          return produtos.map((item) => [
+            {
+              text: `${item.nome} - ${item.categoria} - (R$${item.valor})`,
+              callback_data: `comprar_${item.id}`,
+            },
+          ]);
+        };
+      
+        const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
+      Você selecionou o produto: ${produtoNome}\n\nEscolha a opção para compra:\n\n${produtos
+          .map((item) => `🔹 ${item.nome} - ${item.categoria}`)
+          .join("\n")}
+      
+      =====================
+      
+      🏷️ Garantia Total:
+      Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
+      
+      💎 Experiência Premium, feita para você!`;
+      
+        await ctx.editMessageText(mensagem, {
+          reply_markup: {
+            inline_keyboard: [
+              ...options(), // Espalha os arrays gerados pela função options
+              [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            ],
+          },
+        });
+      } else if (callbackData === "combos") {
       // Obter produtos do Supabase
       const { data: combos, error } = await supabase.from("combos").select("*"); // Busca todas as colunas
 
