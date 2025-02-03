@@ -297,7 +297,7 @@ bot.on("callback_query", async (ctx) => {
 
       if (codigosAtivos.length <= 0) {
         ctx.editMessageText(
-          "❌ Não há códigos ativos disponíveis para este produto no momento. Tente novamente mais tarde.",codigosAtivos
+          "❌ Não há códigos ativos disponíveis para este produto no momento. Tente novamente mais tarde."
         );
         return;
       }
