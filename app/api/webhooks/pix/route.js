@@ -96,7 +96,7 @@ export async function POST(req) {
 
       const { error: vendaUpdateError } = await supabase
         .from('vendas')
-        .update({ status: "pago" }) // Atualiza o status da venda
+        .update({ status: "concluida" }) // Atualiza o status da venda
         .eq('id_transacao', id_transacao); // Filtra pela ID da transação
 
       if (vendaUpdateError) {

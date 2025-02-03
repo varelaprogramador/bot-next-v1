@@ -174,12 +174,12 @@ export default function DashboardPage() {
     const trintaDiasAtras = new Date(today);
     trintaDiasAtras.setDate(today.getDate() - 30);
     
-    // Filtra as vendas que têm o status 'concluido' e foram feitas nos últimos 30 dias
+    // Filtra as vendas que têm o status 'concluida' e foram feitas nos últimos 30 dias
     const vendasfeitas = data
       .filter((venda) => {
         const dataVenda = new Date(venda.created_at); // Converte a data de criação da venda para o formato Date
         return (
-          venda.status.toLowerCase() === "concluido" &&
+          venda.status.toLowerCase() === "concluida" &&
           dataVenda >= trintaDiasAtras // Verifica se a venda é dos últimos 30 dias
         );
       })
@@ -188,7 +188,7 @@ export default function DashboardPage() {
   const vendaspendentes = data
     .filter(
       (venda) =>
-        venda.status.toLowerCase() !== "concluido" &&
+        venda.status.toLowerCase() !== "concluida" &&
         new Date(venda.created_at) >= startOfToday &&
         new Date(venda.created_at) <= endOfToday
     )

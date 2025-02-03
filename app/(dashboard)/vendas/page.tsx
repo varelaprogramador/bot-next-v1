@@ -73,7 +73,7 @@ export default function Vendas() {
     0
   );
   const vendasConcluidas = data.filter(
-    (venda) => venda.status === "concluido"
+    (venda) => venda.status === "concluida"
   ).length;
   const currentPageData = data;
 
