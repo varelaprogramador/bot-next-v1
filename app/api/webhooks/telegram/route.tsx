@@ -181,7 +181,7 @@ bot.on("callback_query", async (ctx) => {
       });
     }
     if (callbackData === "bemvindos-2") {
-      ctx.deleteMessage()
+      await ctx.deleteMessage()
       // Verificar se o usuário já existe no banco de dados
       const { data, error } = await supabase
         .from("users")
