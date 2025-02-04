@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // pages/api/webhooks/telegram/route.ts
 
-import { Telegraf} from 'telegraf';
+import { Telegraf } from 'telegraf';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
@@ -180,6 +180,57 @@ bot.on("callback_query", async (ctx) => {
         },
       });
     }
+    if (callbackData === "bemvindos-2") {
+      ctx.deleteMessage()
+      // Verificar se o usuário já existe no banco de dados
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, saldo, saldo_indicacao")
+        .eq("user_id", userId)
+        .single();
+
+      // Se o usuário não existir, criar um novo
+      if (error || !data) {
+        const { data: insertedData, error: insertError } = await supabase
+          .from("users")
+          .insert([{
+            user_id: userId,
+            username: username,
+            saldo: 0.0,
+            saldo_indicacao: 0.0,
+          }])
+          .single();
+
+        if (insertError) {
+          console.error("Erro ao inserir usuário no Supabase:", insertError);
+          return ctx.reply("Desculpe, houve um erro ao registrar suas informações.");
+        }
+      }
+
+      // Mensagem com a ficha do usuário
+      const { saldo, saldo_indicacao } = data || {};
+
+      const message = `💟 Bem-vindo(a) à Recarga Next! 💟
+✨ A melhor loja de streaming do Telegram! ✨
+
+ 🧾 Sua Ficha de Usuário:
+ ├ 👤 Username: @${username}
+ ├ 🆔 ID do usuário: ${userId}
+ ├ 💵 Saldo disponível: R$${saldo.toFixed(2)}
+ └ 🔘 Saldo de Indicação: R$${saldo_indicacao}
+
+🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!`;
+
+      ctx.reply(message, {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "💎 Contas Premium", callback_data: "premium" }],
+            [{ text: "💰 Saldo", callback_data: "saldo" }, { text: "👤 Perfil", callback_data: "perfil" }],
+            [{ text: "🛠️ Suporte", callback_data: "suporte" }],
+          ],
+        },
+      });
+    }
     else if (callbackData === "premium") {
       const mensagem = `
     🛍️ Escolha o que você deseja comprar no momento:
@@ -212,34 +263,34 @@ bot.on("callback_query", async (ctx) => {
           ],
         },
       });
-    }else if (callbackData === "produtos") {
-        // Obter produtos do Supabase
-        const { data: produtos, error } = await supabase
-          .from("produtos")
-          .select("*"); // Busca todas as colunas
-      
-        console.log("ETAPA ", produtos);
-        if (error) {
-          ctx.editMessageText(
-            "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
-          );
-          return;
-        }
-      
-        const produtosUnique = produtos.filter((item, index, self) => 
-          index === self.findIndex((t) => t.nome === item.nome)
+    } else if (callbackData === "produtos") {
+      // Obter produtos do Supabase
+      const { data: produtos, error } = await supabase
+        .from("produtos")
+        .select("*"); // Busca todas as colunas
+
+      console.log("ETAPA ", produtos);
+      if (error) {
+        ctx.editMessageText(
+          "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
         );
-      
-        const options = () => {
-          return produtosUnique.map((item) => [
-            {
-              text: `${item.nome}`,
-              callback_data: `confirma_produto_${item.nome}`,
-            },
-          ]);
-        };
-      
-        const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
+        return;
+      }
+
+      const produtosUnique = produtos.filter((item, index, self) =>
+        index === self.findIndex((t) => t.nome === item.nome)
+      );
+
+      const options = () => {
+        return produtosUnique.map((item) => [
+          {
+            text: `${item.nome}`,
+            callback_data: `confirma_produto_${item.nome}`,
+          },
+        ]);
+      };
+
+      const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
       Escolha um produto para confirmar a compra:\n\n${produtosUnique
           .map((item) => `🔹 ${item.nome}`)
           .join("\n")}
@@ -250,43 +301,43 @@ bot.on("callback_query", async (ctx) => {
       Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
       
       💎 Experiência Premium, feita para você!`;
-      
-        await ctx.editMessageText(mensagem, {
-          reply_markup: {
-            inline_keyboard: [
-              ...options(), // Espalha os arrays gerados pela função options
-              [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
-            ],
-          },
-        });
-      
+
+      await ctx.editMessageText(mensagem, {
+        reply_markup: {
+          inline_keyboard: [
+            ...options(), // Espalha os arrays gerados pela função options
+            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+          ],
+        },
+      });
+
     } else if (callbackData.startsWith("confirma_produto_")) {
-        const produtoNome = callbackData.replace("confirma_produto_", "");
-        
-        // Obter produtos do Supabase
-        const { data: produtos, error } = await supabase
-          .from("produtos")
-          .select("*")
-          .eq("nome", produtoNome);
-      
-        console.log("ETAPA ", produtos);
-        if (error) {
-          ctx.editMessageText(
-            "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
-          );
-          return;
-        }
-      
-        const options = () => {
-          return produtos.map((item) => [
-            {
-              text: `${item.nome} - ${item.categoria} - (R$${item.valor})`,
-              callback_data: `comprar_${item.id}`,
-            },
-          ]);
-        };
-      
-        const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
+      const produtoNome = callbackData.replace("confirma_produto_", "");
+
+      // Obter produtos do Supabase
+      const { data: produtos, error } = await supabase
+        .from("produtos")
+        .select("*")
+        .eq("nome", produtoNome);
+
+      console.log("ETAPA ", produtos);
+      if (error) {
+        ctx.editMessageText(
+          "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
+        );
+        return;
+      }
+
+      const options = () => {
+        return produtos.map((item) => [
+          {
+            text: `${item.nome} - ${item.categoria} - (R$${item.valor})`,
+            callback_data: `comprar_${item.id}`,
+          },
+        ]);
+      };
+
+      const mensagem = `🎖️ PRODUTOS | PREMIUM 🎖️
       Você selecionou o produto: ${produtoNome}\n\nEscolha a opção para compra:\n\n${produtos
           .map((item) => `🔹 ${item.nome} - ${item.categoria}`)
           .join("\n")}
@@ -297,15 +348,15 @@ bot.on("callback_query", async (ctx) => {
       Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
       
       💎 Experiência Premium, feita para você!`;
-      
-        await ctx.editMessageText(mensagem, {
-          reply_markup: {
-            inline_keyboard: [
-              ...options(), // Espalha os arrays gerados pela função options
-              [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
-            ],
-          },
-        });
+
+      await ctx.editMessageText(mensagem, {
+        reply_markup: {
+          inline_keyboard: [
+            ...options(), // Espalha os arrays gerados pela função options
+            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+          ],
+        },
+      });
     } else if (callbackData === "combos") {
       // Obter produtos do Supabase
       const { data: combos, error } = await supabase.from("combos").select("*"); // Busca todas as colunas
@@ -327,7 +378,7 @@ bot.on("callback_query", async (ctx) => {
                 callback_data: `2comprar_${item.id}`,
               },
             ]),
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            [{ text: "⬅ Voltar", callback_data: "bemvindos-2" }],
           ],
         },
       };
@@ -357,21 +408,13 @@ bot.on("callback_query", async (ctx) => {
     Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
     
     💎 Experiência Premium, feita para você!`;*/}
-    const mensagem=`Escolha um dos combos acima`
-     
-// Caminho da imagem (no caso de imagem local)
-const imageUrl = "https://www.n8nworks.shop/banner.jpeg"; // Caminho correto para a imagem local
+      const mensagem = 'Escolha um dos combos acima:';
+      const imageUrl = 'https://www.n8nworks.shop/banner.jpeg';
 
-// Editar a mensagem com a imagem
-ctx.editMessageText(mensagem, options)
-  .then(() => {
-    // Enviar a imagem local com InputFile
-    return ctx.editMessageMedia({
-      type: 'photo',
-      media: imageUrl, // Usar InputFile para enviar imagens locais
-    });
-  })
-  .catch(err => console.error("Erro ao editar mensagem:", err));
+      ctx.replyWithPhoto(imageUrl, {
+        caption: mensagem,
+        ...options,
+      })
 
     } else if (callbackData.startsWith("comprar_")) {
       const produtoId = callbackData.split("_")[1];
@@ -480,6 +523,7 @@ ctx.editMessageText(mensagem, options)
         confirmacaoOptions
       );
     } else if (callbackData.startsWith("2comprar_")) {
+      ctx.deleteMessage()
       const produtoId = callbackData.split("_")[1];
       console.log(produtoId);
 
@@ -490,7 +534,7 @@ ctx.editMessageText(mensagem, options)
         .eq("id", produtoId)
         .single();
       if (error || !combo) {
-        ctx.editMessageText(
+        ctx.reply(
           "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
         );
         return;
@@ -510,7 +554,7 @@ ctx.editMessageText(mensagem, options)
           .eq("status", "Ativo"); // Filtrando apenas códigos ativos
 
         if (codigosError || !codigos || codigos.length === 0) {
-          ctx.editMessageText(
+          ctx.reply(
             `❌ O produto ${produto.nome} não possui códigos ativos disponíveis. Tente novamente mais tarde.`
           );
           return;
@@ -528,7 +572,7 @@ ctx.editMessageText(mensagem, options)
         .single();
 
       if (userError || !userData) {
-        ctx.editMessageText(
+        ctx.reply(
           "❌ Não foi possível recuperar suas informações. Tente novamente mais tarde."
         );
         return;
@@ -538,7 +582,7 @@ ctx.editMessageText(mensagem, options)
       const valorProduto = combo.valor;
 
       if (saldoAtual < valorProduto) {
-        ctx.editMessageText(
+        ctx.reply(
           `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
           `💰 Recarregue seu saldo para continuar.`,
           {
@@ -573,11 +617,11 @@ ctx.editMessageText(mensagem, options)
         },
       };
 
-      ctx.editMessageText(
+      ctx.reply(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
         `🔹 ${combo.nome}\n\n` + // Corrigido para exibir o nome do produto
         `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo atual: R$${saldoAtual}\n\n` +
+        `💰 Saldo atual: R$${saldoAtual.toFixed(2)||0}\n\n` +
         `Deseja confirmar a compra?`,
         confirmacaoOptions
       );
@@ -848,7 +892,7 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
 
     } else if (callbackData === "gerar_pix") {
       // Solicitar ao usuário que insira o valor para recarga
-      ctx.editMessageText("Digite o valor da recarga (de R$1 a R$999):",{
+      ctx.editMessageText("Digite o valor da recarga (de R$1 a R$999):", {
         reply_markup: {
           inline_keyboard: [
             [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
@@ -1025,7 +1069,7 @@ ${depositoList}
     `;
 
       // Enviar mensagem com as informações do perfil
-      ctx.editMessageText(message,{
+      ctx.editMessageText(message, {
         reply_markup: {
           inline_keyboard: [
             [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
