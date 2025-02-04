@@ -258,7 +258,7 @@ bot.on("callback_query", async (ctx) => {
                 callback_data: "combos",
               },
             ],
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
+            [{ text: "⬅ Voltar", callback_data: "bemvindos-2" }],
           ],
         },
     })
