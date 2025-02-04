@@ -236,16 +236,15 @@ bot.on("callback_query", async (ctx) => {
     🛍️ Escolha o que você deseja comprar no momento:
     
    🎁 Produtos
-    Os produtos são itens individuais que você pode adquirir separadamente. No nosso caso, isso inclui uma variedade de gift cards de diferentes valores e para diversas plataformas.
-    
+
    🎉 Combos
-    Os combos, por outro lado, são pacotes que reúnem vários produtos em uma única oferta. Eles são projetados para oferecer um melhor custo-benefício e uma experiência mais completa. Por exemplo, um combo pode incluir um gift card de um valor maior, juntamente com outros produtos ou serviços que complementam a sua compra. Essa é uma ótima opção se você deseja maximizar o valor do seu investimento e obter mais benefícios de uma só vez.
-
-    Estamos aqui para ajudar você a encontrar a melhor opção para suas necessidades! 😊
-    `;
-
-      ctx.editMessageText(mensagem, {
-        reply_markup: {
+   
+   Estamos aqui para ajudar você a encontrar a melhor opção para suas necessidades! 😊
+    `;await ctx.deleteMessage();
+    const imageUrl = 'https://www.n8nworks.shop/banner.jpeg';
+    ctx.replyWithPhoto(imageUrl, {
+      caption: mensagem,
+       reply_markup: {
           inline_keyboard: [
             [
               {
@@ -262,7 +261,7 @@ bot.on("callback_query", async (ctx) => {
             [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
           ],
         },
-      });
+    })
     } else if (callbackData === "produtos") {
       // Obter produtos do Supabase
       const { data: produtos, error } = await supabase
