@@ -673,21 +673,20 @@ bot.on("callback_query", async (ctx) => {
       );
 
       await ctx.reply(`
-          🎉 PARABÉNS! SEU GIFT CARD ESTÁ PRONTO! 🎉
+🎉 PARABÉNS! SEU GIFT CARD ESTÁ PRONTO! 🎉
           
-          ✨ Aproveite agora mesmo o seu presente exclusivo! ✨  
-          Copie o código abaixo e ative para desbloquear suas recompensas:
+✨ Aproveite agora mesmo o seu presente exclusivo! ✨  
+Copie o código abaixo e ative para desbloquear seu giftcard:
           
-          📜 Seu Código: ${codigoData.codigo}
+📜 Seu Código: ${codigoData.codigo}
           
-          🔗 Como ativar:  
-          1️⃣ Copie o código acima.  
-          2️⃣ Acesse nosso site ou aplicativo.  
-          3️⃣ Insira o código no campo de ativação.  
-          4️⃣ Curta sua experiência ao máximo! 🎁
+🔗 Como ativar:  
+  1️⃣ Copie o código acima.  
+  2️⃣ Acesse nosso site ou aplicativo.  
+  3️⃣ Insira o código no campo de ativação.  
+  4️⃣ Curta sua experiência ao máximo! 🎁
           
-          ⏳ Não perca tempo! O código é válido por tempo limitado.  
-          Se tiver dúvidas, estamos aqui para ajudar. 💬
+Se tiver dúvidas, estamos aqui para ajudar. 💬
         `);
     } else if (callbackData.startsWith("2confirmar_compra_")) {
       const produtoId = callbackData.replace("2confirmar_compra_", "");
