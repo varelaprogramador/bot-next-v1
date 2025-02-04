@@ -359,6 +359,7 @@ bot.on("callback_query", async (ctx) => {
       });
     } else if (callbackData === "combos") {
       // Obter produtos do Supabase
+      ctx.deleteMessage()
       const { data: combos, error } = await supabase.from("combos").select("*"); // Busca todas as colunas
 
       console.log("ETAPA ", combos);
