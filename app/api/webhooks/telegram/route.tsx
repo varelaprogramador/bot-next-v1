@@ -162,11 +162,11 @@ bot.on("callback_query", async (ctx) => {
       const message = `💟 Bem-vindo(a) à Recarga Next! 💟
 ✨ A melhor loja de streaming do Telegram! ✨
 
-🧾 Sua Ficha de Usuário:
-├ 👤 Username: @${username}
-├ 🆔 ID do usuário: ${userId}
-├ 💵 Saldo disponível: R$${saldo.toFixed(2)}
-└ 🔘 Saldo de Indicação: R$${saldo_indicacao}
+ 🧾 Sua Ficha de Usuário:
+ ├ 👤 Username: @${username}
+ ├ 🆔 ID do usuário: ${userId}
+ ├ 💵 Saldo disponível: R$${saldo.toFixed(2)}
+ └ 🔘 Saldo de Indicação: R$${saldo_indicacao}
 
 🎉 Explore nossas opções premium e aproveite o melhor do entretenimento com facilidade e segurança!`;
 

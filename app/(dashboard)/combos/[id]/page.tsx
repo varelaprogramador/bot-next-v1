@@ -128,6 +128,7 @@ export default function ComnbosDetalhes() {
       window.location.href = "/combos";
     }
   };
+  const productIds = combos.produtos.map(produto => produto.id).join(",");
   return (
     <div className="container mx-auto p-6 space-y-4">
       <Button
@@ -219,7 +220,7 @@ export default function ComnbosDetalhes() {
         </div>
         <div
           onClick={() => {
-            window.location.href = `/codigos/${productId}`;
+            window.location.href = `/codigos-combo/${productIds}`;
           }}
           className="border p-4 rounded  flex flex-col justify-center items-center gap-2 min-h-[300px] hover:scale-105 transition-all duration-300  hover:border-blue-500 hover:text-blue-500"
         >
