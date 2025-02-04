@@ -682,7 +682,7 @@ Copie o código abaixo e ative para desbloquear seu giftcard:
           
 🔗 Como ativar:  
   1️⃣ Copie o código acima.  
-  2️⃣ Acesse nosso site ou aplicativo.  
+  2️⃣ Acesse o seu aplicativo.  
   3️⃣ Insira o código no campo de ativação.  
   4️⃣ Curta sua experiência ao máximo! 🎁
           
