@@ -125,7 +125,7 @@ bot.command('start', async (ctx) => {
 bot.on("callback_query", async (ctx) => {
   const userId = ctx.from.id;
   const chatId = ctx.chat?.id;
-  const username = ctx.from.username;
+  const username = ctx.from.first_name;
 
 
   if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {
@@ -263,7 +263,7 @@ bot.on("callback_query", async (ctx) => {
           },
         });
       
-      } else if (callbackData.startsWith("confirma_produto_")) {
+    } else if (callbackData.startsWith("confirma_produto_")) {
         const produtoNome = callbackData.replace("confirma_produto_", "");
         
         // Obter produtos do Supabase
@@ -309,7 +309,7 @@ bot.on("callback_query", async (ctx) => {
             ],
           },
         });
-      } else if (callbackData === "combos") {
+    } else if (callbackData === "combos") {
       // Obter produtos do Supabase
       const { data: combos, error } = await supabase.from("combos").select("*"); // Busca todas as colunas
 
