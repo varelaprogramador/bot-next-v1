@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // pages/api/webhooks/telegram/route.ts
 
-import { Telegraf } from 'telegraf';
+import { Telegraf} from 'telegraf';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
@@ -189,10 +189,7 @@ bot.on("callback_query", async (ctx) => {
     
    🎉 Combos
     Os combos, por outro lado, são pacotes que reúnem vários produtos em uma única oferta. Eles são projetados para oferecer um melhor custo-benefício e uma experiência mais completa. Por exemplo, um combo pode incluir um gift card de um valor maior, juntamente com outros produtos ou serviços que complementam a sua compra. Essa é uma ótima opção se você deseja maximizar o valor do seu investimento e obter mais benefícios de uma só vez.
-    
-   🤔 Conclusão
-    Se você está procurando algo específico, como um gift card para uma plataforma que você já conhece, escolha a opção de produtos. Mas se você quer explorar uma oferta mais abrangente e vantajosa, considere os combos. 
-    
+
     Estamos aqui para ajudar você a encontrar a melhor opção para suas necessidades! 😊
     `;
 
@@ -341,7 +338,7 @@ bot.on("callback_query", async (ctx) => {
       console.log(produtos);
 
 
-      const mensagem = `🎖️ PERFIL | PREMIUM 🎖️\n${produtos.length > 0
+      {/*const mensagem = `🎖️ PERFIL | PREMIUM 🎖️\n${produtos.length > 0
         ? combos
           .map((combo) => {
             return `🔹 ${combo.nome} \n${combo.produtos.length > 0
@@ -359,9 +356,22 @@ bot.on("callback_query", async (ctx) => {
     
     Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
     
-    💎 Experiência Premium, feita para você!`;
+    💎 Experiência Premium, feita para você!`;*/}
+    const mensagem=`Escolha um dos combos acima`
+     
+// Caminho da imagem (no caso de imagem local)
+const imageUrl = "https://www.n8nworks.shop/banner.jpeg"; // Caminho correto para a imagem local
 
-      ctx.editMessageText(mensagem, options);
+// Editar a mensagem com a imagem
+ctx.editMessageText(mensagem, options)
+  .then(() => {
+    // Enviar a imagem local com InputFile
+    return ctx.editMessageMedia({
+      type: 'photo',
+      media: imageUrl, // Usar InputFile para enviar imagens locais
+    });
+  })
+  .catch(err => console.error("Erro ao editar mensagem:", err));
 
     } else if (callbackData.startsWith("comprar_")) {
       const produtoId = callbackData.split("_")[1];
