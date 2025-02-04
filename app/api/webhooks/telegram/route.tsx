@@ -358,8 +358,8 @@ bot.on("callback_query", async (ctx) => {
         },
       });
     } else if (callbackData === "combos") {
-      // Obter produtos do Supabase
-      ctx.deleteMessage()
+      
+      
       const { data: combos, error } = await supabase.from("combos").select("*"); // Busca todas as colunas
 
       console.log("ETAPA ", combos);
@@ -411,7 +411,7 @@ bot.on("callback_query", async (ctx) => {
     💎 Experiência Premium, feita para você!`;*/}
       const mensagem = 'Escolha um dos combos acima:';
       const imageUrl = 'https://www.n8nworks.shop/banner.jpeg';
-
+await ctx.deleteMessage();
       ctx.replyWithPhoto(imageUrl, {
         caption: mensagem,
         ...options,
