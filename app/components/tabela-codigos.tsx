@@ -88,6 +88,7 @@ export const columns: ColumnDef<CodigosProps>[] = [
       </div>
     ),
   },
+  
   {
     accessorKey: "codigo",
     header: "codigo de resgate",

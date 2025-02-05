@@ -181,7 +181,7 @@ bot.on("callback_query", async (ctx) => {
               { text: "💰 Saldo", callback_data: "saldo" },
               { text: "👤 Perfil", callback_data: "perfil" },
             ],
-            [{ text: "🛠️ Suporte", callback_data: "suporte" }],
+            [{ text: "🛠️ Suporte", url:"https://t.me/nextrecarga" }],
           ],
         },
       });
