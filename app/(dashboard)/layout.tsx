@@ -6,11 +6,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/app/components/ui/sidebar";
-import { Toaster } from "@/app/components/ui/toaster";
+
 import { currentUser } from "@clerk/nextjs/server";
 import { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
+
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -57,7 +56,7 @@ export default async function Layout({
           <main className="flex flex-1 flex-col gap-4 p-4 pt-0 h-full overflow-x-hidden">
             {children}
           </main>
-          <Toaster />
+         
         </SidebarInset>
       </div>
     </SidebarProvider>

@@ -25,6 +25,7 @@ import { VendasProps } from "../../utils/vendas";
 import { eachDayOfInterval, endOfDay, format, startOfDay, subDays } from "date-fns";
 import { number } from "zod";
 import MetaProgress from "@/app/components/meta";
+import FileUpload from "@/app/components/input-xsl";
 
 export default function DashboardPage() {
 
@@ -219,6 +220,7 @@ setValorAtual(vendashoje);
 
   return (
     <div className="flex min-h-[90vh] flex-col px-4 space-y-4">
+       
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Boas-vindas</h2>
       </div>

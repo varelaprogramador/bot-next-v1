@@ -5,6 +5,7 @@ import NextTopLoader from "nextjs-toploader";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Metadata } from "next";
+import { Toaster } from "sonner";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -31,6 +32,7 @@ export default function RootLayout({
           <ThemeProvider defaultTheme="light">
             <NextTopLoader color="blue" />
             {children}
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>

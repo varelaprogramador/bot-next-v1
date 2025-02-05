@@ -39,6 +39,7 @@ import { CodigosProps } from "@/app/utils/codigos";
 import { CreateOrUpdateCodigo } from "./edit-form/codigo-edit";
 
 import { createClient } from "@/lib/supabase/client";
+import FileUpload from "./input-xsl";
 
 export const columns: ColumnDef<CodigosProps>[] = [
   {
@@ -173,7 +174,7 @@ const supabase=createClient()
     <div className="w-full">
       <div className="flex items-center py-4 gap-4">
         <Input
-          placeholder="Filtre pela ID/ID  do produto ..."
+          placeholder="Filtre pela ID  do produto ..."
           value={
             (table.getColumn("id_produto")?.getFilterValue() as string) ?? ""
           }
@@ -209,6 +210,7 @@ const supabase=createClient()
           </DropdownMenuContent>
         </DropdownMenu>
         <CreateOrUpdateCodigo onConfirm={handleConfirmCreate}></CreateOrUpdateCodigo>
+        <FileUpload />
       </div>
       <div className="rounded-md border">
         <Table>
