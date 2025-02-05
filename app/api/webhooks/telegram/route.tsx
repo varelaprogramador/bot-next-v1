@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // pages/api/webhooks/telegram/route.ts
 
-import { Telegraf } from 'telegraf';
-import { createClient } from '@supabase/supabase-js';
-import { randomUUID } from 'crypto';
-import { NextResponse } from 'next/server';
+import { Telegraf } from "telegraf";
+import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "crypto";
+import { NextResponse } from "next/server";
 // props: {"title": "Interfaces for public tables", "runQuery": "false"}
 
 // Interface para a tabela codigos
@@ -71,14 +71,14 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 export async function GET(req: Request) {
   try {
     return new NextResponse(
-      JSON.stringify({ message: 'Webhook configurado corretamente!' }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ message: "Webhook configurado corretamente!" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error('Erro no GET:', error);
+    console.error("Erro no GET:", error);
     return new NextResponse(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
@@ -87,26 +87,26 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const data = await req.json(); // Receber a atualização do Telegram
-    console.log('Atualização recebida:', data);
+    console.log("Atualização recebida:", data);
 
     // Passar a atualização para o Telegraf processar
     await bot.handleUpdate(data);
 
     return new NextResponse(
-      JSON.stringify({ message: 'Webhook POST processado com sucesso!' }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ message: "Webhook POST processado com sucesso!" }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error('Erro no POST:', error);
+    console.error("Erro no POST:", error);
     return new NextResponse(
-      JSON.stringify({ error: 'Internal server error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }
 
 // Configurar comandos do bot
-bot.command('start', async (ctx) => {
+bot.command("start", async (ctx) => {
   ctx.reply("✨ Olá, seja Bem vindo ao canal de vendas da next recargas! ✨", {
     reply_markup: {
       inline_keyboard: [
@@ -118,7 +118,7 @@ bot.command('start', async (ctx) => {
         ],
       ],
     },
-  })
+  });
 });
 
 // Configurar handlers de callback_query
@@ -127,8 +127,7 @@ bot.on("callback_query", async (ctx) => {
   const chatId = ctx.chat?.id;
   const username = ctx.from.first_name;
 
-
-  if (ctx.callbackQuery && 'data' in ctx.callbackQuery) {
+  if (ctx.callbackQuery && "data" in ctx.callbackQuery) {
     const callbackData = ctx.callbackQuery.data;
     if (callbackData === "bemvindos") {
       // Verificar se o usuário já existe no banco de dados
@@ -142,17 +141,21 @@ bot.on("callback_query", async (ctx) => {
       if (error || !data) {
         const { data: insertedData, error: insertError } = await supabase
           .from("users")
-          .insert([{
-            user_id: userId,
-            username: username,
-            saldo: 0.0,
-            saldo_indicacao: 0.0,
-          }])
+          .insert([
+            {
+              user_id: userId,
+              username: username,
+              saldo: 0.0,
+              saldo_indicacao: 0.0,
+            },
+          ])
           .single();
 
         if (insertError) {
           console.error("Erro ao inserir usuário no Supabase:", insertError);
-          return ctx.reply("Desculpe, houve um erro ao registrar suas informações.");
+          return ctx.reply(
+            "Desculpe, houve um erro ao registrar suas informações."
+          );
         }
       }
 
@@ -174,14 +177,17 @@ bot.on("callback_query", async (ctx) => {
         reply_markup: {
           inline_keyboard: [
             [{ text: "💎 Contas Premium", callback_data: "premium" }],
-            [{ text: "💰 Saldo", callback_data: "saldo" }, { text: "👤 Perfil", callback_data: "perfil" }],
+            [
+              { text: "💰 Saldo", callback_data: "saldo" },
+              { text: "👤 Perfil", callback_data: "perfil" },
+            ],
             [{ text: "🛠️ Suporte", callback_data: "suporte" }],
           ],
         },
       });
     }
     if (callbackData === "bemvindos-2") {
-      await ctx.deleteMessage()
+      await ctx.deleteMessage();
       // Verificar se o usuário já existe no banco de dados
       const { data, error } = await supabase
         .from("users")
@@ -193,17 +199,21 @@ bot.on("callback_query", async (ctx) => {
       if (error || !data) {
         const { data: insertedData, error: insertError } = await supabase
           .from("users")
-          .insert([{
-            user_id: userId,
-            username: username,
-            saldo: 0.0,
-            saldo_indicacao: 0.0,
-          }])
+          .insert([
+            {
+              user_id: userId,
+              username: username,
+              saldo: 0.0,
+              saldo_indicacao: 0.0,
+            },
+          ])
           .single();
 
         if (insertError) {
           console.error("Erro ao inserir usuário no Supabase:", insertError);
-          return ctx.reply("Desculpe, houve um erro ao registrar suas informações.");
+          return ctx.reply(
+            "Desculpe, houve um erro ao registrar suas informações."
+          );
         }
       }
 
@@ -225,13 +235,15 @@ bot.on("callback_query", async (ctx) => {
         reply_markup: {
           inline_keyboard: [
             [{ text: "💎 Contas Premium", callback_data: "premium" }],
-            [{ text: "💰 Saldo", callback_data: "saldo" }, { text: "👤 Perfil", callback_data: "perfil" }],
+            [
+              { text: "💰 Saldo", callback_data: "saldo" },
+              { text: "👤 Perfil", callback_data: "perfil" },
+            ],
             [{ text: "🛠️ Suporte", callback_data: "suporte" }],
           ],
         },
       });
-    }
-    else if (callbackData === "premium") {
+    } else if (callbackData === "premium") {
       const mensagem = `
     🛍️ Escolha o que você deseja comprar no momento:
     
@@ -240,11 +252,12 @@ bot.on("callback_query", async (ctx) => {
    🎉 Combos
    
    Estamos aqui para ajudar você a encontrar a melhor opção para suas necessidades! 😊
-    `;await ctx.deleteMessage();
-    const imageUrl = 'https://www.n8nworks.shop/banner.jpeg';
-    ctx.replyWithPhoto(imageUrl, {
-      caption: mensagem,
-       reply_markup: {
+    `;
+      await ctx.deleteMessage();
+      const imageUrl = "https://www.n8nworks.shop/banner.jpeg";
+      ctx.replyWithPhoto(imageUrl, {
+        caption: mensagem,
+        reply_markup: {
           inline_keyboard: [
             [
               {
@@ -261,7 +274,7 @@ bot.on("callback_query", async (ctx) => {
             [{ text: "⬅ Voltar", callback_data: "bemvindos-2" }],
           ],
         },
-    })
+      });
     } else if (callbackData === "produtos") {
       // Obter produtos do Supabase
       const { data: produtos, error } = await supabase
@@ -270,14 +283,15 @@ bot.on("callback_query", async (ctx) => {
 
       console.log("ETAPA ", produtos);
       if (error) {
-        ctx.editMessageText(
+        ctx.reply(
           "❌ Não foi possível carregar os produtos. Tente novamente mais tarde."
         );
         return;
       }
 
-      const produtosUnique = produtos.filter((item, index, self) =>
-        index === self.findIndex((t) => t.nome === item.nome)
+      const produtosUnique = produtos.filter(
+        (item, index, self) =>
+          index === self.findIndex((t) => t.nome === item.nome)
       );
 
       const options = () => {
@@ -291,8 +305,8 @@ bot.on("callback_query", async (ctx) => {
 
       const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
       Escolha um produto para confirmar a compra:\n\n${produtosUnique
-          .map((item) => `🔹 ${item.nome}`)
-          .join("\n")}
+        .map((item) => `🔹 ${item.nome}`)
+        .join("\n")}
       
       =====================
       
@@ -301,7 +315,7 @@ bot.on("callback_query", async (ctx) => {
       
       💎 Experiência Premium, feita para você!`;
 
-      await ctx.editMessageText(mensagem, {
+      await ctx.reply(mensagem, {
         reply_markup: {
           inline_keyboard: [
             ...options(), // Espalha os arrays gerados pela função options
@@ -309,7 +323,6 @@ bot.on("callback_query", async (ctx) => {
           ],
         },
       });
-
     } else if (callbackData.startsWith("confirma_produto_")) {
       const produtoNome = callbackData.replace("confirma_produto_", "");
 
@@ -338,8 +351,8 @@ bot.on("callback_query", async (ctx) => {
 
       const mensagem = `🎖️ PRODUTOS | PREMIUM 🎖️
       Você selecionou o produto: ${produtoNome}\n\nEscolha a opção para compra:\n\n${produtos
-          .map((item) => `🔹 ${item.nome} - ${item.categoria}`)
-          .join("\n")}
+        .map((item) => `🔹 ${item.nome} - ${item.categoria}`)
+        .join("\n")}
       
       =====================
       
@@ -357,8 +370,6 @@ bot.on("callback_query", async (ctx) => {
         },
       });
     } else if (callbackData === "combos") {
-      
-      
       const { data: combos, error } = await supabase.from("combos").select("*"); // Busca todas as colunas
 
       console.log("ETAPA ", combos);
@@ -384,12 +395,13 @@ bot.on("callback_query", async (ctx) => {
       };
       console.log(combos, "TESTE");
 
-
-      const produtos = combos.flatMap((item) => { return item.produtos });
+      const produtos = combos.flatMap((item) => {
+        return item.produtos;
+      });
       console.log(produtos);
 
-
-      {/*const mensagem = `🎖️ PERFIL | PREMIUM 🎖️\n${produtos.length > 0
+      {
+        /*const mensagem = `🎖️ PERFIL | PREMIUM 🎖️\n${produtos.length > 0
         ? combos
           .map((combo) => {
             return `🔹 ${combo.nome} \n${combo.produtos.length > 0
@@ -407,15 +419,15 @@ bot.on("callback_query", async (ctx) => {
     
     Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
     
-    💎 Experiência Premium, feita para você!`;*/}
-      const mensagem = 'Escolha um dos combos acima:';
-      const imageUrl = 'https://www.n8nworks.shop/banner.jpeg';
-await ctx.deleteMessage();
+    💎 Experiência Premium, feita para você!`;*/
+      }
+      const mensagem = "Escolha um dos combos acima:";
+      const imageUrl = "https://www.n8nworks.shop/banner.jpeg";
+      await ctx.deleteMessage();
       ctx.replyWithPhoto(imageUrl, {
         caption: mensagem,
         ...options,
-      })
-
+      });
     } else if (callbackData.startsWith("comprar_")) {
       const produtoId = callbackData.split("_")[1];
       console.log(produtoId);
@@ -481,7 +493,7 @@ await ctx.deleteMessage();
       if (saldoAtual < valorProduto) {
         ctx.editMessageText(
           `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
-          `💰 Recarregue seu saldo para continuar.`,
+            `💰 Recarregue seu saldo para continuar.`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -516,14 +528,14 @@ await ctx.deleteMessage();
 
       ctx.editMessageText(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
-        `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto.toFixed(2)}\n` +
-        `💰 Saldo atual: R$${saldoAtual.toFixed(2)}\n\n` +
-        `Deseja confirmar a compra?`,
+          `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
+          `💵 Preço: R$${valorProduto.toFixed(2)}\n` +
+          `💰 Saldo atual: R$${saldoAtual.toFixed(2)}\n\n` +
+          `Deseja confirmar a compra?`,
         confirmacaoOptions
       );
     } else if (callbackData.startsWith("2comprar_")) {
-      ctx.deleteMessage()
+      ctx.deleteMessage();
       const produtoId = callbackData.split("_")[1];
       console.log(produtoId);
 
@@ -584,7 +596,7 @@ await ctx.deleteMessage();
       if (saldoAtual < valorProduto) {
         ctx.reply(
           `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
-          `💰 Recarregue seu saldo para continuar.`,
+            `💰 Recarregue seu saldo para continuar.`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -619,10 +631,10 @@ await ctx.deleteMessage();
 
       ctx.reply(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
-        `🔹 ${combo.nome}\n\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo atual: R$${saldoAtual.toFixed(2)||0}\n\n` +
-        `Deseja confirmar a compra?`,
+          `🔹 ${combo.nome}\n\n` + // Corrigido para exibir o nome do produto
+          `💵 Preço: R$${valorProduto}\n` +
+          `💰 Saldo atual: R$${saldoAtual.toFixed(2) || 0}\n\n` +
+          `Deseja confirmar a compra?`,
         confirmacaoOptions
       );
     } else if (callbackData.startsWith("confirmar_compra_")) {
@@ -636,7 +648,9 @@ await ctx.deleteMessage();
         .single();
 
       if (produtoError || !produto) {
-        await ctx.editMessageText("❌ Não foi possível encontrar o produto. Tente novamente mais tarde.");
+        await ctx.editMessageText(
+          "❌ Não foi possível encontrar o produto. Tente novamente mais tarde."
+        );
         return;
       }
 
@@ -650,7 +664,9 @@ await ctx.deleteMessage();
         .single();
 
       if (userError || !userData || userData.saldo < valorProduto) {
-        await ctx.editMessageText("❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente.");
+        await ctx.editMessageText(
+          "❌ Saldo insuficiente ou erro ao validar a compra. Tente novamente."
+        );
         return;
       }
 
@@ -662,18 +678,21 @@ await ctx.deleteMessage();
         .eq("user_id", userId);
 
       if (updateError) {
-        await ctx.editMessageText("❌ Não foi possível processar sua compra. Tente novamente mais tarde.", {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "Clique aqui para adicionar saldo",
-                  callback_data: "saldo",
-                },
+        await ctx.editMessageText(
+          "❌ Não foi possível processar sua compra. Tente novamente mais tarde.",
+          {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  {
+                    text: "Clique aqui para adicionar saldo",
+                    callback_data: "saldo",
+                  },
+                ],
               ],
-            ],
-          },
-        });
+            },
+          }
+        );
         return;
       }
 
@@ -684,12 +703,14 @@ await ctx.deleteMessage();
         .eq("id_produto", produtoId);
 
       // Filtrar códigos ativos
-      const codigosAtivos = codigos?.filter(codigo => codigo.status.toLowerCase() === "ativo");
+      const codigosAtivos = codigos?.filter(
+        (codigo) => codigo.status.toLowerCase() === "ativo"
+      );
 
       if (codigoError || !codigosAtivos || codigosAtivos.length === 0) {
         await ctx.editMessageText(
           "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." +
-          `\nSeu id: ${userId}`,
+            `\nSeu id: ${userId}`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -714,16 +735,19 @@ await ctx.deleteMessage();
         .eq("id_codigo", codigoData.id_codigo); // Atualizando pelo ID do código
 
       if (updateCodigoError) {
-        console.error(`Erro ao atualizar o código ${codigoData.codigo}:`, updateCodigoError);
+        console.error(
+          `Erro ao atualizar o código ${codigoData.codigo}:`,
+          updateCodigoError
+        );
         // Você pode optar por notificar o usuário ou registrar o erro
       }
 
       await ctx.editMessageText(
         `🎉 Compra realizada com sucesso!\n` +
-        `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
-        `Aproveite seu novo produto!`
+          `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
+          `💵 Preço: R$${valorProduto}\n` +
+          `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
+          `Aproveite seu novo produto!`
       );
 
       await ctx.reply(`
@@ -819,7 +843,9 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
         }
 
         // Filtrar códigos ativos antes de adicionar
-        const codigosAtivosFiltrados = codigos.filter(codigo => codigo.status.toLowerCase() === "ativo");
+        const codigosAtivosFiltrados = codigos.filter(
+          (codigo) => codigo.status.toLowerCase() === "ativo"
+        );
 
         if (codigosAtivosFiltrados.length === 0) {
           await ctx.editMessageText(
@@ -835,16 +861,20 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
       // Se todos os códigos estão ativos, prosseguir com a compra
       ctx.editMessageText(
         `🎉 Compra realizada com sucesso!\n` +
-        `🔹 Combo: ${combo.nome}\n` + // Exibindo o nome do combo
-        `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
-        `Aproveite seu novo combo!`
+          `🔹 Combo: ${combo.nome}\n` + // Exibindo o nome do combo
+          `💵 Preço: R$${valorProduto}\n` +
+          `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
+          `Aproveite seu novo combo!`
       );
 
       const mensagensCodigos = codigosAtivos
         .map((codigo) => {
-          const produto = produtosCombo.find((item: { id: any; }) => codigo.id_produto === item.id);
-          return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${codigo.codigo}`;
+          const produto = produtosCombo.find(
+            (item: { id: any }) => codigo.id_produto === item.id
+          );
+          return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${
+            codigo.codigo
+          }`;
         })
         .join("\n");
       for (const codigo of codigosAtivos) {
@@ -854,7 +884,10 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
           .eq("id_codigo", codigo.id_codigo); // Atualizando pelo ID do código
 
         if (updateCodigoError) {
-          console.error(`Erro ao atualizar o código ${codigo.codigo}:`, updateCodigoError);
+          console.error(
+            `Erro ao atualizar o código ${codigo.codigo}:`,
+            updateCodigoError
+          );
           // Você pode optar por notificar o usuário ou registrar o erro
         }
       }
@@ -877,7 +910,6 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
       Se tiver dúvidas, estamos aqui para ajudar. 💬
     `);
       // Atualizar o status dos códigos resgatados
-
     } else if (callbackData === "saldo") {
       const options = {
         reply_markup: {
@@ -888,15 +920,15 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
         },
       };
 
-      ctx.editMessageText("💰 Escolha o valor para recarregar seu saldo💰", options);
-
+      ctx.editMessageText(
+        "💰 Escolha o valor para recarregar seu saldo💰",
+        options
+      );
     } else if (callbackData === "gerar_pix") {
       // Solicitar ao usuário que insira o valor para recarga
       ctx.editMessageText("Digite o valor da recarga (de R$1 a R$999):", {
         reply_markup: {
-          inline_keyboard: [
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
-          ],
+          inline_keyboard: [[{ text: "⬅ Voltar", callback_data: "bemvindos" }]],
         },
       });
 
@@ -991,7 +1023,7 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
       };
 
       const { error: vendaError } = await supabase
-        .from('vendas')
+        .from("vendas")
         .insert([novaVenda]);
 
       if (vendaError) {
@@ -1001,7 +1033,9 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
       // Recuperar os dados do usuário do Supabase
       const { data, error } = await supabase
         .from("users")
-        .select("id, saldo, saldo_indicacao, historico_produtos,historico_deposito, username")
+        .select(
+          "id, saldo, saldo_indicacao, historico_produtos,historico_deposito, username"
+        )
         .eq("user_id", userId)
         .single();
 
@@ -1032,14 +1066,14 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
       const comprasList =
         historico_produtos
           .map(
-            (produto: { nome: any; valor: any; data_compra: any; }) =>
+            (produto: { nome: any; valor: any; data_compra: any }) =>
               `🔹 ${produto.nome} | R$${produto.valor} | ${produto.data_compra}`
           )
           .join("\n") || "Nenhuma compra realizada ainda.";
       const depositoList =
         historico_deposito
           .map(
-            (deposito: { tipo: any; valor: any; data_compra: any; }) =>
+            (deposito: { tipo: any; valor: any; data_compra: any }) =>
               `🔹 ${deposito.tipo} | R$${deposito.valor} | ${deposito.data_compra}`
           )
           .join("\n") || "Nenhuma deposito realizado ainda.";
@@ -1071,14 +1105,11 @@ ${depositoList}
       // Enviar mensagem com as informações do perfil
       ctx.editMessageText(message, {
         reply_markup: {
-          inline_keyboard: [
-            [{ text: "⬅ Voltar", callback_data: "bemvindos" }],
-          ],
+          inline_keyboard: [[{ text: "⬅ Voltar", callback_data: "bemvindos" }]],
         },
       });
     }
   } else {
-    console.error('CallbackQuery sem dados ou tipo inválido');
+    console.error("CallbackQuery sem dados ou tipo inválido");
   }
 });
-
