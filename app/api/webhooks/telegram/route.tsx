@@ -314,7 +314,7 @@ bot.on("callback_query", async (ctx) => {
       Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
       
       💎 Experiência Premium, feita para você!`;
-
+      await ctx.deleteMessage();
       await ctx.reply(mensagem, {
         reply_markup: {
           inline_keyboard: [
