@@ -79,7 +79,7 @@ const data = {
   
     {
       title: "Configurações",
-      url: "/dashboard",
+      url: "/config",
       icon: Settings,
       isActive: false,
       items: [],
