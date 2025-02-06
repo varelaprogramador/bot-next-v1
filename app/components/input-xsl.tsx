@@ -41,9 +41,9 @@ const FileUpload: React.FC = () => {
   const [isArchive,setArchive]=useState<React.ChangeEvent<HTMLInputElement>>();
   const supabase = createClient();
   const handleFileChange = () => {
-    const file =isArchive?.target.files?.[0]; // Obtém o primeiro arquivo
+    const file =isArchive?.target.files?.[0]||undefined; // Obtém o primeiro arquivo
 
-    if (!file){
+    if (!file||file==undefined){
       setProdutosECodigos([]);
       setProdutosEncontrados([]);
       return;
@@ -118,23 +118,24 @@ const FileUpload: React.FC = () => {
 
   async function SearchProdutos(produtos: ProdutoCodigo[]) {
     try {
+      // Busca os produtos na tabela 'produtos'
       const { data, error } = await supabase.from("produtos").select("*");
       console.log(data);
-
+  
       if (error) {
         throw error;
       }
-
+  
       // Filtra e atualiza somente os produtos encontrados no DB
       const produtosAtualizados = produtos.map((produto) => {
         const produtoEncontrado = data.find(
           (item: any) =>
             item.nome.replaceAll(" ", "").toLowerCase() ===
-            produto.produto.replaceAll(" ", "").toLowerCase() &&
+              produto.produto.replaceAll(" ", "").toLowerCase() &&
             item.categoria.replaceAll(" ", "").toLowerCase() ===
-            produto.categoria.replaceAll(" ", "").toLowerCase()
+              produto.categoria.replaceAll(" ", "").toLowerCase()
         );
-
+  
         if (produtoEncontrado) {
           return {
             ...produto,
@@ -143,18 +144,46 @@ const FileUpload: React.FC = () => {
         }
         return undefined;
       });
-
+  
       // Filtra os produtos que foram encontrados
-      const produtosFiltrados = produtosAtualizados.filter(item => item !== undefined);
-
+      const produtosFiltrados = produtosAtualizados.filter((item) => item !== undefined);
+  
       // Atualiza o estado com os produtos encontrados
       setProdutosEncontrados(produtosFiltrados as ProdutoCodigo[]);
-
-      console.log("Produtos e Códigos após verificação:", produtosFiltrados);
+  
+      console.log("Produtos e Códigos após verificação 1*:", produtosFiltrados);
+  
+      // Verifica se algum código de produto já existe na tabela 'codigos'
+      const { data: data2, error: error2 } = await supabase.from("codigos").select("*");
+      console.log(data2);
+  
+      if (error2) {
+        throw error2;
+      }
+  
+      // Filtra os produtos para verificar se o código já existe
+      const produtosAtualizados2 = produtosFiltrados.filter((produto) => {
+        const codigoEncontrado = data2.find(
+          (item: any) =>
+            item.codigo === produto.codigo // Assume que "codigo" é o campo que relaciona com os produtos
+        );
+        console.log("TESTE", codigoEncontrado);
+  
+      window.alert(`Veja os códigos já existentes:${JSON.stringify(codigoEncontrado,null,2)}`)
+        return !codigoEncontrado;
+      });
+  
+      // Atualiza o estado com os produtos encontrados sem código
+      setProdutosEncontrados(produtosAtualizados2 as ProdutoCodigo[]);
+  
+      console.log("Produtos e Códigos após verificação 2*:", produtosAtualizados2);
+  
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
     }
-  };
+  }
+  
+  
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const isDesktop = !useIsMobile();
@@ -256,9 +285,24 @@ const FileUpload: React.FC = () => {
 
           <div className="flex gap-2 items-center mt-4">
             
-            <Input type="file" value={isArchive?.target.value} onChange={setArchive} />
-            <Button onClick={()=>setArchive(undefined)}><Eraser></Eraser></Button>
-          </div>
+          <Input 
+  type="file" 
+  id="input-id" 
+  value={isArchive ? isArchive.target.value : ""} // Aqui, você pode controlar o valor do input a partir do estado
+  onChange={setArchive} 
+/>
+
+<Button 
+  onClick={() => { 
+    setArchive(undefined);  // Limpa o estado relacionado ao arquivo
+    setProdutosECodigos([]); // Limpa os produtos e códigos
+    setProdutosEncontrados([]); // Limpa os produtos encontrados
+    // Não é necessário manipular diretamente o valor do input aqui. O estado React já cuidará disso
+  }}
+>
+  <Eraser />
+</Button>
+ </div>
           <Console produtosECodigos={produtosECodigos} produtosEncontrados={produtosEncontrados} />
           <div className="flex flex-col space-y-4 max-h-[200px] overflow-y-auto">
             {produtosEncontrados.map((produto, index) => (
@@ -277,7 +321,6 @@ const FileUpload: React.FC = () => {
                   onValueChange={(e) => handlerInput(e, index, 'status')}
                   value={produto.status}
                   disabled={!edit}
-                // Definindo largura máxima
                 >
                   <SelectTrigger >
                     <SelectValue placeholder="Selecione um status" />
