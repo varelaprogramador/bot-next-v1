@@ -1,14 +1,10 @@
 "use client";
-import { AlertTriangle } from "lucide-react";
-import { MainNav } from "@/app/components/main-nav";
 import { RevenueChart, ChartProps } from "@/app/components/revenue-chart";
 import { SummaryCard } from "@/app/components/summary-card";
-import { Alert, AlertDescription } from "@/app/components/ui/alert";
 
 import { Progress } from "@/app/components/ui/progress";
 import {
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
@@ -23,9 +19,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { VendasProps } from "../../utils/vendas";
 import { eachDayOfInterval, endOfDay, format, startOfDay, subDays } from "date-fns";
-import { number } from "zod";
 import MetaProgress from "@/app/components/meta";
-import FileUpload from "@/app/components/input-xsl";
+
 
 export default function DashboardPage() {
 
