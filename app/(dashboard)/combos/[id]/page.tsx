@@ -208,16 +208,8 @@ export default function ComnbosDetalhes() {
         </Accordion>
       </div>
 
-      <div className="grid grid-cols-2 gap-8">
-        <div
-          onClick={() => {
-            window.location.href = `/vendas/${productId}`;
-          }}
-          className="border p-4 rounded  flex flex-col justify-center items-center gap-2 min-h-[300px] hover:scale-105 transition-all duration-300 hover:border-blue-500 hover:text-blue-500"
-        >
-          <BarChart3 size={60}></BarChart3>
-          <h2 className="text-2xl">Vendas</h2>
-        </div>
+      <div className="grid grid-cols-1 gap-8">
+    
         <div
           onClick={() => {
             window.location.href = `/codigos-combo/${productIds}`;

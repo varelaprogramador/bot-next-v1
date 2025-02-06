@@ -160,10 +160,14 @@ export default function DashboardPage() {
     })
     .reduce((acc, venda) => acc + venda.valor || 0, 0);
 
-  const vendastotal = data.reduce(
-    (acc, venda) => acc + venda.valor,
-    0
+  const vendastotal =  data
+  .filter((venda) => {
+    return (
+      venda.status.toLowerCase() === "concluida"
   );
+  })
+  .reduce((acc, venda) => acc + venda.valor || 0, 0); // Soma os valores das vendas
+
 
   const vendasontem = data
     .filter((venda) => {
@@ -199,7 +203,7 @@ export default function DashboardPage() {
     (data.filter((venda) => venda.tipo_pagamento === "pix").length * 100) /
     data.length;
 
-  const [valorAtual, setValorAtual] = useState(0); 
+  const [valorAtual, setValorAtual] = useState(vendastotal); 
   const [meta, setMeta] = useState(10000); 
   const [nivel, setNivel] = useState(1);
 
@@ -217,7 +221,9 @@ setValorAtual(vendashoje);
       handleMetaConcluida();
     }
   }, [valorAtual, meta]);
-
+  useEffect(()=>{
+    setValorAtual(vendastotal);
+  },[vendastotal])
   return (
     <div className="flex min-h-[90vh] flex-col px-4 space-y-4">
        
