@@ -213,13 +213,12 @@ const FileUpload: React.FC = () => {
     if (error) {
       console.error("Erro ao criar codigo:", error);
       console.log(dataFormatted);
-      window.alert("ERRO AO CRIAR CÓDIGO!!")
+    
     } else {
       console.log("codigo criado com sucesso");
       setProdutosEncontrados((prevProdutos) => {
         return prevProdutos.filter((_, i) => i !== index); // Remove o produto pelo índice
     });
-   window.alert("CÓDIGO CRIADO COM SUCESSO !!")
     }
 
    
