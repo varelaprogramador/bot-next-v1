@@ -168,8 +168,6 @@ const FileUpload: React.FC = () => {
             item.codigo === produto.codigo // Assume que "codigo" é o campo que relaciona com os produtos
         );
         console.log("TESTE", codigoEncontrado);
-  
-      window.alert(`Veja os códigos já existentes:${JSON.stringify(codigoEncontrado,null,2)}`)
         return !codigoEncontrado;
       });
   
