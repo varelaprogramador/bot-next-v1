@@ -13,15 +13,25 @@ export default function Codigos() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const { data: codigos, error } = await supabase
-          .from("codigos")
-          .select("*");
+        let allData: CodigosProps[] = [];
+        let start = 0;
+        const batchSize = 1000; // Tamanho do lote
 
-        if (error) {
-          throw error;
+        while (start < 7000) {
+          const { data: batch, error } = await supabase
+            .from("codigos")
+            .select("*")
+            .range(start, start + batchSize - 1); // Buscar em lotes de 1000
+
+          if (error) throw error;
+
+          if (batch.length === 0) break; // Se não houver mais registros, parar a busca
+
+          allData = [...allData, ...batch];
+          start += batchSize;
         }
 
-        setData(codigos || []);
+        setData(allData);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
       } finally {
@@ -30,7 +40,7 @@ export default function Codigos() {
     };
 
     loadData();
-  }, [supabase]); // Supabase não precisa estar na dependência
+  }, []);
 
   useEffect(() => {
     const subscription = supabase.channel("realtime:public:codigos").on(
@@ -67,12 +77,12 @@ export default function Codigos() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   // KPIs
   const totalcodigos = data.length;
   const codigosConcluidas = data.filter(
-    (venda) => venda.status.toLowerCase() === "Resgatado"
+    (venda) => venda.status.toLowerCase() === "resgatado"
   ).length;
   const currentPageData = data;
 
@@ -87,9 +97,7 @@ export default function Codigos() {
           <p className="text-2xl font-bold">{totalcodigos} </p>
         </div>
         <div className="p-4 border rounded">
-          <h2 className="text-xl font-semibold">
-            Total de códigos de resgatados
-          </h2>
+          <h2 className="text-xl font-semibold">Total de códigos resgatados</h2>
           <p className="text-2xl font-bold">{codigosConcluidas}</p>
         </div>
         <div className="p-4 border rounded">
