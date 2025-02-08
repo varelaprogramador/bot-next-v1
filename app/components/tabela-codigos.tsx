@@ -88,7 +88,7 @@ export const columns: ColumnDef<CodigosProps>[] = [
       </div>
     ),
   },
-  
+
   {
     accessorKey: "codigo",
     header: "codigo de resgate",
@@ -111,6 +111,7 @@ export const columns: ColumnDef<CodigosProps>[] = [
 ];
 
 export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
+  const [itemsToDelete, setItemsToDelete] = React.useState<CodigosProps[]>([]);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -118,8 +119,8 @@ export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-const supabase=createClient()
- const handleConfirmCreate = async ({ data }: { data: CodigosProps }) => {   
+  const supabase = createClient();
+  const handleConfirmCreate = async ({ data }: { data: CodigosProps }) => {
     const { error } = await supabase.from("codigos").insert(data);
     if (error) {
       console.error("Erro ao criar codigo:", error);
@@ -127,31 +128,47 @@ const supabase=createClient()
     } else {
       console.log("codigo criado com sucesso");
     }
- 
   };
 
- 
-   const handleConfirmEdit = async ({ data }: { data: CodigosProps }) => {
+  const handleConfirmEdit = async ({ data }: { data: CodigosProps }) => {
     const { error } = await supabase
-    .from("codigos")
-    .update(data)
-    .eq("id_codigo", data.id_codigo);
-  if (error) {
-    console.error("Erro ao atualizar registro:", error);
-  } else {
-    console.log("registro atualizado com sucesso");
-  }
-   
-    };
-    const handleDelete = async (id: string) => {
-      const { error } = await supabase.from("codigos").delete().eq("id_codigo", id);
-  
-      if (error) {
-        console.error("Erro ao deletar codigos:", error);
-      } else {
-        console.log("Codigo deletado com sucesso");
-      }
-    };
+      .from("codigos")
+      .update(data)
+      .eq("id_codigo", data.id_codigo);
+    if (error) {
+      console.error("Erro ao atualizar registro:", error);
+    } else {
+      console.log("registro atualizado com sucesso");
+    }
+  };
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase
+      .from("codigos")
+      .delete()
+      .eq("id_codigo", id);
+
+    if (error) {
+      console.error("Erro ao deletar codigos:", error);
+    } else {
+      console.log("Codigo deletado com sucesso");
+    }
+  };
+  const handleDeleteSelected = async () => {
+    for (const item of itemsToDelete) {
+      await handleDelete(item.id_codigo);
+    }
+    setItemsToDelete([]);
+  };
+
+  React.useEffect(() => {
+    const selectedRowIds = Object.keys(rowSelection);
+    const selectedRows = selectedRowIds
+      .map((id) => data[parseInt(id)])
+      .filter(Boolean) as CodigosProps[];
+
+    setItemsToDelete(selectedRows);
+  }, [rowSelection, data]);
+
   const table = useReactTable({
     data,
     columns,
@@ -210,8 +227,17 @@ const supabase=createClient()
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        <CreateOrUpdateCodigo onConfirm={handleConfirmCreate}></CreateOrUpdateCodigo>
+        <CreateOrUpdateCodigo
+          onConfirm={handleConfirmCreate}
+        ></CreateOrUpdateCodigo>
         <FileUpload />
+        <Button
+          variant="destructive"
+          onClick={handleDeleteSelected}
+          disabled={itemsToDelete.length === 0}
+        >
+          Deletar em massa
+        </Button>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -249,18 +275,30 @@ const supabase=createClient()
                     </TableCell>
                   ))}
                   <TableCell>
-                                    <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                              <Button variant="ghost" size="sm">
-                                                <MoreHorizontal />
-                                              </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                             <CreateOrUpdateCodigo codigo={data.find(item=>item.id_codigo==row.getValue("id_codigo")) } onConfirm={handleConfirmEdit}></CreateOrUpdateCodigo>
-                                              <DropdownMenuItem onClick={()=>handleDelete(row.getValue('id_codigo'))}>Deletar</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                          </DropdownMenu>
-                                    </TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <CreateOrUpdateCodigo
+                          codigo={data.find(
+                            (item) =>
+                              item.id_codigo == row.getValue("id_codigo")
+                          )}
+                          onConfirm={handleConfirmEdit}
+                        ></CreateOrUpdateCodigo>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            handleDelete(row.getValue("id_codigo"))
+                          }
+                        >
+                          Deletar
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
