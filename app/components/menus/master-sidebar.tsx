@@ -10,6 +10,7 @@ import {
   BarChart3,
   LayoutDashboard,
   ShoppingBag,
+  MessageCircle,
 } from "lucide-react";
 
 import { NavMain } from "./_components/nav-main";
@@ -62,7 +63,8 @@ const data = {
       icon: Binary,
       isActive: false,
       items: [],
-    },  {
+    },
+    {
       title: "Combos",
       url: "/combos",
       icon: ShoppingBag,
@@ -76,7 +78,14 @@ const data = {
       isActive: false,
       items: [],
     },
-  
+
+    {
+      title: "Disparo",
+      url: "/disparo",
+      icon: MessageCircle,
+      isActive: false,
+      items: [],
+    },
     {
       title: "Configurações",
       url: "/config",
