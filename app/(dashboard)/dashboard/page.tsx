@@ -262,7 +262,7 @@ setValorAtual(vendashoje);
       </div>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">GRÁFICO DE FATURAMENTO</h3>
+          <h3 className="text-lg font-medium">GRÁFICO DE VENDAS</h3>
           <Tabs
             defaultValue="30"
             className="space-y-4 "

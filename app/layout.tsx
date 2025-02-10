@@ -28,12 +28,11 @@ export default function RootLayout({
     <ClerkProvider localization={ptBR}>
       <html lang="pt" className={poppins.variable}>
         <body>
-          {/* Ensure default theme is applied */}
-          <ThemeProvider defaultTheme="light">
+          
             <NextTopLoader color="blue" />
             {children}
             <Toaster />
-          </ThemeProvider>
+         
         </body>
       </html>
     </ClerkProvider>
