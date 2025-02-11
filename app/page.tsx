@@ -9,6 +9,9 @@ import {
   CardFooter,
   CardHeader,
 } from "@/app/components/ui/card";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+
 
 export default function GiftCardStore() {
   const giftCards = [
@@ -79,6 +82,7 @@ export default function GiftCardStore() {
     },
   ];
 
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -138,18 +142,19 @@ export default function GiftCardStore() {
           <div className="relative">
             <div className="flex overflow-x-auto gap-4 py-4">
               {giftCards.map((card) => (
-                <div
-                  key={card.id}
-                  className="flex-shrink-0 w-20 h-20 rounded-full overflow-hidden border-2 border-gray-200 hover:border-red-500 cursor-pointer"
-                >
-                  <Image
-                    src="/placeholder.svg"
-                    alt={card.name}
-                    width={80}
-                    height={80}
-                    className="object-cover"
-                  />
-                </div>
+          <div
+          key={card.id}
+          className="flex-shrink-0 w-36 h-36 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
+        >
+          <Image
+            src="/placeholder.svg"
+            alt={card.name}
+            width={80}
+            height={80}
+            className="object-cover w-full h-full"
+          />
+        </div>
+        
               ))}
             </div>
             <Button

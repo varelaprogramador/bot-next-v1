@@ -4,18 +4,87 @@ import { DropUser } from "./_components/drop";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Button } from "@/app/components/ui/button";
 import { Flashlight, MoveRight, Plus, Send, Trash } from "lucide-react";
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useEffect } from "react";
 import Image from "next/image";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { createClient } from "@/lib/supabase/client";
 
 interface ButtonsProps {
   name: string;
   command: string;
   type: string;
 }
+interface usersProps{
+  id:string,
+  user_id:string,
+  username:string,
+  saldo:string,
+  created_at:string
 
+}
 export default function Trigger() {
+  const supabase = createClient();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<usersProps[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const { data: users, error } = await supabase
+          .from("users")
+          .select("*");
+
+        if (error) {
+          throw error;
+        }
+
+        setData(users || []);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [supabase]); // Supabase não precisa estar na dependência
+
+  useEffect(() => {
+    const subscription = supabase.channel("realtime:public:users").on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "users",
+      },
+      (payload) => {
+        setData((prevData) => {
+          switch (payload.eventType) {
+            case "INSERT":
+              return [...prevData, payload.new as usersProps];
+            case "UPDATE":
+              return prevData.map((item) =>
+                item.id === payload.new.id
+                  ? (payload.new as usersProps)
+                  : item
+              );
+            case "DELETE":
+              return prevData.filter((item) => item.id !== payload.old.id);
+            default:
+              return prevData;
+          }
+        });
+      }
+    );
+
+    subscription.subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
   const [getImage, setImage] = useState<string | ArrayBuffer | null>(null);
   const [getMessage, setMessage] = useState<string>("");
   const [getOpenBox, setOpenBox] = useState<boolean>(false);
@@ -33,17 +102,24 @@ export default function Trigger() {
 
   return (
     <div className="w-full min-h-screen flex flex-col gap-4 py-4">
+      <div className="w-full flex justify-center items-center bg-yellow-400 p-2 rounded-md font-semibold animate-pulse">⚠️ FUNCIONALIDADE EM DESENVOLVIMENTO ⚠️</div>
       <h1 className="text-xl">Disparo</h1>
+      
       <div className="grid grid-cols-2 gap-8">
         <div className="border min-h-[70vh] flex flex-col rounded-md">
-          <div className="flex gap-8 items-center p-4 border-b-[1px]">
-            <input type="checkbox" />
-            <div className="flex flex-col w-full">
-              <h2>Username</h2>
-              <p className="text-xs text-gray-400">id:</p>
+      
+          {data.map((item)=>{
+            return(
+              <div className="flex gap-8 items-center p-4 border-b-[1px]">
+              <input type="checkbox" />
+              <div className="flex flex-col w-full">
+                <h2>{item.username}</h2>
+                <p className="text-xs text-gray-400">id:{item.user_id}</p>
+              </div>
+              <DropUser />
             </div>
-            <DropUser />
-          </div>
+            )
+          })}
         </div>
 
         <div className="border min-h-[70vh] flex flex-col rounded-md p-4 gap-4 relative">
