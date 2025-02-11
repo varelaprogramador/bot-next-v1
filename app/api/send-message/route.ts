@@ -31,7 +31,7 @@ export async function POST(request:any) {
     await sendMessageToUser(userId, message);
 
     return new Response('Mensagem enviada com sucesso', { status: 200 });
-  } catch (error) {
+  } catch (error:any) {
     return new Response(error.message, { status: 500 });
   }
 }

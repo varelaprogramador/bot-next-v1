@@ -20,7 +20,7 @@ import { Edit, Eraser, MoveRight, Sheet, Trash } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { CodigosProps } from "../utils/codigos";
 import { v4 } from "uuid";
-import { useToast } from "@/hooks/use-toast";
+
 interface DataRow {
   [key: string]: string | number; // Define um tipo genérico para as linhas de dados
 }

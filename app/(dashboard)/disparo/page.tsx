@@ -372,6 +372,7 @@ const BoxConfirmation = ({
                       <Checkbox
                         id="option-1"
                         checked={buttonType === "link"}
+                        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                         onCheckedChange={(e) => { e ? setButtonType("link") : setButtonType("") }}
                       />
                       <label htmlFor="option-1" className="text-sm font-medium leading-none">
@@ -382,6 +383,7 @@ const BoxConfirmation = ({
                       <Checkbox
                         id="option-2"
                         checked={buttonType === "Rota do bot"}
+                        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
                         onCheckedChange={(e) => { e ? setButtonType("Rota do bot") : setButtonType("") }}
                       />
                       <label htmlFor="option-2" className="text-sm font-medium leading-none">

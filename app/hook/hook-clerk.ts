@@ -28,7 +28,7 @@ const useUserRole = ():Boolean => {
       };
   
       fetchUserRole();
-    }, []);
+    }, [isAdmin]);
   
     return isAdmin;
 };

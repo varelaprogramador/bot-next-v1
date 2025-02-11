@@ -40,7 +40,7 @@ export default function Codigos() {
     };
 
     loadData();
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     const subscription = supabase.channel("realtime:public:codigos").on(
@@ -77,7 +77,7 @@ export default function Codigos() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   // KPIs
   const totalcodigos = data.length;
