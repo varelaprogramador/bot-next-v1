@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, User } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import {
@@ -105,7 +105,9 @@ export default function GiftCardStore() {
                 <Input placeholder="O que você procura?" className="pl-10" />
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </div>
-              <Button variant="destructive">Minha Conta</Button>
+              <Button variant="destructive">
+                <User></User>Minha Conta
+              </Button>
             </div>
           </div>
         </div>
@@ -130,7 +132,8 @@ export default function GiftCardStore() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <section className="mb-12">
+        <section className="w-full min-h-[500px] bg-cover bg-[url('/img-banner.png')] rounded-md"></section>
+        <section className="my-12">
           <h2 className="text-2xl font-bold mb-6">Escolha seu Giftcard</h2>
           <div className="relative">
             <div className="flex overflow-x-auto gap-4 py-4">
@@ -170,18 +173,21 @@ export default function GiftCardStore() {
           <h2 className="text-2xl font-bold mb-6">Nossos Produtos</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <Card key={product.id} className="overflow-hidden">
-                <CardHeader className="bg-blue-600 text-white text-center py-2">
-                  {product.period}
-                </CardHeader>
+              <Card
+                key={product.id}
+                className="overflow-hidden bg-gray-100 border shadow-none"
+              >
                 <CardContent className="p-4">
-                  <div className="aspect-square relative mb-4">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      fill
-                      className="object-contain"
-                    />
+                  <div className="bg-blue-600 py-2 rounded-md">
+                    <p className="text-center text-white">{product.period}</p>
+                    <div className="aspect-square relative ">
+                      <Image
+                        src={product.image || "/placeholder.svg"}
+                        alt={product.name}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
                   </div>
                   <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
                   <div className="text-green-600">{product.pixPrice}</div>
