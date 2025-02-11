@@ -3,7 +3,7 @@ import { Input } from "@/app/components/ui/input";
 import { DropUser } from "./_components/drop";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Button } from "@/app/components/ui/button";
-import { Flashlight, MoveRight, Plus, Send, Trash } from "lucide-react";
+import { MoveRight, Plus, Send, Trash } from "lucide-react";
 import React, { useState, ChangeEvent, useEffect } from "react";
 import Image from "next/image";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -15,18 +15,20 @@ interface ButtonsProps {
   command: string;
   type: string;
 }
-interface usersProps{
-  id:string,
-  user_id:string,
-  username:string,
-  saldo:string,
-  created_at:string
+interface usersProps {
+  id: string,
+  user_id: string,
+  username: string,
+  saldo: string,
+  created_at: string
 
 }
 export default function Trigger() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<usersProps[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>(""); // Estado para armazenar a busca
+  const [selectedLeads, setSelectedLeads] = useState<number[]>([]); // Estado para armazenar os leads selecionados
 
   useEffect(() => {
     const loadData = async () => {
@@ -85,6 +87,7 @@ export default function Trigger() {
       subscription.unsubscribe();
     };
   }, [supabase]);
+
   const [getImage, setImage] = useState<string | ArrayBuffer | null>(null);
   const [getMessage, setMessage] = useState<string>("");
   const [getOpenBox, setOpenBox] = useState<boolean>(false);
@@ -100,26 +103,64 @@ export default function Trigger() {
     }
   };
 
+  // Função para filtrar os usuários com base na busca
+  const filteredData = data.filter((user) =>
+    user.username.toLowerCase().includes(searchQuery.toLowerCase()) // Filtra pelo nome de usuário
+  );
+
+  // Função para alternar a seleção de um lead
+  const toggleLeadSelection = (userId: number) => {
+    setSelectedLeads((prevSelectedLeads) =>
+      prevSelectedLeads.includes(userId)
+        ? prevSelectedLeads.filter((id) => id !== userId) // Remove se já estiver selecionado
+        : [...prevSelectedLeads, userId] // Adiciona se não estiver selecionado
+    );
+  };
+
+  // Função para selecionar todos os leads
+  const selectAllLeads = () => {
+    const allUserIds = filteredData.map((user) => user.user_id);
+    setSelectedLeads(allUserIds); // Adiciona todos os leads ao estado de selecionados
+  };
+
   return (
     <div className="w-full min-h-screen flex flex-col gap-4 py-4">
-      <div className="w-full flex justify-center items-center bg-yellow-400 p-2 rounded-md font-semibold animate-pulse">⚠️ FUNCIONALIDADE EM DESENVOLVIMENTO ⚠️</div>
+      <div className="w-full flex justify-center items-center bg-yellow-400 p-2 rounded-md font-semibold animate-pulse">
+        ⚠️ FUNCIONALIDADE EM DESENVOLVIMENTO ⚠️
+      </div>
       <h1 className="text-xl">Disparo</h1>
-      
+
       <div className="grid grid-cols-2 gap-8">
         <div className="border min-h-[70vh] flex flex-col rounded-md">
-      
-          {data.map((item)=>{
-            return(
-              <div className="flex gap-8 items-center p-4 border-b-[1px]">
-              <input type="checkbox" />
+          <div className="border">
+            <div className="p-4 flex gap-4">
+              <Input
+                type="text"
+                placeholder="Buscar usuario..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)} // Atualiza o estado de busca
+              />
+              <Button onClick={selectAllLeads}>Selecionar todos os leads</Button>
+            </div>
+          </div>
+          {filteredData.map((item, index) => (
+            <div
+              className="flex gap-8 items-center p-4 border-b-[1px] hover:bg-gray-50"
+              key={`user-${index}`}
+              onClick={() => toggleLeadSelection(item.user_id)} // Alterna a seleção ao clicar na div
+            >
+              <input
+                type="checkbox"
+                checked={selectedLeads.includes(item.user_id)} // Marca o checkbox se o lead estiver selecionado
+                onChange={() => toggleLeadSelection(item.user_id)} // Alterna a seleção do checkbox
+              />
               <div className="flex flex-col w-full">
                 <h2>{item.username}</h2>
                 <p className="text-xs text-gray-400">id:{item.user_id}</p>
               </div>
               <DropUser />
             </div>
-            )
-          })}
+          ))}
         </div>
 
         <div className="border min-h-[70vh] flex flex-col rounded-md p-4 gap-4 relative">
@@ -164,17 +205,20 @@ export default function Trigger() {
       </div>
 
       {getOpenBox && (
-        <BoxConfirmation setOpenBox={setOpenBox} getImage={getImage} getMessage={getMessage} />
+        <BoxConfirmation leadsData={selectedLeads} setOpenBox={setOpenBox} getImage={getImage} getMessage={getMessage} />
       )}
     </div>
   );
 }
 
+
 const BoxConfirmation = ({
+  leadsData,
   setOpenBox,
   getImage,
   getMessage,
 }: {
+  leadsData: any,
   setOpenBox: React.Dispatch<React.SetStateAction<boolean>>;
   getImage: any;
   getMessage: any;
@@ -208,7 +252,30 @@ const BoxConfirmation = ({
   const removeButton = (index: number) => {
     setButtons((prev) => prev.filter((_, i) => i !== index));
   };
+  const createDisparo = async (ids: string) => {
+   
+    for (const id of ids) {
 
+      const response = await fetch('/api/send-message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: id,  // Passando o ID do usuário atual da iteração
+          message: 'Sua mensagem aqui',  // Mensagem personalizada
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Mensagem enviada com sucesso:', data);
+      } else {
+        const error = await response.json();
+        console.error('Erro ao enviar mensagem:', error);
+      }
+    }
+  }
   return (
     <div className="min-w-[100vw] min-h-screen fixed z-40 top-0 left-0">
       <div className="min-w-[100vw] min-h-screen bg-black opacity-40 fade-in-5 duration-300 fixed z-40 top-0 left-0" />
@@ -240,23 +307,23 @@ const BoxConfirmation = ({
             </div>
 
             <div className="mt-[1px]">
-           
-  <div
-    className={`grid gap-2
+
+              <div
+                className={`grid gap-2
       ${getButtons.length === 2 ? 'grid-cols-2' : ''}
       ${getButtons.length === 3 ? 'grid-cols-1' : ''}
       ${getButtons.length === 4 ? 'grid-cols-1 grid-rows-2' : ''}
       ${getButtons.length > 4 ? 'grid-cols-1' : ''}
     `}
-  >
-    {getButtons.map((button, index) => (
-      <button
-        key={index}
-        onClick={() => {
-          // Defina o que acontece quando o botão for clicado
-          console.log(button.command);
-        }}
-        className={` 
+              >
+                {getButtons.map((button, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      // Defina o que acontece quando o botão for clicado
+                      console.log(button.command);
+                    }}
+                    className={` 
           ${getButtons.length === 4 && index === 0 ? 'col-span-2' : ''}
           ${getButtons.length === 4 && (index === 1 || index === 2) ? 'col-span-1 max-w-[165px] w-[165px]' : ''}
           ${getButtons.length === 4 && index === 3 ? 'col-span-2' : ''}
@@ -264,23 +331,24 @@ const BoxConfirmation = ({
           hover:bg-[#006bb3] hover:shadow-lg transition-all duration-200 
           focus:outline-none focus:ring-2 focus:ring-[#006bb3] focus:ring-opacity-50
         `}
-      >
-        {button.name}
-      </button>
-    ))}
-</div>
+                  >
+                    {button.name}
+                  </button>
+                ))}
+              </div>
 
-</div>
+            </div>
 
 
           </div>
           <div className="mt-2"></div>
           Deseja adicionar botão a mensagem:
-          <div className="mt-2"></div>
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant={"sucess"} onClick={() => { setBoxButton(true) }}>Sim</Button>
-            <Button onClick={() => { }}>Não</Button>
-          </div>
+          <div className="mt-2 flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-4">
+              <Button variant={"sucess"} onClick={() => { setBoxButton(true) }}>Sim</Button>
+              <Button onClick={() => { }}>Não</Button>
+            </div>
+            <Button onClick={()=>createDisparo(leadsData)}>Enviar Disparo</Button></div>
         </div>
         {
           getBoxButton && (

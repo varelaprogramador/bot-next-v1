@@ -1,3 +1,4 @@
+'use client';
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Search, User } from "lucide-react";
@@ -9,7 +10,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/app/components/ui/card";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 
@@ -42,6 +43,15 @@ export default function GiftCardStore() {
     },
     {
       id: 6,
+      name: "RedPlay",
+      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#redplay",
+    },{
+      id:7,
+      name: "UniTV",
+      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#unitv",
+    },
+    {
+      id: 8,
       name: "RedPlay",
       logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#redplay",
     },
@@ -81,8 +91,24 @@ export default function GiftCardStore() {
       period: "Mensal",
     },
   ];
+  const carouselRef = useRef<HTMLDivElement | null>(null);
 
+  const handleScroll = (direction: "left" | "right") => {
+    const container = carouselRef.current;
+    if (!container) return; // Verificar se o container existe
 
+    if (direction === "left") {
+      container.scrollBy({
+        left: -container.offsetWidth,
+        behavior: "smooth",
+      });
+    } else {
+      container.scrollBy({
+        left: container.offsetWidth,
+        behavior: "smooth",
+      });
+    }
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -140,27 +166,30 @@ export default function GiftCardStore() {
         <section className="my-12">
           <h2 className="text-2xl font-bold mb-6">Escolha seu Giftcard</h2>
           <div className="relative">
-            <div className="flex overflow-x-auto gap-4 py-4">
+            <div
+              ref={carouselRef}
+              className="flex   overflow-x-hidden gap-4 py-4"
+            >
               {giftCards.map((card) => (
-          <div
-          key={card.id}
-          className="flex-shrink-0 w-36 h-36 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
-        >
-          <Image
-            src="/placeholder.svg"
-            alt={card.name}
-            width={80}
-            height={80}
-            className="object-cover w-full h-full"
-          />
-        </div>
-        
+                <div
+                  key={card.id}
+                  className="flex-shrink-0 w-36 h-36 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
+                >
+                  <Image
+                    src="/placeholder.svg"
+                    alt={card.name}
+                    width={80}
+                    height={80}
+                    className="object-cover w-full h-full"
+                  /> 
+                </div>
               ))}
             </div>
             <Button
               variant="outline"
               size="icon"
               className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 rounded-full"
+              onClick={() => handleScroll("left")}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -168,12 +197,12 @@ export default function GiftCardStore() {
               variant="outline"
               size="icon"
               className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 rounded-full"
+              onClick={() => handleScroll("right")}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </section>
-
         <section>
           <h2 className="text-2xl font-bold mb-6">Nossos Produtos</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -183,7 +212,7 @@ export default function GiftCardStore() {
                 className="overflow-hidden bg-gray-100 border shadow-none"
               >
                 <CardContent className="p-4">
-                  <div className="bg-blue-600 py-2 rounded-md">
+                  <div className="bg-blue-600 hover:bg-blue-500 py-2 rounded-md">
                     <p className="text-center text-white">{product.period}</p>
                     <div className="aspect-square relative ">
                       <Image
