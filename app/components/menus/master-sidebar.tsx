@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   ShoppingBag,
   MessageCircle,
+  Image,
 } from "lucide-react";
 
 import { NavMain } from "./_components/nav-main";
@@ -83,6 +84,13 @@ const data = {
       title: "Disparo",
       url: "/disparo",
       icon: MessageCircle,
+      isActive: false,
+      items: [],
+    },
+    {
+      title: "Galeria",
+      url: "/imagens",
+      icon: Image,
       isActive: false,
       items: [],
     },

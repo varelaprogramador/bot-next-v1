@@ -10,7 +10,7 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 
-interface ButtonsProps {
+export interface ButtonsProps {
   name: string;
   command: string;
   type: string;
@@ -263,7 +263,9 @@ const BoxConfirmation = ({
         },
         body: JSON.stringify({
           userId: id,  // Passando o ID do usuário atual da iteração
-          message: 'Sua mensagem aqui',  // Mensagem personalizada
+          message: getMessage,  // Mensagem personalizada
+          button:getButtons,
+          image:"https://ctenwsbxdxlzvbdhfidw.supabase.co/storage/v1/object/public/galeria//0te.png"
         }),
       });
 
@@ -281,7 +283,7 @@ const BoxConfirmation = ({
       <div className="min-w-[100vw] min-h-screen bg-black opacity-40 fade-in-5 duration-300 fixed z-40 top-0 left-0" />
       <div className="min-h-screen flex flex-col justify-center items-center">
         <div className={`bg-white p-4 z-50 w-[400px] min-h-[450px] rounded-xl shadow-lg flex flex-col ${getBoxButton ? "hidden" : "visible"}`} >
-          <div className=" flex justify-between items-center">Etapa de confirmação: <Button variant={"destructive"} className=" self-end mb-2">X</Button></div>
+          <div className=" flex justify-between items-center">Etapa de confirmação: <Button onClick={()=>{setOpenBox(false)}} variant={"destructive"} className=" self-end mb-2">X</Button></div>
           <div className="w-full h-auto bg-cover bg-[url('/bg-telegram.svg')] flex flex-col justify-start p-4 rounded-lg max-h-[80vh] overflow-y-auto">
             {/* Imagem ajustada */}
             {getImage && (
