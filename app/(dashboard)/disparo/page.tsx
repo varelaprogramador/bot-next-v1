@@ -28,7 +28,7 @@ export default function Trigger() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<usersProps[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>(""); // Estado para armazenar a busca
-  const [selectedLeads, setSelectedLeads] = useState<number[]>([]); // Estado para armazenar os leads selecionados
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]); // Estado para armazenar os leads selecionados
 
   useEffect(() => {
     const loadData = async () => {
@@ -109,7 +109,7 @@ export default function Trigger() {
   );
 
   // Função para alternar a seleção de um lead
-  const toggleLeadSelection = (userId: number) => {
+  const toggleLeadSelection = (userId: string) => {
     setSelectedLeads((prevSelectedLeads) =>
       prevSelectedLeads.includes(userId)
         ? prevSelectedLeads.filter((id) => id !== userId) // Remove se já estiver selecionado
