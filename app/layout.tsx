@@ -2,10 +2,9 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Poppins } from "next/font/google";
 import { ptBR } from "@clerk/localizations";
 import NextTopLoader from "nextjs-toploader";
-import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Metadata } from "next";
-import { Toaster } from "sonner";
+
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -31,7 +30,6 @@ export default function RootLayout({
           
             <NextTopLoader color="blue" />
             {children}
-            <Toaster />
          
         </body>
       </html>

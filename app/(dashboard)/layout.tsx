@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { AppSidebar } from "@/app/components/menus/master-sidebar";
 import { Separator } from "@/app/components/ui/separator";
 import {
@@ -41,17 +41,7 @@ export default async function Layout({
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
             </div>
-            {/* <Link href={"/dashboard"}>
-              <Image
-                alt="Logo"
-                src="/Logo-light.svg"
-                width={200}
-                height={500}
-                draggable="false"
-                loading="lazy"
-                decoding="async"
-              />
-            </Link> */}
+         
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 pt-0 h-full overflow-x-hidden">
             {children}
