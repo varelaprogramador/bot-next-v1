@@ -1,3 +1,4 @@
+"use client";
 import * as React from "react";
 import { z } from "zod";
 import { useState } from "react";
@@ -26,38 +27,25 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
-
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/app/components/ui/form";
-import { FilePlus } from "lucide-react";
-import { ProdutosProps } from "@/app/utils/produto";
 import ImageSelector from "../popup-imagens";
+import { MediaProps } from "@/app/utils/media";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 
-interface DialogCreateProdutoProps {
-  onConfirmCreate: (args: { data: ProdutosProps }) => void;
+interface DialogCreateMediaProps {
+  onConfirmCreate: (args: { data: MediaProps }) => void;
 }
 
 const schema = z.object({
   nome: z.string().trim().min(1, "Campo Obrigatório!"),
-  descricao: z.string().trim().min(1, "Campo Obrigatório!"),
-  valor: z.preprocess(
-    (val) => (typeof val === "string" ? parseFloat(val) : val), // Preprocessa para número
-    z.number().min(0, "O preço não pode ser negativo!")
-  ),
-  categoria: z.string().trim().min(1, "Campo Obrigatório!"),
-  url_image: z.string().trim().min(1, "Campo Obrigatório!")
+  rota: z.string().trim().min(1, "Campo Obrigatório!"),
+  url: z.string().trim().min(1, "Campo Obrigatório!"),
+  status: z.boolean(),
 });
 
-export const CreateProduto = ({
+export const CreateMedia = ({
   onConfirmCreate,
-}: DialogCreateProdutoProps) => {
+}: DialogCreateMediaProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const isDesktop = !useIsMobile();
@@ -66,10 +54,9 @@ export const CreateProduto = ({
     resolver: zodResolver(schema),
     defaultValues: {
       nome: "",
-      descricao: "",
-      valor: 0,
-      categoria: "",
-      url_image:""
+      rota: "",
+      url: "",
+      status: true,
     },
   });
 
@@ -78,10 +65,11 @@ export const CreateProduto = ({
     setOpen(false);
     form.reset();
   };
-  function handlerUrl(url:string){
-    form.setValue("url_image",url);
 
-  }
+  const handlerUrl = (url: string) => {
+    form.setValue("url", url);
+  };
+
   const FormContent = (
     <Form {...form}>
       <form
@@ -104,31 +92,15 @@ export const CreateProduto = ({
 
         <FormField
           control={form.control}
-          name="descricao"
+          name="rota"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Descrição" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="valor"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Preço</FormLabel>
+              <FormLabel>Url de redirecionamento</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  placeholder="Preço"
+                  type="text"
+                  placeholder="https://example.com.br"
                   {...field}
-                  min="0"
-                  step="0.01"
                 />
               </FormControl>
               <FormMessage />
@@ -138,24 +110,37 @@ export const CreateProduto = ({
 
         <FormField
           control={form.control}
-          name="categoria"
+          name="status"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Categoria</FormLabel>
+              <FormLabel>Status</FormLabel>
               <FormControl>
-                <Input placeholder="Categoria" {...field} />
+                <Select
+                  onValueChange={(value) => field.onChange(value === "true")}
+                  value={String(field.value)}
+                >
+                  <SelectTrigger className="w-full max-w-xs">
+                    <SelectValue placeholder="Selecione um status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Visível</SelectItem>
+                    <SelectItem value="false">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <ImageSelector defaultValue="" sendData={handlerUrl} onClose={()=>{}}></ImageSelector>
+
+        <ImageSelector defaultValue="" sendData={handlerUrl} onClose={() => { }} />
+
         <FormField
           control={form.control}
-          name="url_image"
+          name="url"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Url</FormLabel>
+              <FormLabel>Url da Imagem</FormLabel>
               <FormControl>
                 <Input placeholder="url_image" readOnly value={field.value} />
               </FormControl>
@@ -163,6 +148,7 @@ export const CreateProduto = ({
             </FormItem>
           )}
         />
+        
         <Button type="submit" disabled={loading}>
           {loading ? "Criando..." : "Criar Produto"}
         </Button>
@@ -179,18 +165,13 @@ export const CreateProduto = ({
       }}
     >
       <DialogTrigger asChild>
-        <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
-          <div className="flex flex-col gap-8 justify-center items-center">
-            <FilePlus size={80} />
-            <p className="font-medium">Criar Produto</p>
-          </div>
-        </div>
+        <Button>Criar Banner</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Criar Novo Produto</DialogTitle>
+          <DialogTitle>Criar Novo Banner</DialogTitle>
           <DialogDescription>
-            Preencha as informações do novo produto abaixo.
+            Preencha as informações do novo Banner abaixo.
           </DialogDescription>
         </DialogHeader>
         {FormContent}
@@ -205,18 +186,13 @@ export const CreateProduto = ({
       }}
     >
       <DrawerTrigger asChild>
-        <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
-          <div className="flex flex-col gap-8 justify-center items-center">
-            <FilePlus size={80} />
-            <p className="font-medium">Criar Produto</p>
-          </div>
-        </div>
+        <Button>Criar Banner</Button>
       </DrawerTrigger>
       <DrawerContent className="p-4">
         <DrawerHeader>
-          <DrawerTitle>Criar Novo Produto</DrawerTitle>
+          <DrawerTitle>Criar Novo Banner</DrawerTitle>
           <DrawerDescription>
-            Preencha as informações do novo produto abaixo.
+            Preencha as informações do novo Banner abaixo.
           </DrawerDescription>
         </DrawerHeader>
         {FormContent}

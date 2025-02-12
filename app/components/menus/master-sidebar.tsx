@@ -95,6 +95,13 @@ const data = {
       items: [],
     },
     {
+      title: "Layout Loja",
+      url: "/loja",
+      icon: LayoutDashboard,
+      isActive: false,
+      items: [],
+    },
+    {
       title: "Configurações",
       url: "/config",
       icon: Settings,

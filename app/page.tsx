@@ -12,85 +12,59 @@ import {
 } from "@/app/components/ui/card";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { ProdutosProps } from "./utils/produto";
+import { MediaProps } from "./utils/media";
 
 
 export default function GiftCardStore() {
-  const giftCards = [
-    {
-      id: 1,
-      name: "Ativa Play",
-      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#ativa",
-    },
-    {
-      id: 2,
-      name: "TV Express",
-      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#tvexpress",
-    },
-    {
-      id: 3,
-      name: "You Cine",
-      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#youcine",
-    },
-    {
-      id: 4,
-      name: "BTV",
-      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#btv",
-    },
-    {
-      id: 5,
-      name: "UniTV",
-      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#unitv",
-    },
-    {
-      id: 6,
-      name: "RedPlay",
-      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#redplay",
-    },{
-      id:7,
-      name: "UniTV",
-      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#unitv",
-    },
-    {
-      id: 8,
-      name: "RedPlay",
-      logo: "https://sjc.microlink.io/UwYz3uZkQ9R5vxqshu_DcDLb8gNybV2-_7L0ASndBmMoPpjCXKnKJRllvieA8Py95kpXfxAxGUKHCrKsV03ceA.jpeg#redplay",
-    },
-  ];
+  const supabase = createClient()
+  const [loading, setLoading] = useState(true);
 
-  const products = [
-    {
-      id: 1,
-      name: "Xbox Game Pass (ultimate)",
-      price: "R$ 110,00",
-      pixPrice: "NO PIX 100,00",
-      image: "/placeholder.svg",
-      period: "Mensal",
-    },
-    {
-      id: 2,
-      name: "TVExpress",
-      price: "R$ 28,90",
-      pixPrice: "NO PIX 23,90",
-      image: "/placeholder.svg",
-      period: "Mensal",
-    },
-    {
-      id: 3,
-      name: "Xbox Game Pass",
-      price: "R$ 110,00",
-      pixPrice: "NO PIX 100,00",
-      image: "/placeholder.svg",
-      period: "Mensal",
-    },
-    {
-      id: 4,
-      name: "Ativa Play [New]",
-      price: "R$ 29,90",
-      pixPrice: "NO PIX, R$ 24,90",
-      image: "/placeholder.svg",
-      period: "Mensal",
-    },
-  ];
+  const [data, setData] = useState<ProdutosProps[]>([]);
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.from("produtos").select("*");
+
+        if (error) {
+          throw error;
+        }
+
+        setData(data || []);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [supabase]);
+
+  const [dataGift, setDataGift] = useState<MediaProps[]>([]);
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.from("media-loja").select("*");
+
+        if (error) {
+          throw error;
+        }
+
+        setDataGift(data || []);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [supabase]);
+
+
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   const handleScroll = (direction: "left" | "right") => {
@@ -170,18 +144,21 @@ export default function GiftCardStore() {
               ref={carouselRef}
               className="flex   overflow-x-hidden gap-4 py-4"
             >
-              {giftCards.map((card) => (
-                <div
-                  key={card.id}
-                  className="flex-shrink-0 w-36 h-36 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
-                >
-                  <Image
-                    src="/placeholder.svg"
-                    alt={card.name}
-                    width={80}
-                    height={80}
-                    className="object-cover w-full h-full"
-                  /> 
+              {dataGift.map((card) => (
+                <div key={card.id+"-"+"pai"} className=" flex flex-col justify-center items-center gap-2">
+                  <div
+                    key={card.id}
+                    className="flex-shrink-0 w-36 h-36 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
+                  >
+                    <Image
+                      src={card.url || "/placeholder.svg"}
+                      alt={card.nome}
+                      width={80}
+                      height={80}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                  <p className="max-w-[120px] truncate ">{card.nome}</p>
                 </div>
               ))}
             </div>
@@ -206,26 +183,26 @@ export default function GiftCardStore() {
         <section>
           <h2 className="text-2xl font-bold mb-6">Nossos Produtos</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {data.map((product) => (
               <Card
                 key={product.id}
                 className="overflow-hidden bg-gray-100 border shadow-none"
               >
                 <CardContent className="p-4">
                   <div className="bg-blue-600 hover:bg-blue-500 py-2 rounded-md">
-                    <p className="text-center text-white">{product.period}</p>
+                    <p className="text-center text-white">{product.categoria}</p>
                     <div className="aspect-square relative ">
                       <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
+                        src={product.url_image || "/placeholder.svg"}
+                        alt={product.nome}
                         fill
                         className="object-contain"
                       />
                     </div>
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
-                  <div className="text-green-600">{product.pixPrice}</div>
-                  <div className="text-gray-600">{product.price} no cartão</div>
+                  <h3 className="font-semibold text-lg mb-2">{product.nome}</h3>
+                  <div className="text-green-600">R${(product.valor || 0).toFixed(2)}</div>
+                  <div className="text-gray-600">R${(product.valor * 1.20 || 0).toFixed(2)} no cartão</div>
                 </CardContent>
                 <CardFooter>
                   <Button className="w-full bg-gray-900 hover:bg-gray-800">

@@ -1,36 +1,77 @@
 'use client';
 
-import { Separator } from "@/app/components/ui/separator";
+import { DataTableMediaCarousel } from "@/app/components/tabela-loja";
+import { MediaProps } from "@/app/utils/media";
+import { createClient } from "@/lib/supabase/client";
+
+import { useEffect, useState } from "react";
 
 
 export default function Shop() {
+    const supabase = createClient();
+    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState<MediaProps[]>([]);
+  useEffect(() => {
+      const loadData = async () => {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase.from("media-loja").select("*");
   
+          if (error) {
+            throw error;
+          }
+  
+          setData(data || []);
+        } catch (error) {
+          console.error("Erro ao carregar dados:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      loadData();
+    }, [supabase]);
+  
+    useEffect(() => {
+      const subscription = supabase.channel(`realtime:public:media-loja`).on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "media-loja",
+        },
+        (payload) => {
+          setData((prevData) => {
+            switch (payload.eventType) {
+              case "INSERT":
+                return [...prevData, payload.new as MediaProps];
+              case "UPDATE":
+                return prevData.map((item) =>
+                  item.id === payload.new.id ? (payload.new as MediaProps) : item
+                );
+              case "DELETE":
+                return prevData.filter((item) => item.id !== payload.old.id);
+              default:
+                return prevData;
+            }
+          });
+        }
+      );
+  
+      subscription.subscribe();
+  
+      return () => {
+        subscription.unsubscribe();
+      };
+    }, [supabase]);
   return (
    <div className="p-4">
     <h1 className="text-2xl font-semibold">Configure sua loja</h1>
    <h2>Layout da Loja</h2>
    <div>
     <h3 className="font-semibold">Lista do carousel de escolha do giftcard:</h3>
-    <table >
-  <thead>
-    <tr className="bg-gray-100">
-      <th className="border p-4 hover:bg-gray-200">Nome do produto</th>
-      <th className="border p-4 hover:bg-gray-200">Url da Foto</th>
-      <th className="border p-4 hover:bg-gray-200">Status da visi.</th>
-      <th className="border p-4 hover:bg-gray-200">Rota </th>
-    </tr>
-  </thead>
-  <tbody>
     
-    <tr>
-      <td>Produto Exemplo</td>
-      <td>https://exemplo.com/foto.jpg</td>
-      <td className="flex flex-col justify-center items-center">Visível</td>
-      <td>/rota-de-redirecionamento</td>
-    </tr>
-  </tbody>
-</table>
-
+<DataTableMediaCarousel data={data}></DataTableMediaCarousel>
    </div>
     
    </div>

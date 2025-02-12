@@ -26,7 +26,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { Textarea } from "@/app/components/ui/textarea";
-
+import ImageSelector from "../popup-imagens";
 import {
   Form,
   FormControl,
@@ -51,6 +51,7 @@ const schema = z.object({
     z.number().min(0, "O preço não pode ser negativo!")
   ),
   categoria: z.string().trim().min(1, "Campo Obrigatório!"),
+  url_image: z.string().trim().min(1, "Campo Obrigatório!")
 });
 
 export const EditProduto = ({
@@ -68,9 +69,13 @@ export const EditProduto = ({
       descricao: produto.descricao,
       valor: produto.valor,
       categoria: produto.categoria,
+      url_image:produto.url_image
     },
   });
-
+  function handlerUrl(url:string){
+    form.setValue("url_image",url);
+  
+  }
   const onSubmit = (values: z.infer<typeof schema>) => {
     onConfirmEdit({ data: { ...produto, ...values } });
     setOpen(false);
@@ -144,7 +149,20 @@ export const EditProduto = ({
             </FormItem>
           )}
         />
-
+ <ImageSelector defaultValue={form.getValues('url_image')} sendData={handlerUrl} onClose={()=>{}}></ImageSelector>
+        <FormField
+          control={form.control}
+          name="url_image"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Url</FormLabel>
+              <FormControl>
+                <Input placeholder="url_image" readOnly value={field.value} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <Button type="submit" disabled={loading}>
           {loading ? "Atualizando..." : "Atualizar Produto"}
         </Button>

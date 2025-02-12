@@ -6,4 +6,5 @@ export interface ProdutosProps{
     valor:number,
     categoria:string,
     created_at?:string,
+    url_image:string
 }
