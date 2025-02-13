@@ -110,12 +110,6 @@ export default function GaleriaPage() {
     setSelectedFile(file); // Seleciona a imagem
   };
 
-  // Função para continuar após selecionar uma imagem
-  const handleProceed = () => {
-    setOpen(false);
-    sendData(selectedFile?.url as string);
-  };
-
   useEffect(() => {
     fetchFiles();
   }, []);
