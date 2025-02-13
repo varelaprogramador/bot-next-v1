@@ -4,7 +4,10 @@ import { ptBR } from "@clerk/localizations";
 import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 import { Metadata } from "next";
-
+import Link from "next/link";
+import { Input } from "./components/ui/input";
+import { Search, User } from "lucide-react";
+import { Button } from "./components/ui/button";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,10 +30,8 @@ export default function RootLayout({
     <ClerkProvider localization={ptBR}>
       <html lang="pt" className={poppins.variable}>
         <body>
-          
-            <NextTopLoader color="blue" />
-            {children}
-         
+          <NextTopLoader color="blue" />
+          {children}
         </body>
       </html>
     </ClerkProvider>

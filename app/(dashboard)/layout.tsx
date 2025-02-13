@@ -1,4 +1,3 @@
-
 import { AppSidebar } from "@/app/components/menus/master-sidebar";
 import { Separator } from "@/app/components/ui/separator";
 import {
@@ -41,12 +40,10 @@ export default async function Layout({
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
             </div>
-         
           </header>
           <main className="flex flex-1 flex-col gap-4 p-4 pt-0 h-full overflow-x-hidden">
             {children}
           </main>
-         
         </SidebarInset>
       </div>
     </SidebarProvider>
