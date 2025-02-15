@@ -120,16 +120,6 @@ const sendMessageToUser = async (
       });
       console.log(`Mensagem enviada para o ID: ${userId}`);
     }
-
-    bot
-      .launch()
-
-      .then(() => {
-        console.log("Bot iniciado e pronto para receber mensagens!");
-      })
-      .catch((error) => {
-        console.error("Erro ao iniciar o bot:", error);
-      });
   } catch (error) {
     console.error("Erro ao enviar mensagem:", error);
     throw new Error("Erro ao enviar mensagem");
