@@ -31,6 +31,7 @@ interface usersProps {
   saldo: string;
   created_at: string;
 }
+
 export default function Trigger() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
@@ -296,6 +297,7 @@ const BoxConfirmation = ({
       }
     }
   };
+  const rotas = [{ key: "start - 0", value: "bemvindos-2", text: "/start" }];
   return (
     <div className="min-w-[100vw] min-h-screen fixed z-40 top-0 left-0">
       <div className="min-w-[100vw] min-h-screen bg-black opacity-40 fade-in-5 duration-300 fixed z-40 top-0 left-0" />
@@ -471,10 +473,12 @@ const BoxConfirmation = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        <SelectLabel>Categoria</SelectLabel>
-                        <SelectItem value="mensal">Mensal</SelectItem>
-                        <SelectItem value="anual">Anual</SelectItem>
-                        <SelectItem value="geral">Geral</SelectItem>
+                        <SelectLabel>Rotas</SelectLabel>
+                        {rotas.map((rota) => (
+                          <SelectItem key={rota.key} value={rota.value}>
+                            {rota.value}
+                          </SelectItem>
+                        ))}
                       </SelectGroup>
                     </SelectContent>
                   </Select>
