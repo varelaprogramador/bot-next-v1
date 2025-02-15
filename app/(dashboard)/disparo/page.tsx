@@ -275,7 +275,7 @@ const BoxConfirmation = ({
   };
   const createDisparo = async (ids: string) => {
     for (const id of ids) {
-      const response = await fetch("/api/send-message", {
+      const response = await fetch("/api/webhooks/telegram", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -285,6 +285,7 @@ const BoxConfirmation = ({
           message: getMessage, // Mensagem personalizada
           button: getButtons,
           image: getImage,
+          disparo: true,
         }),
       });
 

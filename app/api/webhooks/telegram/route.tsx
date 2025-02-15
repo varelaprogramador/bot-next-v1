@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // pages/api/webhooks/telegram/route.ts
 
 import { Telegraf } from "telegraf";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
+import { ButtonsProps } from "@/app/(dashboard)/disparo/page";
 // props: {"title": "Interfaces for public tables", "runQuery": "false"}
 
 // Interface para a tabela codigos
@@ -82,13 +82,75 @@ export async function GET(req: Request) {
     );
   }
 }
+// Função para enviar mensagem para o usuário
+const sendMessageToUser = async (
+  userId: string,
+  message: string,
+  buttons: ButtonsProps[],
+  image: any
+) => {
+  try {
+    // Cria o teclado inline com os botões
+    const inlineKeyboard = buttons.map((button) => [
+      {
+        text: button.name,
+        ...(button.type === "link"
+          ? { url: button.command }
+          : { callback_data: button.command }), // Define o callback_data
+      },
+    ]);
+    console.log(inlineKeyboard);
 
+    // Verifica se a imagem foi fornecida
+    if (image) {
+      // Envia uma foto com o texto de mensagem como legenda
+      await bot.telegram.sendPhoto(userId, image, {
+        caption: message,
+        reply_markup: {
+          inline_keyboard: inlineKeyboard,
+        },
+      });
+      console.log(`Mensagem com foto enviada para o ID: ${userId}`);
+    } else {
+      // Envia apenas a mensagem, caso não haja imagem
+      await bot.telegram.sendMessage(userId, message, {
+        reply_markup: {
+          inline_keyboard: inlineKeyboard,
+        },
+      });
+      console.log(`Mensagem enviada para o ID: ${userId}`);
+    }
+
+    bot
+      .launch()
+
+      .then(() => {
+        console.log("Bot iniciado e pronto para receber mensagens!");
+      })
+      .catch((error) => {
+        console.error("Erro ao iniciar o bot:", error);
+      });
+  } catch (error) {
+    console.error("Erro ao enviar mensagem:", error);
+    throw new Error("Erro ao enviar mensagem");
+  }
+};
 // Método POST para receber as atualizações do Telegram
 export async function POST(req: Request) {
   try {
     const data = await req.json(); // Receber a atualização do Telegram
     console.log("Atualização recebida:", data);
+    if (data.disparo) {
+      const { userId, message, button, image } = data;
+      await sendMessageToUser(userId, message, button, image);
 
+      return new NextResponse(
+        JSON.stringify({
+          message: "Webhook POST disparo processado com sucesso!",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
     // Passar a atualização para o Telegraf processar
     await bot.handleUpdate(data);
 
@@ -181,7 +243,7 @@ bot.on("callback_query", async (ctx) => {
               { text: "💰 Saldo", callback_data: "saldo" },
               { text: "👤 Perfil", callback_data: "perfil" },
             ],
-            [{ text: "🛠️ Suporte", url:"https://t.me/nextrecarga" }],
+            [{ text: "🛠️ Suporte", url: "https://t.me/nextrecarga" }],
           ],
         },
       });
@@ -239,7 +301,7 @@ bot.on("callback_query", async (ctx) => {
               { text: "💰 Saldo", callback_data: "saldo" },
               { text: "👤 Perfil", callback_data: "perfil" },
             ],
-            [{ text: "🛠️ Suporte", url:"https://t.me/nextrecarga" }],
+            [{ text: "🛠️ Suporte", url: "https://t.me/nextrecarga" }],
           ],
         },
       });
@@ -717,7 +779,7 @@ bot.on("callback_query", async (ctx) => {
                 [
                   {
                     text: "Clique aqui para chamar o suporte",
-                    url:"https://t.me/nextrecarga",
+                    url: "https://t.me/nextrecarga",
                   },
                 ],
               ],
