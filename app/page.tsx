@@ -118,16 +118,10 @@ export default function GiftCardStore() {
             <div className="container mx-auto px-4">
               <div className="flex items-center h-12 gap-6 text-sm">
                 <Link href="#" className="text-white hover:text-gray-300">
-                  CARD FOOD
+                  CARD Mensal
                 </Link>
                 <Link href="#" className="text-white hover:text-gray-300">
-                  CARD GAMES
-                </Link>
-                <Link href="#" className="text-white hover:text-gray-300">
-                  CARD ENTRETENIMENTO
-                </Link>
-                <Link href="#" className="text-white hover:text-gray-300">
-                  NOVIDADES
+                  CARD Anual
                 </Link>
               </div>
             </div>

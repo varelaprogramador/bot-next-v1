@@ -5,7 +5,15 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { Eye, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 import { set } from "date-fns";
 
 export interface FileObject {
@@ -22,7 +30,11 @@ interface GaleriaPopupProps {
   onClose: () => void; // Função para fechar o popup
 }
 
-const GaleriaPopup: React.FC<GaleriaPopupProps> = ({ sendData, onClose, defaultValue }) => {
+const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
+  sendData,
+  onClose,
+  defaultValue,
+}) => {
   const [files, setFiles] = useState<FileObject[]>([]); // Estado para os arquivos
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -114,7 +126,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({ sendData, onClose, defaultV
 
   // Função para continuar após selecionar uma imagem
   const handleProceed = () => {
-  setOpen(false);
+    setOpen(false);
     sendData(selectedFile?.url as string);
   };
 
@@ -142,9 +154,9 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({ sendData, onClose, defaultV
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={()=>setOpen(!isOpen)}>
+    <Dialog open={isOpen} onOpenChange={() => setOpen(!isOpen)}>
       <DialogTrigger asChild>
-        <Button>Selecionar Logo</Button>
+        <Button>Selecionar Imagem</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -154,7 +166,6 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({ sendData, onClose, defaultV
           </DialogDescription>
         </DialogHeader>
         <div className="container mx-auto p-6 max-h-[500px] overflow-y-auto">
-
           {/* Formulário de Upload */}
           <Card className="p-4 mb-6">
             <div className="flex gap-4 mt-2">
@@ -167,8 +178,9 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({ sendData, onClose, defaultV
               />
               <Button
                 onClick={() => uploadFile(nomeFile as any)}
-                className={`${uploading ? "opacity-50 cursor-not-allowed animate-pulse" : ""
-                  }`}
+                className={`${
+                  uploading ? "opacity-50 cursor-not-allowed animate-pulse" : ""
+                }`}
                 disabled={uploading}
               >
                 {uploading ? (
@@ -185,8 +197,11 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({ sendData, onClose, defaultV
             {files.map((file) => (
               <Card
                 key={file.name}
-                className={`p-4 max-w-sm truncate ${selectedFile?.name === file.name ? "border border-blue-500" : ""
-                  }`}
+                className={`p-4 max-w-sm truncate ${
+                  selectedFile?.name === file.name
+                    ? "border border-blue-500"
+                    : ""
+                }`}
                 onClick={() => handleSelectImage(file)} // Seleciona o arquivo
               >
                 <div className="flex flex-col gap-2">
@@ -228,14 +243,15 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({ sendData, onClose, defaultV
               </Card>
             ))}
           </div>
-
+        </div>
+        <DialogFooter>
           {/* Botão "Prosseguir" */}
           {selectedFile && (
             <div className="mt-6">
               <Button onClick={handleProceed}>Prosseguir</Button>
             </div>
           )}
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
