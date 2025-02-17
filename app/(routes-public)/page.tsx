@@ -12,8 +12,8 @@ import {
 } from "@/app/components/ui/card";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ProdutosProps } from "./utils/produto";
-import { MediaProps } from "./utils/media";
+import { ProdutosProps } from "../utils/produto";
+import { MediaProps } from "../utils/media";
 
 export default function GiftCardStore() {
   const supabase = createClient();
@@ -82,58 +82,15 @@ export default function GiftCardStore() {
     }
   };
   return (
-    <div className="min-h-screen bg-gray-50">
-      <main className="container mx-auto px-4 py-8">
-        <header className="bg-white border-b">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-8">
-                <Link href="/" className="text-red-600 font-bold text-2xl">
-                  ativabox
-                </Link>
-                <nav className="hidden md:flex items-center gap-6">
-                  <Link href="#" className="text-gray-600 hover:text-gray-900">
-                    Inicial
-                  </Link>
-                  <Link href="#" className="text-gray-600 hover:text-gray-900">
-                    Duvidas Frequentes
-                  </Link>
-                  <Link href="#" className="text-gray-600 hover:text-gray-900">
-                    Contato
-                  </Link>
-                </nav>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="relative w-64">
-                  <Input placeholder="O que você procura?" className="pl-10" />
-                  <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                </div>
-                <Button variant="destructive">
-                  <User></User>Minha Conta
-                </Button>
-              </div>
-            </div>
-          </div>
-          <nav className="bg-gray-900">
-            <div className="container mx-auto px-4">
-              <div className="flex items-center h-12 gap-6 text-sm">
-                <Link href="#" className="text-white hover:text-gray-300">
-                  CARD Mensal
-                </Link>
-                <Link href="#" className="text-white hover:text-gray-300">
-                  CARD Anual
-                </Link>
-              </div>
-            </div>
-          </nav>
-        </header>
+    <div className="min-h-screen ">
+
         <section className="w-full min-h-[500px] bg-cover bg-[url('/img-banner.png')] bg-center rounded-md"></section>
-        <section className="my-12">
+        <section className="my-12 bg-white border p-4 rounded-md">
           <h2 className="text-2xl font-bold mb-6">Escolha seu Giftcard</h2>
-          <div className="relative">
+          <div className="relative bg-gray-100 p-4 rounded-md">
             <div
               ref={carouselRef}
-              className="flex   overflow-x-hidden gap-4 py-4"
+              className="flex   overflow-x-hidden gap-4 py-4 px-8"
             >
               {dataGift.map((card) => (
                 <div
@@ -142,24 +99,27 @@ export default function GiftCardStore() {
                 >
                   <div
                     key={card.id}
-                    className="flex-shrink-0 w-36 h-36 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
+                    className="flex-shrink-0 w-[100px] rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
                   >
                     <Image
                       src={card.url || "/placeholder.svg"}
                       alt={card.nome}
-                      width={80}
-                      height={80}
+                      width={100}
+                      height={100}
                       className="object-cover w-full h-full"
                     />
+                    
                   </div>
-                  <p className="max-w-[120px] truncate ">{card.nome}</p>
+                  
+           
                 </div>
+                
               ))}
             </div>
             <Button
               variant="outline"
               size="icon"
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 rounded-full"
+              className="absolute left-5 top-1/2 -translate-y-1/2 -translate-x-4 rounded-full"
               onClick={() => handleScroll("left")}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -167,14 +127,14 @@ export default function GiftCardStore() {
             <Button
               variant="outline"
               size="icon"
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 rounded-full"
+              className="absolute right-5  top-1/2 -translate-y-1/2 translate-x-4 rounded-full"
               onClick={() => handleScroll("right")}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </section>
-        <section>
+        <section className="bg-white rounded-md p-4">
           <h2 className="text-2xl font-bold mb-6">Nossos Produtos</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {data.map((product) => (
@@ -215,7 +175,7 @@ export default function GiftCardStore() {
             ))}
           </div>
         </section>
-      </main>
+   
     </div>
   );
 }

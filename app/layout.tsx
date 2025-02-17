@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <ClerkProvider localization={ptBR}>
       <html lang="pt" className={poppins.variable}>
-        <body>
+        <body className="bg-gray-100">
           <NextTopLoader color="blue" />
           {children}
         </body>
