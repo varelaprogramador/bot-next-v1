@@ -61,7 +61,7 @@ const InputSearch = () => {
           className="pl-10 bg-white"
           onClick={() => setOpen(!open)}
           value={filter}
-          onChange={()=>{}}
+          onChange={(e) => setFilter(e.target.value)}
         />
         <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
       </div>

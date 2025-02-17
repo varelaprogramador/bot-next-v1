@@ -53,7 +53,7 @@ export default function GiftCardStore() {
           throw error;
         }
 
-        setDataGift(data || []);
+        setDataGift(data.filter((item) => item.status === true) || []);
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
       } finally {
@@ -94,6 +94,7 @@ export default function GiftCardStore() {
               className="flex   overflow-x-hidden gap-4 py-4 px-8"
             >
               {dataGift.map((card) => (
+                
                 <Link key={card.id} href={`/card/${card.id}`}>
                 <div
                   key={card.id + "-" + "pai"}
