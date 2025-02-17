@@ -3,6 +3,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 // Definindo rotas públicas (todas fora da root no diretório app)
 const isPublicRoute = createRouteMatcher([
   "/",
+  "/card(.*)",
   "/checkout(.*)",
   "/sign-in(.*)",
   "/api(.*)",
