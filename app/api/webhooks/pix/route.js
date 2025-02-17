@@ -123,17 +123,25 @@ Boas compras!`
           type:"Rota do bot",
           command:"bemvindos-2",
           name:'🤖 COMPRAR PELO BOT 🤖'
-        }]
+        }],image:"",
+        disparo: true
       }
       const response = await fetch('https://www.n8nworks.shop/api/webhooks/telegram', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(dataUpdate),
     });
+    if (response.ok) {
+      const datares = await response.json();
+      console.log("Mensagem enviada com sucesso:", datares);
+    } else {
+      const error = await response.json();
+      console.error("Erro ao enviar mensagem:", error);
+    }
     
   
     
-      return new Response(JSON.stringify({ message: "Saldo atualizado e status da venda atualizado com sucesso" }), {
+      return new Response(JSON.stringify({ message: "Saldo atualizado e status da venda atualizado com sucesso." }), {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
