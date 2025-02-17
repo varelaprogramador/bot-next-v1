@@ -109,6 +109,32 @@ export async function POST(req) {
         });
       }
 
+      const mensagem=`
+🎉 Parabéns! Seu saldo foi adicionado à sua carteira.
+
+Agora é só escolher o produto que deseja comprar! O valor será descontado automaticamente da sua carteira.
+
+Caso seu saldo seja insuficiente, basta adicionar mais, e ele será somado ao valor já disponível.
+
+Boas compras!`
+//disparo de mensagem
+      const dataUpdate={
+        userId:user_id, message:mensagem, button:[{
+          type:"Rota do bot",
+          command:"bemvindos-2",
+          name:'🤖 COMPRAR PELO BOT 🤖'
+        }]
+      }
+      const response = await fetch('/api/webhooks/telegram', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(dataUpdate),
+        });
+  
+  
+    
       return new Response(JSON.stringify({ message: "Saldo atualizado e status da venda atualizado com sucesso" }), {
         status: 200,
         headers: {

@@ -477,7 +477,7 @@ const BoxConfirmation = ({
                         <SelectLabel>Rotas</SelectLabel>
                         {rotas.map((rota) => (
                           <SelectItem key={rota.key} value={rota.value}>
-                            {rota.value}
+                            {rota.text}
                           </SelectItem>
                         ))}
                       </SelectGroup>
