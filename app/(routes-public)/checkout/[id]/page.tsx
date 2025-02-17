@@ -26,27 +26,8 @@ export default function VendaDetalhesLoja() {
   const carouselRef = useRef<HTMLDivElement | null>(null);
   
   console.log(productId);
-  const handleConfirmEdit = async ({ data }: { data: ProdutosProps }) => {
-    const { error } = await supabase
-      .from("produtos")
-      .update(data)
-      .eq("id", data.id);
-    if (error) {
-      console.error("Erro ao atualizar produto:", error);
-    } else {
-      console.log("Produto atualizado com sucesso");
-    }
-  };
-  const handleDeleteProduto = async (id: string) => {
-    const { error } = await supabase.from("produtos").delete().eq("id", id);
 
-    if (error) {
-      console.error("Erro ao deletar produto:", error);
-    } else {
-      console.log("Produto deletado com sucesso");
-      // Opcional: Atualize o estado para remover o produto da lista
-    }
-  };
+ 
   useEffect(() => {
     const fetchProduto = async () => {
       if (!productId) return;
@@ -62,7 +43,7 @@ export default function VendaDetalhesLoja() {
 
         if (error) {
           console.error("Erro ao carregar produto:", error);
-          router.push("/produtos"); // Redirecionar em caso de erro
+          router.push("/"); // Redirecionar em caso de erro
           return;
         }
 

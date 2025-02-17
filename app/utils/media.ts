@@ -1,8 +1,10 @@
+import { ProdutosProps } from "./produto";
+
 export interface MediaProps{
     id?:string,
       nome:string,
       url:string,
       status:boolean,
-      rota:string,
+      produtos:ProdutosProps[],
       created_at?:string
     }

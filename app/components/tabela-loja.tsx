@@ -36,10 +36,9 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 
-import { CreateOrUpdateCodigo } from "./edit-form/codigo-edit";
 
 import { createClient } from "@/lib/supabase/client";
-import FileUpload from "./input-xsl";
+
 import { MediaProps } from "../utils/media";
 import { CreateMedia } from "./create-forms/produto-2";
 
@@ -99,17 +98,18 @@ export const columns: ColumnDef<MediaProps>[] = [
     ),
   },
   {
-    accessorKey: "rota",
-    header: "Rota de redirecionamento",
+    accessorKey: "produtos",
+    header: "Produtos",
     cell: ({ row }) => (
       <div
         className="truncate max-w-[150px]"
-        title={row.getValue("rota")} // Exibe o valor completo ao passar o mouse
+        title={JSON.stringify(row.getValue("produtos"))} // Exibe o valor completo (em formato JSON) ao passar o mouse
       >
-        {row.getValue("rota")}
+        {JSON.stringify(row.getValue("produtos"))} 
       </div>
     ),
-  },
+  }
+  
 ];
 
 export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
@@ -123,7 +123,7 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
   const [rowSelection, setRowSelection] = React.useState({});
   const supabase = createClient();
   const handleConfirmCreate = async ({ data }: { data: MediaProps }) => {
-    const { error } = await supabase.from("media-loja").insert(data);
+    const { error } = await supabase.from("marca").insert(data);
     if (error) {
       console.error("Erro ao criar codigo:", error);
       console.log(data);
@@ -134,7 +134,7 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
 
   const handleConfirmEdit = async ({ data }: { data: MediaProps }) => {
     const { error } = await supabase
-      .from("media-loja")
+      .from("marca")
       .update(data)
       .eq("id", data.id);
     if (error) {
@@ -145,7 +145,7 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
   };
   const handleDelete = async (id: string) => {
     const { error } = await supabase
-      .from("media-loja")
+      .from("marca")
       .delete()
       .eq("id", id);
 

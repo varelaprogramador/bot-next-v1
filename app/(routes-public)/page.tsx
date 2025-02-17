@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
+
 import { ChevronLeft, ChevronRight, Search, User } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "../utils/produto";
 import { MediaProps } from "../utils/media";
+import Link from "next/link";
 
 export default function GiftCardStore() {
   const supabase = createClient();
@@ -46,7 +47,7 @@ export default function GiftCardStore() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.from("media-loja").select("*");
+        const { data, error } = await supabase.from("marca").select("*");
 
         if (error) {
           throw error;
@@ -93,6 +94,7 @@ export default function GiftCardStore() {
               className="flex   overflow-x-hidden gap-4 py-4 px-8"
             >
               {dataGift.map((card) => (
+                <Link key={card.id} href={`/card/${card.id}`}>
                 <div
                   key={card.id + "-" + "pai"}
                   className=" flex flex-col justify-center items-center gap-2"
@@ -113,7 +115,7 @@ export default function GiftCardStore() {
                   
            
                 </div>
-                
+                </Link>
               ))}
             </div>
             <Button

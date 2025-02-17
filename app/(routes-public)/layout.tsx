@@ -4,6 +4,7 @@ import { Search, User } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { DropdownMenu } from "../components/ui/dropdown-menu";
 import { ListBulletIcon } from "@radix-ui/react-icons";
+import InputSearch from "../components/search-input";
 
 
 export default async function Layout({
@@ -36,10 +37,7 @@ export default async function Layout({
                 </nav>
               </div>
               <div className="hidden xl:flex items-center gap-4">
-                <div className="relative w-64">
-                  <Input placeholder="O que você procura?" className="pl-10" />
-                  <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                </div>
+                <InputSearch></InputSearch>
                 <Button variant="destructive">
                   <User></User>Minha Conta
                 </Button>
@@ -63,10 +61,7 @@ export default async function Layout({
           </nav>
           <nav className="bg-gray-900 rounded-b-md p-2 max-xl:flex hidden ">
             <div className="container mx-auto px-4 flex items-center justify-center">
-            <div className="relative w-full">
-                  <Input placeholder="O que você procura?" className="pl-10 bg-white" />
-                  <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                </div>
+            <InputSearch></InputSearch>
             </div>
           </nav>
         </header>

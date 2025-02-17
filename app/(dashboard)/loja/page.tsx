@@ -15,7 +15,7 @@ export default function Shop() {
       const loadData = async () => {
         setLoading(true);
         try {
-          const { data, error } = await supabase.from("media-loja").select("*");
+          const { data, error } = await supabase.from("marca").select("*");
   
           if (error) {
             throw error;
@@ -33,12 +33,12 @@ export default function Shop() {
     }, [supabase]);
   
     useEffect(() => {
-      const subscription = supabase.channel(`realtime:public:media-loja`).on(
+      const subscription = supabase.channel(`realtime:public:marca`).on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "media-loja",
+          table: "marca",
         },
         (payload) => {
           setData((prevData) => {
