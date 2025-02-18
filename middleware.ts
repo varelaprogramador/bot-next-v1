@@ -6,6 +6,7 @@ const isPublicRoute = createRouteMatcher([
   "/card(.*)",
   "/checkout(.*)",
   "/sign-in(.*)",
+  "/auth(.*)",
   "/api(.*)",
 ]);
 

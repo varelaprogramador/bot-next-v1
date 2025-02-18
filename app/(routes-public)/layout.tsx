@@ -38,9 +38,7 @@ export default async function Layout({
               </div>
               <div className="hidden xl:flex items-center gap-4">
                 <InputSearch></InputSearch>
-                <Button variant="destructive">
-                  <User></User>Minha Conta
-                </Button>
+            
               </div>
                 <Button className="max-xl:flex hidden" variant="outline">
                        <ListBulletIcon></ListBulletIcon>

@@ -95,6 +95,9 @@ export default function VendaDetalhesLoja() {
   if (!produto) {
     return <div className="text-center mt-10">Produto não encontrado.</div>;
   }
+  const redirectToPayament=()=>{
+    
+  }
 
   return (
 
@@ -141,7 +144,7 @@ export default function VendaDetalhesLoja() {
             </div>
 
             <div className="space-y-4">
-              <Button className="w-full text-lg" size="lg">
+              <Button onClick={redirectToPayament} className="w-full text-lg" size="lg">
                 Comprar Agora
                 <ChevronRight className="ml-2 h-5 w-5" />
               </Button>
