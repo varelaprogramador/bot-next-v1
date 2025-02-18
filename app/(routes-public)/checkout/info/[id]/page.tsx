@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import CarouselRelacionados from "@/app/components/carousel-relacionados";
+import { InfoCheckout } from "../../_components/popup-dados";
+import Link from "next/link";
 
 
 
@@ -144,19 +146,20 @@ export default function VendaDetalhesLoja() {
             </div>
 
             <div className="space-y-4">
-              <Button onClick={redirectToPayament} className="w-full text-lg" size="lg">
-                Comprar Agora
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
+              <InfoCheckout onConfirmCreate={()=>{}}
+               ></InfoCheckout>
               <div className="flex gap-4">
+              <Link href={"https://t.me/nextrecargas_bot"}>
                 <Button variant="sucess" className="flex-1">
                   <MessagesSquare className="mr-2 h-4 w-4" />
                   Comprar via WhatsApp
                 </Button>
+                </Link>
+                <Link href={"https://t.me/nextrecargas_bot"}>
                 <Button className="flex-1 bg-blue-500 hover:bg-blue-400">
                   <ShoppingBag className="mr-2 h-4 w-4" />
                   Comprar via Telegram
-                </Button>
+                </Button></Link>
               </div>
             </div>
 

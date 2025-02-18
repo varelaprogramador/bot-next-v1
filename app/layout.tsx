@@ -8,6 +8,7 @@ import Link from "next/link";
 import { Input } from "./components/ui/input";
 import { Search, User } from "lucide-react";
 import { Button } from "./components/ui/button";
+import { Toaster } from "./components/ui/toaster";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -18,7 +19,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "NEXTRECARGAS",
   applicationName: "NEXT RECARGAS",
-  metadataBase: new URL("https://firebank.vercel.app"),
+  metadataBase: new URL("https://bot-next-v1.vercel.app/"),
 };
 
 export default function RootLayout({
@@ -32,6 +33,7 @@ export default function RootLayout({
         <body className="bg-gray-100">
           <NextTopLoader color="blue" />
           {children}
+          <Toaster></Toaster>
         </body>
       </html>
     </ClerkProvider>
