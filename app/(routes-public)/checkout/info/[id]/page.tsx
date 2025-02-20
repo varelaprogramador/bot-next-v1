@@ -97,8 +97,8 @@ export default function VendaDetalhesLoja() {
   if (!produto) {
     return <div className="text-center mt-10">Produto não encontrado.</div>;
   }
-  const redirectToPayament=()=>{
-    
+  const redirectToPayament = () => {
+
   }
 
   return (
@@ -146,20 +146,20 @@ export default function VendaDetalhesLoja() {
             </div>
 
             <div className="space-y-4">
-              <InfoCheckout onConfirmCreate={()=>{}}
-               ></InfoCheckout>
+              <InfoCheckout onConfirmCreate={() => { }}
+              ></InfoCheckout>
               <div className="flex gap-4">
-              <Link href={"https://t.me/nextrecargas_bot"}>
-                <Button variant="sucess" className="flex-1">
-                  <MessagesSquare className="mr-2 h-4 w-4" />
-                  Comprar via WhatsApp
-                </Button>
+                <Link href={"https://t.me/nextrecargas_bot"}>
+                  <Button variant="sucess" className="flex-1">
+                    <MessagesSquare className="mr-2 h-4 w-4" />
+                    Comprar via WhatsApp
+                  </Button>
                 </Link>
                 <Link href={"https://t.me/nextrecargas_bot"}>
-                <Button className="flex-1 bg-blue-500 hover:bg-blue-400">
-                  <ShoppingBag className="mr-2 h-4 w-4" />
-                  Comprar via Telegram
-                </Button></Link>
+                  <Button className="flex-1 bg-blue-500 hover:bg-blue-400">
+                    <ShoppingBag className="mr-2 h-4 w-4" />
+                    Comprar via Telegram
+                  </Button></Link>
               </div>
             </div>
 
@@ -190,7 +190,7 @@ export default function VendaDetalhesLoja() {
           </div>
         </div>
 
-        <CarouselRelacionados produtos={produtoRel }></CarouselRelacionados>
+        <CarouselRelacionados produtos={produtoRel}></CarouselRelacionados>
       </div>
 
 

@@ -108,7 +108,7 @@ export const InfoCheckout = ({
                         <FormItem>
                             <FormLabel>Whatsapp</FormLabel>
                             <FormControl>
-                                <PhoneInput {...field} placeholder="+55 00 90000-0000"></PhoneInput>
+                                <PhoneInput {...field} defaultCountry="BR" placeholder="+55 00 90000-0000"></PhoneInput>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
