@@ -37,24 +37,27 @@ export async function POST(req: any) {
   try {
     const data = await req.json(); // Corpo da requisição
 
-    console.log("Corpo da requisição:", JSON.stringify(data, null, 2));
+    const isTestEvent = data?.event === "teste_webhook";
 
-    const eventType = data.evento;
+    if (isTestEvent) {
+      console.log("Evento de teste recebido com sucesso.");
 
-    if (eventType === "teste_webhook") {
-      console.log("teste_webhook");
-
-      return new Response(JSON.stringify({ message: "teste_webhook" }), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return new Response(
+        JSON.stringify({ message: "Evento de teste recebido com sucesso." }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
     }
 
     const { additionalInfo } = data?.charge;
 
     if (!additionalInfo) {
+      console.log("Campos adicionais não encontrados");
+
       return new Response(
         JSON.stringify({ message: "Campos adicionais não encontrados" }),
         {
@@ -65,6 +68,22 @@ export async function POST(req: any) {
         }
       );
     }
+
+    const eventType = data?.event;
+    const allowedEvents = ["OPENPIX:CHARGE_COMPLETED"];
+
+    if (!allowedEvents.includes(eventType)) {
+      console.log("Evento não permitido:", eventType);
+
+      return new Response(JSON.stringify({ error: "Evento não permitido" }), {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    }
+
+    console.log("Corpo da requisição:", JSON.stringify(data, null, 2));
 
     // Valida se o evento é o esperado
     if (data.event === "OPENPIX:CHARGE_COMPLETED") {
