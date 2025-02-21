@@ -339,17 +339,26 @@ Boas compras!`;
           // Você pode optar por notificar o usuário ou registrar o erro
         }
 
-        const message =
-          `Olá, *${additionalInfo.find(
-            (info: any) => info.key === "Nome"
-          )}*!\nSeu codigo *${codigoData.codigo}* foi ativado! 🎉\n\n` +
-          `Agora basta você resgatar.\n\n` +
-          `Atenciosamente,\nEquipe *NEXTRECARGAS*`;
+        const name = additionalInfo.find((info: any) => info.key === "Nome");
+
+        // const message =
+        //   `Olá, *${additionalInfo.find(
+        //     (info: any) => info.key === "Nome"
+        //   )}*!\nSeu codigo *${codigoData.codigo}* foi ativado! 🎉\n\n` +
+        //   `Agora basta você resgatar.\n\n` +
+        //   `Atenciosamente,\nEquipe *NEXTRECARGAS*`;
+
+        const message = `Olá, *${name?.value || "Cliente"}*!\nSeu código *${
+          codigoData?.codigo || "N/A"
+        }* foi ativado! 🎉\n\nAgora basta você resgatar.\n\nAtenciosamente,\nEquipe *NEXTRECARGAS*`;
+
         console.log(message);
+
         await sendWhatsappNotification({
           message,
           phone: additionalInfo.find((info: any) => info.key === "Telefone"),
         });
+
         return new Response(
           JSON.stringify({
             message:
