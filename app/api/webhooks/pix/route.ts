@@ -39,7 +39,17 @@ export async function POST(req: any) {
 
     console.log("Corpo da requisição:", JSON.stringify(data, null, 2));
 
-    const { additionalInfo } = data.charge;
+    return new Response(
+      JSON.stringify({ message: "POST request successful" }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    const { additionalInfo } = data?.charge;
 
     if (!additionalInfo) {
       return new Response(
