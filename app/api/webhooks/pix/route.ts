@@ -152,7 +152,7 @@ Boas compras!`
           },
         });
        
-      } else if (data.charge?.additionalInfo?.find((info:any) => info.key === "Origin") == "site") { 
+      } else if (data.charge.additionalInfo.find((info:any) => info.key === "Origin") == "site") { 
         console.log(data);
         const additionalInfo = data.charge?.additionalInfo || [];
         const produtoId=  additionalInfo?.find((info:any) => info.key === "Product")  
