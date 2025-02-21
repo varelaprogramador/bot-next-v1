@@ -83,11 +83,36 @@ export async function POST(req: any) {
       });
     }
 
-    console.log("Corpo da requisição:", JSON.stringify(data, null, 2));
+    // console.log("Corpo da requisição:", JSON.stringify(data, null, 2)); // Log para verificar o corpo da requisição
 
     // Valida se o evento é o esperado
     if (data.event === "OPENPIX:CHARGE_COMPLETED") {
-      if (additionalInfo?.find((info: any) => info.key === "Origin") == "bot") {
+      const originField = additionalInfo.find(
+        (info: any) => info.key === "Origin"
+      );
+
+      const originValue = originField?.value;
+
+      if (!originValue) {
+        console.log("Campo Origin não encontrado");
+
+        return new Response(
+          JSON.stringify({ error: "Campo Origin não encontrado" }),
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+
+      const isBotOrigin = originValue === "bot";
+      const isSiteOrigin = originValue === "site";
+
+      if (isBotOrigin) {
+        console.log("========Bot=========");
+
         console.log(
           "Campos adicionais:",
           JSON.stringify(additionalInfo, null, 2)
@@ -248,10 +273,13 @@ Boas compras!`;
             },
           }
         );
-      } else if (
-        additionalInfo.find((info: any) => info.key === "Origin") == "site"
-      ) {
-        console.log(data);
+      }
+
+      if (isSiteOrigin) {
+        console.log("========Site=========");
+
+        // console.log(data);
+
         const produtoId = additionalInfo?.find(
           (info: any) => info.key === "Product"
         )?.value;
@@ -281,6 +309,21 @@ Boas compras!`;
             "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id."
           );
         }
+
+        if (!codigosAtivos || codigosAtivos.length <= 0) {
+          console.log("Nenhum código ativo encontrado");
+
+          return new Response(
+            JSON.stringify({ error: "Nenhum código ativo encontrado" }),
+            {
+              status: 400,
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
+
         // Atualizar o status do primeiro código ativo para "resgatado"
         const codigoData = codigosAtivos[0]; // Usar o primeiro código ativo
         const { error: updateCodigoError } = await supabase
@@ -319,31 +362,22 @@ Boas compras!`;
             },
           }
         );
-      } else {
-        return new Response(JSON.stringify({ message: "PARA DE EXPLORAR;" }), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
       }
-    } else {
-      console.log("Evento não processado:", data.event);
-      return new Response(
-        JSON.stringify({ message: "Evento não processado" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+
+      console.log("Origem não reconhecida:", originValue);
+
+      return new Response(JSON.stringify({ error: "Origem não reconhecida" }), {
+        status: 400,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
     }
-  } catch (error: any) {
-    console.error("Erro no processamento do POST:", error.message);
+  } catch (error) {
+    console.error("Erro no processamento do POST:", error);
 
     return new Response(
-      JSON.stringify({ message: "Error", error: error.message }),
+      JSON.stringify({ message: "Erro", error: (error as Error).message }),
       {
         status: 500,
         headers: {
