@@ -203,7 +203,14 @@ Boas compras!`
       phone:additionalInfo.find((info:any) => info.key === "Telefone"),
     })
         return new Response(JSON.stringify({ message: "Saldo atualizado e status da venda atualizado com sucesso." }), {
-          status: 201,
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      }else{
+        return new Response(JSON.stringify({ message: "PARA DE EXPLORAR;" }), {
+          status: 200,
           headers: {
             'Content-Type': 'application/json',
           },
