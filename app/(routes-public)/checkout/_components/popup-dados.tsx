@@ -40,6 +40,10 @@ import { FilePlus } from "lucide-react";
 import { PhoneInput } from "./phone";
 import { useToast } from "@/hooks/use-toast"
 import { ProdutosProps } from "@/app/utils/produto";
+import { v4 } from "uuid";
+import { Value } from "@radix-ui/react-select";
+import Image from "next/image";
+import Link from "next/link";
 
 interface DialogInfoCheckout {
     onConfirmCreate: (args: {
@@ -48,13 +52,13 @@ interface DialogInfoCheckout {
             telefone: string
         }
     }) => void;
-        produto:ProdutosProps
+    produto: ProdutosProps
 }
 
 const schema = z.object({
     nome: z.string().trim().min(1, "Campo Obrigatório!"),
     telefone: z.string().trim().min(1, "Campo Obrigatório!"),
-    email:z.string().optional()
+    email: z.string().optional()
 });
 
 export const InfoCheckout = ({
@@ -62,6 +66,19 @@ export const InfoCheckout = ({
     produto
 }: DialogInfoCheckout) => {
     const [open, setOpen] = useState(false);
+    const [openQR, setOpenQR] = useState(false);
+    const [dataQR, setDataQR] =useState(   {charge: {
+        qrCodeImage:"/placeholder.svg",
+        value: 0,
+        comment: "",
+        identifier: "",
+        status: "",
+        expiresDate: "",
+        pixKey: "",
+        paymentLinkUrl: "#",
+        expiresIn:0,
+        brCode: "#",
+    }});
     const [loading, setLoading] = useState(false);
     const isDesktop = !useIsMobile();
 
@@ -72,56 +89,49 @@ export const InfoCheckout = ({
         defaultValues: {
             nome: "",
             telefone: "",
-            email:""
+            email: ""
         },
     });
 
     const onSubmit = (values: z.infer<typeof schema>) => {
-        toast({
-            className: "bg-green-500 text-white",
-            title: "Dados enviados  ",
-            description: "Dentro de alguns segundos voce será redirecionado!",
-        })
+
         onConfirmCreate({ data: values });
         setOpen(false);
         form.reset();
     };
-    useEffect(() => {
-        const script = document.createElement("script");
-        script.src = "https://plugin.openpix.com.br/v1/openpix.js";
-        script.async = true;
-        document.body.appendChild(script);
-    
-        return () => {
-          document.body.removeChild(script);
-        };
-      }, []);
-    
-      const generatePix = () => {
-        console.log(parseFloat(produto.valor.toFixed(2)));
-        const gerarCorrelationIdUnico = (len:number, chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') => [...Array(len)].map(() => chars.charAt(Math.floor(Math.random() * chars.length))).join('')
-        window.$openpix = window.$openpix || [];
-    
-        window.$openpix.push(["config", {
-          appID: "Q2xpZW50X0lkXzRjZjdjYzllLTM5ZWYtNDkwZC05NmFmLTk1MmRlMWJjMGEwODpDbGllbnRfU2VjcmV0X0tTbDdkNmtFekhRM1ROb2IvbUxCekl5akhQeHBhNnhERmJIZ09LdmlMeU09",
-        }]);
-    
-        window.$openpix.push([
-          "pix",
-          {
-            value:parseFloat(produto.valor.toFixed(2))*100,
-            correlationID: gerarCorrelationIdUnico(30),
-            description: produto.nome,
-            customer: {
-                name: form.getValues("nome") || "",
-                email: form.getValues("email") || "",
-                phone: form.getValues("telefone") || "",
-              },
-            
-            
-          },
-        ]);
-      };
+    const generatePix = async () => {
+
+        const response = await fetch(
+            "https://api.openpix.com.br/api/v1/charge?return_existing=true",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `${process.env.NEXT_PUBLIC_OPENPIX_API_KEY}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    correlationID: (`${produto.nome}+${v4()}`).replace(' ', ''),
+                    value: produto.valor * 100,
+                    comment: produto.nome,
+                    additionalInfo: [
+                        { key: "Product", value: produto.nome },
+                        { key: "Invoice", value: `${new Date().getTime()}` },
+                        { key: "Origin", value: "site" }
+                    ],
+                    payer: {
+                        name: form.getValues("nome") || "",
+                        email: form.getValues("email") || "",
+                        phone: form.getValues("telefone") || "",
+                    },
+                }),
+            }
+        );
+        setDataQR(await response.json());
+        console.log(dataQR)
+        if (response.ok) {
+            setOpenQR(true)
+        }
+    }
     const FormContent = (
         <Form {...form}>
             <form
@@ -155,7 +165,7 @@ export const InfoCheckout = ({
                         </FormItem>
                     )}
                 />
-     <FormField
+                <FormField
                     control={form.control}
                     name="email"
                     render={({ field }) => (
@@ -169,13 +179,53 @@ export const InfoCheckout = ({
                     )}
                 />
 
-                <Button type="submit" disabled={loading} onClick={generatePix}>
+                <Button type="button" disabled={loading} onClick={generatePix}>
                     {loading ? "Gerando..." : "Gerar Pix"}
                 </Button>
             </form>
         </Form>
     );
-   
+    const QRContent = (
+        <>
+            {/* {JSON.stringify(
+        dataQR
+      )} */}
+            <div
+                className="grid items-center justify-center gap-4"
+
+            >
+                <Image
+                src={dataQR.charge.qrCodeImage}
+                width={300}
+                height={200}
+                alt="QR-CODE"
+                
+                >
+
+                </Image>
+                <div className="w-full grid grid-cols-2 gap-4">
+                <h1>Valor</h1>
+                <Input placeholder="Valor" value={dataQR.charge.value||"/"} readOnly />
+                <h1>Nome do produto</h1>
+                <Input placeholder="Comentário" value={dataQR.charge.comment||"/"} readOnly />
+                <h1>Status</h1>
+                <Input placeholder="Status" value={dataQR.charge.status||"/"} readOnly />
+                <h1>Expira em:</h1>
+                <Input placeholder="Expira em" value={dataQR.charge.expiresIn/60 +" Minutos"||"/"} readOnly />
+                <h1>Chave Pix:</h1>
+                <Input placeholder="Pix Key" value={dataQR.charge.pixKey+" M"||"/"}  readOnly />
+
+                </div>
+<Link href={dataQR.charge.paymentLinkUrl||"/"}>
+                <Button className="w-full">
+                    Pagar Agora
+                </Button>
+</Link>
+
+
+            </div>
+        </>
+    );
 
     return isDesktop ? (
         <Dialog
@@ -192,12 +242,13 @@ export const InfoCheckout = ({
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Informe seus dados</DialogTitle>
+                    <DialogTitle>{openQR ? "Dados do pix" : "Informe seus dados"}</DialogTitle>
                     <DialogDescription>
-                        Informe seus dados para gerar o pix e te enviar infos sobre o produto.
+                        {openQR ? "Dados do pix para pagamento" : " Informe seus dados para gerar o pix e te enviar infos sobre o produto"}
+                        .
                     </DialogDescription>
                 </DialogHeader>
-                {FormContent}
+                {openQR ? QRContent : FormContent}
             </DialogContent>
         </Dialog>
     ) : (
@@ -221,7 +272,7 @@ export const InfoCheckout = ({
                         Preencha as informações do novo produto abaixo.
                     </DrawerDescription>
                 </DrawerHeader>
-                {FormContent}
+                {openQR ? QRContent : FormContent}
                 <DrawerFooter className="flex justify-end mt-4">
                     <DrawerClose asChild>
                         <Button variant="outline">Cancelar</Button>

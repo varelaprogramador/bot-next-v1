@@ -20,6 +20,7 @@ export async function POST(req: any, res: any) {
           { key: "UserID", value: '' },
           { key: "Product", value: "Saldo" },
           { key: "Invoice", value: `${new Date().getTime()}` },
+          {key:"Origin", value:"bot"}
         ],
         payer: {
           name: ``,
