@@ -39,17 +39,19 @@ export async function POST(req: any) {
 
     console.log("Corpo da requisição:", JSON.stringify(data, null, 2));
 
-    return new Response(
-      JSON.stringify({ message: "POST request successful" }),
-      {
+    const eventType = data.event;
+    const { additionalInfo } = data?.charge;
+
+    if (eventType === "teste_webhook") {
+      console.log("teste_webhook");
+
+      return new Response(JSON.stringify({ message: "teste_webhook" }), {
         status: 200,
         headers: {
           "Content-Type": "application/json",
         },
-      }
-    );
-
-    const { additionalInfo } = data?.charge;
+      });
+    }
 
     if (!additionalInfo) {
       return new Response(
