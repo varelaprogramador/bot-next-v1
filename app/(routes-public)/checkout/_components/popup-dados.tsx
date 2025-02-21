@@ -113,6 +113,7 @@ export const InfoCheckout = ({
                     correlationID: (`${produto.nome}+${v4()}`).replace(' ', ''),
                     value: produto.valor * 100,
                     comment: produto.nome,
+                    expiresIn:420,
                     additionalInfo: [
                         { key: "Product", value: produto.nome },
                         { key: "Invoice", value: `${new Date().getTime()}` },
@@ -205,7 +206,7 @@ export const InfoCheckout = ({
                 </Image>
                 <div className="w-full grid grid-cols-2 gap-4">
                 <h1>Valor</h1>
-                <Input placeholder="Valor" value={dataQR.charge.value||"/"} readOnly />
+                <Input placeholder="Valor" value={"R$"+(dataQR.charge.value/100).toFixed(2)||"/"} readOnly />
                 <h1>Nome do produto</h1>
                 <Input placeholder="Comentário" value={dataQR.charge.comment||"/"} readOnly />
                 <h1>Status</h1>
