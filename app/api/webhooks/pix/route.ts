@@ -414,21 +414,22 @@ const sendWhatsappNotification = async ({
       },
     };
 
-    const response = await axios({
+    await axios({
       ...config,
       data: JSON.stringify({
-        delay: 120,
+        delay: 500,
         number: phone,
         text: message,
-        linkPreview: false,
+        linkPreview: true,
       }),
     });
-
-    console.log("Message :" + response);
-
-    return response;
-  } catch (error: any) {
-    console.log(error);
-    return null;
+  } catch (error) {
+    console.log("Erro ao enviar notificação via WhatsApp:");
+    console.error(
+      JSON.stringify({
+        message: "Erro ao enviar notificação via WhatsApp",
+        error: (error as any).message,
+      })
+    );
   }
 };
