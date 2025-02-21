@@ -1,3 +1,4 @@
+"use client";
 import * as React from "react";
 import { z } from "zod";
 import { useEffect, useState } from "react";
@@ -100,33 +101,17 @@ export const InfoCheckout = ({
         form.reset();
     };
     const generatePix = async () => {
-
-        const response = await fetch(
-            "https://api.openpix.com.br/api/v1/charge?return_existing=true",
-            {
-                method: "POST",
-                headers: {
-                    Authorization: `${process.env.NEXT_PUBLIC_OPENPIX_API_KEY}`,
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    correlationID: (`${produto.nome}+${v4()}`).replace(' ', ''),
-                    value: produto.valor * 100,
-                    comment: produto.nome,
-                    expiresIn:420,
-                    additionalInfo: [
-                        { key: "Product", value: produto.nome },
-                        { key: "Invoice", value: `${new Date().getTime()}` },
-                        { key: "Origin", value: "site" }
-                    ],
-                    payer: {
-                        name: form.getValues("nome") || "",
-                        email: form.getValues("email") || "",
-                        phone: form.getValues("telefone") || "",
-                    },
-                }),
-            }
-        );
+        const response = await fetch("/api/payaments/open-pix", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                produto: { nome: produto.nome, id: produto.id, valor: produto.valor},
+                nome: form.getValues('nome'),
+                email: form.getValues('email'),
+                telefone: form.getValues('telefone'),
+                origin: "site",
+            }),
+        });
         setDataQR(await response.json());
         console.log(dataQR)
         if (response.ok) {

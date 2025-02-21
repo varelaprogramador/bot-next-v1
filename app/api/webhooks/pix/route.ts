@@ -1,9 +1,12 @@
+import axios, { AxiosRequestConfig } from "axios"
 import { createClient } from '@supabase/supabase-js';
+
+import { CodigosProps } from "@/app/utils/codigos";
 require('dotenv').config(); // Carregar variáveis de ambiente
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
 
-export async function GET(req) {
+export async function GET(req:any) {
   try {
     console.log(await req.json()); // Corrigido para aguardar a promessa
     return new Response(JSON.stringify({ message: "GET request successful" }), {
@@ -12,7 +15,7 @@ export async function GET(req) {
         'Content-Type': 'application/json',
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     // Caso ocorra algum erro
     console.error('Erro no GET:', error.message);
     return new Response(JSON.stringify({ message: "Error", error: error.message }), {
@@ -24,19 +27,19 @@ export async function GET(req) {
   }
 }
 
-export async function POST(req) {
+export async function POST(req: any) {
   try {
     const data = await req.json(); // Corpo da requisição
     console.log("Corpo da requisição:", JSON.stringify(data, null, 2));
 
     // Valida se o evento é o esperado
     if (data.event === 'OPENPIX:CHARGE_COMPLETED') {
-      if (data.charge.additionalInfo.find(info => info.key === "Origin") == "bot") {
+      if (data.charge.additionalInfo.find((info:any) => info.key === "Origin") == "bot") {
         const additionalInfo = data.charge.additionalInfo || [];
         console.log("Campos adicionais:", JSON.stringify(additionalInfo, null, 2)); // Log para verificar os campos adicionais
 
         // Encontrar o user_id nos campos adicionais
-        const userIdField = additionalInfo.find(info => info.key === "UserID");
+        const userIdField = additionalInfo.find((info:any) => info.key === "UserID");
         if (!userIdField) {
           throw new Error("User  ID não encontrado nos campos adicionais.");
         }
@@ -88,7 +91,7 @@ export async function POST(req) {
         console.log("Saldo atualizado com sucesso para o usuário:", user_id);
 
         // Atualizar o status da venda existente
-        const idTransacaoField = additionalInfo.find(info => info.key === "ID");
+        const idTransacaoField = additionalInfo.find((info:any) => info.key === "ID");
         if (!idTransacaoField) {
           throw new Error("ID da transação não encontrado nos campos adicionais.");
         }
@@ -148,7 +151,56 @@ Boas compras!`
             'Content-Type': 'application/json',
           },
         });
-      } else if (data.charge.additionalInfo.find(info => info.key === "Origin") == "site") {
+       
+      } else if (data.charge.additionalInfo.find((info:any) => info.key === "Origin") == "site") { 
+        const additionalInfo = data.charge.additionalInfo || [];
+        const produtoId=  additionalInfo.find((info:any) => info.key === "Product")  
+       
+        // Recuperar códigos do produto apenas se o status for "ativo"
+      const { data: codigos, error: codigoError } = await supabase
+      .from("codigos")
+      .select("*")
+      .eq("id_produto", produtoId);
+
+    // Filtrar códigos ativos
+    const defaultData=[{
+      id_codigo:"",
+      id_produto:"",
+      codigo:"",
+      status:""
+    }]
+    const codigosAtivos: CodigosProps[]= codigos?.filter(
+      (codigo) => codigo.status.toLowerCase() === "ativo"
+    )||  defaultData;
+
+    if (codigoError || !codigosAtivos || codigosAtivos.length <= 0) {
+    console.log(
+        "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." )
+    }
+    // Atualizar o status do primeiro código ativo para "resgatado"
+    const codigoData = codigosAtivos[0]; // Usar o primeiro código ativo
+    const { error: updateCodigoError } = await supabase
+      .from("codigos")
+      .update({ status: "Resgatado" }) // Ou "inativo", dependendo da sua lógica
+      .eq("id_codigo", codigoData.id_codigo); // Atualizando pelo ID do código
+
+    if (updateCodigoError) {
+      console.error(
+        `Erro ao atualizar o código ${codigoData.codigo}:`,
+        updateCodigoError
+      );
+      // Você pode optar por notificar o usuário ou registrar o erro
+    }
+        
+    const message =
+    `Olá, *${additionalInfo.find((info:any) => info.key === "Nome")}*!\nSeu codigo *${codigoData.codigo}* foi ativado! 🎉\n\n` +
+    `Agora basta você resgatar.\n\n` +
+    `Atenciosamente,\nEquipe *NEXTRECARGAS*`
+    
+    await sendWhatsappNotification({
+      message,
+      phone:additionalInfo.find((info:any) => info.key === "Telefone"),
+    })
         return new Response(JSON.stringify({ message: "Saldo atualizado e status da venda atualizado com sucesso." }), {
           status: 201,
           headers: {
@@ -165,7 +217,7 @@ Boas compras!`
         },
       });
     }
-  } catch (error) {
+  } catch (error:any) {
     console.error('Erro no processamento do POST:', error.message);
     return new Response(JSON.stringify({ message: "Error", error: error.message }), {
       status: 500,
@@ -174,4 +226,40 @@ Boas compras!`
       },
     });
   }
+}
+
+const sendWhatsappNotification = async (
+  {
+    message,
+    phone
+  }: {
+    phone: string
+    message: string
+  }
+) => {
+try {
+  const config: AxiosRequestConfig = {
+    method: 'post',
+    url: `${process.env.EVOLUTION_API_URL}/message/sendText/${process.env.EVOLUTION_INSTANCE_ID}`,
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: process.env.EVOLUTION_API_KEY,
+    },
+  }
+
+  const response = await axios({
+    ...config,
+    data: JSON.stringify({
+      delay: 120,
+      number: phone,
+      text: message,
+      linkPreview: false,
+    })
+  })
+
+  return response
+} catch (error:any) {
+  console.log(error)
+  return null
+}
 }

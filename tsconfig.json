@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/api/webhooks/pix/route.js", "app/api/webhooks/pix/route.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/api/webhooks/pix/route.ts", "app/api/webhooks/pix/route.ts"],
   "exclude": ["node_modules"]
 }
