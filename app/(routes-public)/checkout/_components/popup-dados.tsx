@@ -1,6 +1,6 @@
 import * as React from "react";
 import { z } from "zod";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/app/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,6 +39,8 @@ import {
 import { FilePlus } from "lucide-react";
 import { PhoneInput } from "./phone";
 import { useToast } from "@/hooks/use-toast"
+import { ProdutosProps } from "@/app/utils/produto";
+
 interface DialogInfoCheckout {
     onConfirmCreate: (args: {
         data: {
@@ -46,15 +48,18 @@ interface DialogInfoCheckout {
             telefone: string
         }
     }) => void;
+        produto:ProdutosProps
 }
 
 const schema = z.object({
     nome: z.string().trim().min(1, "Campo Obrigatório!"),
     telefone: z.string().trim().min(1, "Campo Obrigatório!"),
+    email:z.string().optional()
 });
 
 export const InfoCheckout = ({
     onConfirmCreate,
+    produto
 }: DialogInfoCheckout) => {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -66,7 +71,8 @@ export const InfoCheckout = ({
         resolver: zodResolver(schema),
         defaultValues: {
             nome: "",
-            telefone: ""
+            telefone: "",
+            email:""
         },
     });
 
@@ -80,7 +86,42 @@ export const InfoCheckout = ({
         setOpen(false);
         form.reset();
     };
-
+    useEffect(() => {
+        const script = document.createElement("script");
+        script.src = "https://plugin.openpix.com.br/v1/openpix.js";
+        script.async = true;
+        document.body.appendChild(script);
+    
+        return () => {
+          document.body.removeChild(script);
+        };
+      }, []);
+    
+      const generatePix = () => {
+        console.log(parseFloat(produto.valor.toFixed(2)));
+        const gerarCorrelationIdUnico = (len:number, chars='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') => [...Array(len)].map(() => chars.charAt(Math.floor(Math.random() * chars.length))).join('')
+        window.$openpix = window.$openpix || [];
+    
+        window.$openpix.push(["config", {
+          appID: "Q2xpZW50X0lkXzRjZjdjYzllLTM5ZWYtNDkwZC05NmFmLTk1MmRlMWJjMGEwODpDbGllbnRfU2VjcmV0X0tTbDdkNmtFekhRM1ROb2IvbUxCekl5akhQeHBhNnhERmJIZ09LdmlMeU09",
+        }]);
+    
+        window.$openpix.push([
+          "pix",
+          {
+            value:parseFloat(produto.valor.toFixed(2))*100,
+            correlationID: gerarCorrelationIdUnico(30),
+            description: produto.nome,
+            customer: {
+                name: form.getValues("nome") || "",
+                email: form.getValues("email") || "",
+                phone: form.getValues("telefone") || "",
+              },
+            
+            
+          },
+        ]);
+      };
     const FormContent = (
         <Form {...form}>
             <form
@@ -114,14 +155,27 @@ export const InfoCheckout = ({
                         </FormItem>
                     )}
                 />
+     <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                                <Input placeholder="example@gmail.com(opcional)" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
 
-
-                <Button type="submit" disabled={loading}>
+                <Button type="submit" disabled={loading} onClick={generatePix}>
                     {loading ? "Gerando..." : "Gerar Pix"}
                 </Button>
             </form>
         </Form>
     );
+   
 
     return isDesktop ? (
         <Dialog

@@ -21,8 +21,8 @@ export default async function Layout({
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-8">
-                <Link href="/" className="text-red-600 font-bold text-2xl">
-                  ativabox
+                <Link href="/" className="text-gray-900 font-bold text-2xl">
+                  NextRecargas
                 </Link>
                 <nav className="hidden xl:flex items-center gap-6 ">
                   <Link href="#" className="text-gray-600 hover:text-gray-900">

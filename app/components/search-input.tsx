@@ -17,6 +17,8 @@ const InputSearch = () => {
   const [produtos, setProdutos] = useState<ProdutosProps[]>([]);
   const [filteredProdutos, setFilteredProdutos] = useState<ProdutosProps[]>([]);
 
+  console.log(filter)
+
   useEffect(() => {
     const fetchProduto = async () => {
       setLoading(true);
@@ -60,7 +62,7 @@ const InputSearch = () => {
           placeholder="O que você procura?"
           className="pl-10 bg-white"
           onClick={() => setOpen(!open)}
-          value={filter}
+          value={filter  }
           onChange={(e) => setFilter(e.target.value)}
         />
         <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -80,6 +82,7 @@ const InputSearch = () => {
            
            <div className="sticky top-0 w-full"> <div className="relative w-full ">
               <Input
+              value={filter}
                 placeholder="O que você procura?"
                 className="pl-10 bg-white py-6 rounded-none"
                 onChange={(e) => setFilter(e.target.value)}

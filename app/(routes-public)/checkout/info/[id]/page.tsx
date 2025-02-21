@@ -146,7 +146,7 @@ export default function VendaDetalhesLoja() {
             </div>
 
             <div className="space-y-4">
-              <InfoCheckout onConfirmCreate={() => { }}
+              <InfoCheckout produto={produto} onConfirmCreate={() => { }}
               ></InfoCheckout>
               <div className="flex gap-4">
                 <Link href={"https://t.me/nextrecargas_bot"}>

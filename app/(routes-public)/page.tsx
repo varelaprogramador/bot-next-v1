@@ -85,7 +85,17 @@ export default function GiftCardStore() {
   return (
     <div className="min-h-screen ">
 
-        <section className="w-full min-h-[500px] bg-cover bg-[url('/img-banner.png')] bg-center rounded-md"></section>
+<section className="w-full min-h-[500px] bg-cover bg-center rounded-md relative">
+  <Image
+    src="/img-banner.png" 
+    alt="Banner" 
+    width={1440}
+    height={500}
+    className="w-full h-full object-cover absolute top-0 left-0 rounded-md"
+    onError={(e) => e.currentTarget.src = '/placeholder.svg'} // Fallback image on error
+  />
+</section>
+
         <section className="my-12 bg-white border p-4 rounded-md">
           <h2 className="text-2xl font-bold mb-6">Escolha seu Giftcard</h2>
           <div className="relative bg-gray-100 p-4 rounded-md">
