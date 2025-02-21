@@ -34,7 +34,7 @@ export async function POST(req: any) {
 
     // Valida se o evento é o esperado
     if (data.event === 'OPENPIX:CHARGE_COMPLETED') {
-      if (data.charge.additionalInfo.find((info:any) => info.key === "Origin") == "bot") {
+      if (data.charge?.additionalInfo?.find((info:any) => info.key === "Origin") == "bot") {
         const additionalInfo = data.charge.additionalInfo || [];
         console.log("Campos adicionais:", JSON.stringify(additionalInfo, null, 2)); // Log para verificar os campos adicionais
 
@@ -152,7 +152,7 @@ Boas compras!`
           },
         });
        
-      } else if (data.charge.additionalInfo.find((info:any) => info.key === "Origin") == "site") { 
+      } else if (data.charge?.additionalInfo?.find((info:any) => info.key === "Origin") == "site") { 
         console.log(data);
         const additionalInfo = data.charge?.additionalInfo || [];
         const produtoId=  additionalInfo?.find((info:any) => info.key === "Product")  
