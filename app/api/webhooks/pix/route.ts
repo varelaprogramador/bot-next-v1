@@ -39,7 +39,7 @@ export async function POST(req: any) {
 
     console.log("Corpo da requisição:", JSON.stringify(data, null, 2));
 
-    const eventType = data.event;
+    const eventType = data.evento;
 
     if (eventType === "teste_webhook") {
       console.log("teste_webhook");
