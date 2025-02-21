@@ -154,8 +154,8 @@ Boas compras!`
        
       } else if (data.charge.additionalInfo.find((info:any) => info.key === "Origin") == "site") { 
         console.log(data);
-        const additionalInfo = data.charge.additionalInfo || [];
-        const produtoId=  additionalInfo.find((info:any) => info.key === "Product")  
+        const additionalInfo = data.charge?.additionalInfo || [];
+        const produtoId=  additionalInfo?.find((info:any) => info.key === "Product")  
        
         // Recuperar códigos do produto apenas se o status for "ativo"
       const { data: codigos, error: codigoError } = await supabase
