@@ -153,6 +153,7 @@ Boas compras!`
         });
        
       } else if (data.charge.additionalInfo.find((info:any) => info.key === "Origin") == "site") { 
+        console.log(data);
         const additionalInfo = data.charge.additionalInfo || [];
         const produtoId=  additionalInfo.find((info:any) => info.key === "Product")  
        
@@ -196,7 +197,7 @@ Boas compras!`
     `Olá, *${additionalInfo.find((info:any) => info.key === "Nome")}*!\nSeu codigo *${codigoData.codigo}* foi ativado! 🎉\n\n` +
     `Agora basta você resgatar.\n\n` +
     `Atenciosamente,\nEquipe *NEXTRECARGAS*`
-    
+    console.log(message);
     await sendWhatsappNotification({
       message,
       phone:additionalInfo.find((info:any) => info.key === "Telefone"),
@@ -256,6 +257,8 @@ try {
       linkPreview: false,
     })
   })
+
+  console.log("Message :"+response);
 
   return response
 } catch (error:any) {
