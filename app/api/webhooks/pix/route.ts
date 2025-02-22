@@ -357,7 +357,7 @@ Boas compras!`;
             `Agora basta você resgatar.\n\n` +
             `Atenciosamente,\nEquipe *NEXTRECARGAS*`;
 
-          sendWhatsappNotification({
+          await sendWhatsappNotification({
             phone,
             message,
           });
