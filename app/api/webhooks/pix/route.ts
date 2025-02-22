@@ -358,8 +358,8 @@ Boas compras!`;
             `Atenciosamente,\nEquipe *NEXTRECARGAS*`;
 
           sendWhatsappNotification({
+            phone,
             message,
-            phone: additionalInfo.find((info: any) => info.key === "Telefone"),
           });
         }
 
