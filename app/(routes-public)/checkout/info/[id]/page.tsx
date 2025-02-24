@@ -106,7 +106,7 @@ export default function VendaDetalhesLoja() {
     <>
 
       <div className="container  py-8">
-        <div className="grid gap-8 lg:grid-cols-2 bg-white p-4 rounded-md">
+        <div className="grid gap-8 lg:grid-cols-2 bg-white p-4 max-lg:p-0 rounded-md ">
           {/* Product Image */}
           <div className="relative aspect-square overflow-hidden rounded-xl bg-muted">
             <Image
@@ -120,7 +120,7 @@ export default function VendaDetalhesLoja() {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <div className="flex flex-col gap-8 ">
             <div>
               <h1 className="text-4xl font-bold tracking-tight">{produto.nome}</h1>
               <div className="mt-2 flex items-center gap-2">
@@ -134,10 +134,10 @@ export default function VendaDetalhesLoja() {
             </div>
 
             <div className="rounded-lg bg-muted p-4">
-              <div className="space-y-2">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-2xl font-bold text-green-600">R${produto.valor.toFixed(2)} no pix</span>
-                  <Badge variant="secondary" className="text-lg">
+              <div className="flex flex-col">
+                <div className="flex items-baseline justify-between max-lg:flex-col">
+                  <span className="text-2xl font-bold text-green-600 max-md:order-2">R${produto.valor.toFixed(2)} no pix</span>
+                  <Badge variant="secondary" className="text-lg max-md:order-1">
                     {produto.categoria}
                   </Badge>
                 </div>
@@ -145,17 +145,17 @@ export default function VendaDetalhesLoja() {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="flex flex-col gap-4">
               <InfoCheckout produto={produto} onConfirmCreate={() => { }}
               ></InfoCheckout>
               <div className="flex gap-4">
-                <Link href={"https://t.me/nextrecargas_bot"}>
+                <Link href={process.env.NEXT_PUBLIC_WHATSAPP_CHECKOUT || ""}>
                   <Button variant="sucess" className="flex-1">
                     <MessagesSquare className="mr-2 h-4 w-4" />
                     Comprar via WhatsApp
                   </Button>
                 </Link>
-                <Link href={"https://t.me/nextrecargas_bot"}>
+                <Link href={process.env.NEXT_PUBLIC_TELEGRAM_CHECKOUT || ""}>
                   <Button className="flex-1 bg-blue-500 hover:bg-blue-400">
                     <ShoppingBag className="mr-2 h-4 w-4" />
                     Comprar via Telegram
