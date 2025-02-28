@@ -41,6 +41,7 @@ import { createClient } from "@/lib/supabase/client";
 
 import { MediaProps } from "../utils/media";
 import { CreateMedia } from "./create-forms/produto-2";
+import { CreateBanner } from "./create-forms/banner";
 
 export const columns: ColumnDef<MediaProps>[] = [
   {
@@ -94,7 +95,7 @@ export const columns: ColumnDef<MediaProps>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <div className="capitalize flex gap-4"> <div className={`min-h-[5px] min-w-[10px] ${row.getValue("status")?"bg-green-400":"bg-red-400"}  rounded-full`}/>{row.getValue("status")?"ativo":"inativo"}</div>
+      <div className="capitalize flex gap-4"> <div className={`min-h-[5px] min-w-[10px] ${row.getValue("status") ? "bg-green-400" : "bg-red-400"}  rounded-full`} />{row.getValue("status") ? "ativo" : "inativo"}</div>
     ),
   },
   {
@@ -105,11 +106,11 @@ export const columns: ColumnDef<MediaProps>[] = [
         className="truncate max-w-[150px]"
         title={JSON.stringify(row.getValue("produtos"))} // Exibe o valor completo (em formato JSON) ao passar o mouse
       >
-        {JSON.stringify(row.getValue("produtos"))} 
+        {JSON.stringify(row.getValue("produtos"))}
       </div>
     ),
   }
-  
+
 ];
 
 export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
@@ -131,7 +132,15 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
       console.log("codigo criado com sucesso");
     }
   };
-
+  const handleConfirmCreateBanner = async ({ data }: { data: MediaProps }) => {
+    const { error } = await supabase.from("media-loja").insert(data);
+    if (error) {
+      console.error("Erro ao criar codigo:", error);
+      console.log(data);
+    } else {
+      console.log("codigo criado com sucesso");
+    }
+  };
   const handleConfirmEdit = async ({ data }: { data: MediaProps }) => {
     const { error } = await supabase
       .from("marca")
@@ -193,7 +202,7 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
   return (
     <div className="w-full">
       <div className="flex items-center py-4 gap-4">
-   
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -220,6 +229,7 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        <CreateBanner onConfirmCreate={handleConfirmCreateBanner}></CreateBanner>
         <CreateMedia onConfirmCreate={handleConfirmCreate}></CreateMedia>
         <Button
           variant="destructive"
@@ -240,9 +250,9 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
@@ -272,7 +282,7 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                      
+
                         <DropdownMenuItem
                           onClick={() =>
                             handleDelete(row.getValue("id_codigo"))

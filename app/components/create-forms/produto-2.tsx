@@ -54,7 +54,7 @@ const fetchProducts = async () => {
   }
 };
 interface DialogCreateMediaProps {
-  onConfirmCreate: (args: { data: MediaProps }) => void;
+  onConfirmCreate: (args: { data }) => void;
 }
 const produtoSchema = z.object({
   id: z.string().optional(),
@@ -93,7 +93,7 @@ export const CreateMedia = ({
       status: true,
     },
   });
-  
+
   useEffect(() => {
     const loadProducts = async () => {
       const fetchedProducts = await fetchProducts();
@@ -111,7 +111,7 @@ export const CreateMedia = ({
   const handlerUrl = (url: string) => {
     form.setValue("url", url);
   };
-useEffect(() => {
+  useEffect(() => {
     form.setValue("produtos", listProductSelecionados);
   }, [form, listProductSelecionados]);
 
@@ -135,7 +135,7 @@ useEffect(() => {
           )}
         />
 
-       
+
         <FormLabel>Produtos</FormLabel>
         <div className="flex gap-4">
           <Select onValueChange={setProductSelecionados}>
@@ -246,7 +246,7 @@ useEffect(() => {
             </FormItem>
           )}
         />
-        
+
         <Button type="submit" disabled={loading}>
           {loading ? "Criando..." : "Criar Produto"}
         </Button>
@@ -263,7 +263,7 @@ useEffect(() => {
       }}
     >
       <DialogTrigger asChild>
-        <Button>Criar Banner</Button>
+        <Button>Criar Banner Carousel</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -284,7 +284,7 @@ useEffect(() => {
       }}
     >
       <DrawerTrigger asChild>
-        <Button>Criar Banner</Button>
+        <Button>Criar Banner Carousel</Button>
       </DrawerTrigger>
       <DrawerContent className="p-4">
         <DrawerHeader>

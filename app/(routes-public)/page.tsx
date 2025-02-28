@@ -8,7 +8,7 @@ import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
+
 } from "@/app/components/ui/card";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,6 +21,7 @@ export default function GiftCardStore() {
   const [loading, setLoading] = useState(true);
 
   const [data, setData] = useState<ProdutosProps[]>([]);
+  const [dataBanner, setDataBanner] = useState<MediaProps[]>([]);
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -63,7 +64,26 @@ export default function GiftCardStore() {
 
     loadData();
   }, [supabase]);
+  useEffect(() => {
+    const loadData2 = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.from("media-loja").select("*");
 
+        if (error) {
+          throw error;
+        }
+
+        setDataBanner(data);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData2();
+  }, [supabase]);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
   const handleScroll = (direction: "left" | "right") => {
@@ -82,20 +102,69 @@ export default function GiftCardStore() {
       });
     }
   };
+  const carouselRef2 = useRef<HTMLDivElement | null>(null);
+  const handleScroll2 = (direction: "left" | "right") => {
+    const container = carouselRef2.current;
+    if (!container) return; // Verificar se o container existe
+
+    if (direction === "left") {
+      container.scrollBy({
+        left: -container.offsetWidth,
+        behavior: "smooth",
+      });
+    } else {
+      container.scrollBy({
+        left: container.offsetWidth,
+        behavior: "smooth",
+      });
+    }
+  };
   return (
     <div className="min-h-screen ">
 
-      <section className="w-full min-h-[500px] bg-cover bg-center rounded-md relative">
-        <Image
-          src="/banner-next.jpeg"
-          unoptimized
-          alt="Banner"
-          width={1880}
-          height={880}
-          className="w-full h-full object-cover absolute top-0 left-0 rounded-md"
-          onError={(e) => e.currentTarget.src = '/placeholder.svg'} // Fallback image on error
-        />
+      <section className=" bg-white border  rounded-md">
+
+        <div className="relative  rounded-md ">
+          <div
+            ref={carouselRef2}
+            className="flex overflow-hidden "
+          >
+            {dataBanner.map((card) => (
+              <Link key={card.id} href={`/card/${card.id}`} className="w-full flex-shrink-0   max-h-[800px] rounded-md">
+                <Image
+                  src={card.url || "/placeholder.svg"}
+                  unoptimized
+                  alt={card.nome}
+                  width={2000}
+                  height={2000}
+                  className="w-full rounded-md object-fit bg-center  max-h-[800px]"
+                />
+              </Link>
+            ))}
+          </div>
+
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute left-5 top-1/2 -translate-y-1/2 -translate-x-4 rounded-full"
+            onClick={() => handleScroll2("left")}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="absolute right-5  top-1/2 -translate-y-1/2 translate-x-4 rounded-full"
+            onClick={() => handleScroll2("right")}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </section>
+
+
+
+
 
       <section className="my-12 bg-white border p-4 rounded-md">
         <h2 className="text-2xl font-bold mb-6">Escolha seu Giftcard</h2>
@@ -150,7 +219,7 @@ export default function GiftCardStore() {
       </section>
       <section className="bg-white rounded-md p-4">
         <h2 className="text-2xl font-bold mb-6">Nossos Produtos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid max-lg:grid-cols-2 grid-cols-4 gap-6">
           {data.map((product) => (
             <Card
               key={product.id}
