@@ -219,14 +219,14 @@ export default function GiftCardStore() {
       </section>
       <section className="bg-white rounded-md p-4">
         <h2 className="text-2xl font-bold mb-6">Nossos Produtos</h2>
-        <div className="grid max-lg:grid-cols-2 grid-cols-4 gap-6">
+        <div className="grid max-lg:grid-cols-1 grid-cols-4 gap-6">
           {data.map((product) => (
             <Card
               key={product.id}
-              className="overflow-hidden bg-gray-100 border shadow-none"
+              className="overflow-hidden bg-gray-100 border shadow-none "
             >
-              <CardContent className="p-4">
-                <div className="bg-blue-600 hover:bg-blue-500 py-2 rounded-md">
+              <CardContent className="p-4 max-md:flex gap-4 max-md:p-0">
+                <div className="bg-blue-600 hover:bg-blue-500 py-2 rounded-md flex-shrink-0 min-w-[150px] ">
                   <p className="text-center text-white">
                     {product.categoria}
                   </p>
@@ -239,16 +239,23 @@ export default function GiftCardStore() {
                     />
                   </div>
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{product.nome}</h3>
-                <div className="text-green-600">
-                  no pix R${(product.valor || 0).toFixed(2)}
-                </div>
-                <div className="text-gray-600">
-                  R${(product.valor * 1.1 || 0).toFixed(2)} no cartão
-                </div>
+                <div className="flex flex-col justify-center">
+                  <h3 className="font-semibold text-lg mb-2">{product.nome}</h3>
+                  <div className="text-green-600">
+                    no pix R${(product.valor || 0).toFixed(2)}
+                  </div>
+                  <div className="text-gray-600">
+                    R${(product.valor * 1.1 || 0).toFixed(2)} no cartão
+                  </div>
+                  <Link href={`/checkout/info/${product.id}`} className="w-full hidden max-md:flex">
+                    <Button className="w-full bg-gray-900 hover:bg-gray-800">
+                      Comprar
+                    </Button>
+                  </Link></div>
+
               </CardContent>
               <CardFooter>
-                <Link href={`/checkout/info/${product.id}`} className="w-full">
+                <Link href={`/checkout/info/${product.id}`} className="w-full max-md:hidden">
                   <Button className="w-full bg-gray-900 hover:bg-gray-800">
                     Comprar
                   </Button>
