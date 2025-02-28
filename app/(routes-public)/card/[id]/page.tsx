@@ -21,14 +21,14 @@ import Link from "next/link";
 export default function VendaDetalhesLoja() {
   const supabase = createClient();
   const [getMarca, setMarca] = useState<MediaProps | null>(null);
- 
+
   const [loading, setLoading] = useState<boolean>(true);
   const { id: marcaId } = useParams(); // Uso correto do useParams
   const router = useRouter();
   const carouselRef = useRef<HTMLDivElement | null>(null);
-  
+
   console.log(marcaId);
-  
+
   useEffect(() => {
     const fetchMarca = async () => {
       if (!marcaId) return;
@@ -68,8 +68,8 @@ export default function VendaDetalhesLoja() {
   if (!getMarca) {
     return <div className="text-center mt-10">marca não encontrado.</div>;
   }
-  
-  
+
+
   const handleScroll = (direction: "left" | "right") => {
     const container = carouselRef.current;
     if (!container) return; // Verificar se o container existe
@@ -92,48 +92,48 @@ export default function VendaDetalhesLoja() {
 
     <div className="container  py-8">
       <section className="bg-white rounded-md p-4">
-          <h2 className="text-2xl font-bold mb-6">Nossos Produtos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {getMarca.produtos.map((product) => (
-              <Card
-                key={product.id}
-                className="overflow-hidden bg-gray-100 border shadow-none"
-              >
-                <CardContent className="p-4">
-                  <div className="bg-blue-600 hover:bg-blue-500 py-2 rounded-md">
-                    <p className="text-center text-white">
-                      {product.categoria}
-                    </p>
-                    <div className="aspect-square relative ">
-                      <Image
-                        src={product.url_image || "/placeholder.svg"}
-                        alt={product.nome}
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
+        <h2 className="text-2xl font-bold mb-6">Nossos Produtos</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {getMarca.produtos.map((product) => (
+            <Card
+              key={product.id}
+              className="overflow-hidden bg-gray-100 border shadow-none"
+            >
+              <CardContent className="p-4">
+                <div className="bg-blue-600 hover:bg-blue-500 py-2 rounded-md">
+                  <p className="text-center text-white">
+                    {product.categoria}
+                  </p>
+                  <div className="aspect-square relative ">
+                    <Image
+                      src={product.url_image || "/placeholder.svg"}
+                      alt={product.nome}
+                      fill
+                      className="object-contain"
+                    />
                   </div>
-                  <h3 className="font-semibold text-lg mb-2">{product.nome}</h3>
-                  <div className="text-green-600">
-                    no pix R${(product.valor || 0).toFixed(2)}
-                  </div>
-                  <div className="text-gray-600">
-                    R${(product.valor * 1.1 || 0).toFixed(2)} no cartão
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Link href={`/checkout/${product.id}`} className="w-full">
-                    <Button className="w-full bg-gray-900 hover:bg-gray-800">
-                      Comprar
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </section>
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{product.nome}</h3>
+                <div className="text-green-600">
+                  no pix R${(product.valor || 0).toFixed(2)}
+                </div>
+                <div className="text-gray-600">
+                  R${(product.valor * 1.1 || 0).toFixed(2)} no cartão
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Link href={`/checkout/${product.id}`} className="w-full">
+                  <Button className="w-full bg-gray-900 hover:bg-gray-800">
+                    Comprar
+                  </Button>
+                </Link>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </section>
     </div>
-  
+
 
 
   );

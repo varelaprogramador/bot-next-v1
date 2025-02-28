@@ -54,7 +54,7 @@ const fetchProducts = async () => {
   }
 };
 interface DialogCreateMediaProps {
-  onConfirmCreate: (args: { data }) => void;
+  onConfirmCreate: (args: { data: MediaProps }) => void;
 }
 const produtoSchema = z.object({
   id: z.string().optional(),

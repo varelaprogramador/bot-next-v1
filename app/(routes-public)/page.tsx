@@ -13,7 +13,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "../utils/produto";
-import { MediaProps } from "../utils/media";
+import { MediaBannerProps, MediaProps } from "../utils/media";
 import Link from "next/link";
 
 export default function GiftCardStore() {
@@ -21,7 +21,7 @@ export default function GiftCardStore() {
   const [loading, setLoading] = useState(true);
 
   const [data, setData] = useState<ProdutosProps[]>([]);
-  const [dataBanner, setDataBanner] = useState<MediaProps[]>([]);
+  const [dataBanner, setDataBanner] = useState<MediaBannerProps[]>([]);
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);

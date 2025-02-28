@@ -39,7 +39,7 @@ import {
 
 import { createClient } from "@/lib/supabase/client";
 
-import { MediaProps } from "../utils/media";
+import { MediaBannerProps, MediaProps } from "../utils/media";
 import { CreateMedia } from "./create-forms/produto-2";
 import { CreateBanner } from "./create-forms/banner";
 
@@ -132,7 +132,7 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
       console.log("codigo criado com sucesso");
     }
   };
-  const handleConfirmCreateBanner = async ({ data }: { data: MediaProps }) => {
+  const handleConfirmCreateBanner = async ({ data }: { data: MediaBannerProps }) => {
     const { error } = await supabase.from("media-loja").insert(data);
     if (error) {
       console.error("Erro ao criar codigo:", error);

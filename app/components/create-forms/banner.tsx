@@ -27,7 +27,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 
 import ImageSelector from "../popup-imagens";
-import { MediaProps } from "@/app/utils/media";
+import { MediaBannerProps, MediaProps } from "@/app/utils/media";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import Image from "next/image";
@@ -35,7 +35,7 @@ import Image from "next/image";
 
 
 interface DialogCreateMediaProps {
-    onConfirmCreate: (args: { data: MediaProps }) => void;
+    onConfirmCreate: (args: { data: MediaBannerProps }) => void;
 }
 
 

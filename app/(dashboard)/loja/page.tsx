@@ -2,7 +2,7 @@
 
 import { DataTableMediaCarousel } from "@/app/components/tabela-loja";
 import { Button } from "@/app/components/ui/button";
-import { MediaProps } from "@/app/utils/media";
+import { MediaBannerProps, MediaProps } from "@/app/utils/media";
 import { createClient } from "@/lib/supabase/client";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -11,14 +11,15 @@ import { useEffect, useRef, useState } from "react";
 import { Separator } from "@/app/components/ui/separator";
 import Carousel from "./_components/carousel/component";
 import { useIsMobile } from "@/hooks/use-mobile";
-import SimpleSlider from "@/app/components/model-carousel";
 
+import { EmblaOptionsType } from 'embla-carousel'
+import EmblaCarousel from "@/app/components/model-carousel/EmblaCarousel";
 
 export default function Shop() {
   const supabase = createClient();
 
-  const [dataBannerDesk, setDataBannerDesk] = useState<MediaProps[]>([]);
-  const [dataBannerNote, setDataBannerNote] = useState<MediaProps[]>([]);
+  const [dataBannerDesk, setDataBannerDesk] = useState<MediaBannerProps[]>([]);
+  const [dataBannerNote, setDataBannerNote] = useState<MediaBannerProps[]>([]);
   const carouselRef2 = useRef<HTMLDivElement | null>(null);
   const handleScroll2 = (direction: "left" | "right") => {
     const container = carouselRef2.current;
@@ -56,13 +57,17 @@ export default function Shop() {
     loadData2();
   }, [supabase]);
   const mobile = useIsMobile();
+
+  const OPTIONS: EmblaOptionsType = { dragFree: true, loop: true }
+  const SLIDE_COUNT = 5
+  const SLIDES = Array.from(Array(SLIDE_COUNT).keys())
   return (
     <div className="p-4">
       <h1 className="text-2xl font-semibold">Configure sua loja</h1>
       <h2>Layout da Loja</h2>
       <div>
         <h2 className="font-semibold">Banner :</h2>
-
+        <EmblaCarousel slides={SLIDES} options={OPTIONS} />
         <div className="w-full">
           <section className=" bg-white border  rounded-md">
 
