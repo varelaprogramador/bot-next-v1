@@ -67,9 +67,9 @@ export default function Shop() {
       <h2>Layout da Loja</h2>
       <div>
         <h2 className="font-semibold">Banner :</h2>
-        <EmblaCarousel slides={SLIDES} options={OPTIONS} />
+        
         <div className="w-full">
-          <section className=" bg-white border  rounded-md">
+          <section className=" bg-white border rounded-md">
 
             <div className="relative  rounded-md ">
               <div
@@ -77,14 +77,14 @@ export default function Shop() {
                 className="flex overflow-hidden "
               >
                 {(mobile ? dataBannerNote : dataBannerDesk)?.map((card, index) => (
-                  <Link key={card.id} href={`/card/${card.id}`} className="w-full flex-shrink-0   max-h-[800px] rounded-md">
+                  <Link key={card.id} href={`/card/${card.id}`} className="w-full flex-shrink-0   max-h-[420px]  rounded-md">
                     <Image
                       src={card.url || "/placeholder.svg"}
                       unoptimized
                       alt={card.nome}
                       width={2000}
                       height={2000}
-                      className="w-full rounded-md object-fit bg-center  max-h-[800px]"
+                      className="w-full rounded-md object-fit bg-center  max-h-[420px]"
                     />
                   </Link>
                 ))}
