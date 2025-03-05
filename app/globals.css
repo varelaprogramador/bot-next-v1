@@ -254,7 +254,7 @@
 }
 
 
-@media (max-width:500px) {
+@media (max-width:750px) {
   .embla__slide_circle {
     flex: 0 0 auto;
     width: 70px; /* Fixed size for each circle */
