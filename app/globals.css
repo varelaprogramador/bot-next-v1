@@ -254,3 +254,17 @@
 }
 
 
+@media (max-width:500px) {
+  .embla__slide_circle {
+    flex: 0 0 auto;
+    width: 70px; /* Fixed size for each circle */
+    height: 70px;
+    border-radius: 50%;
+    overflow: hidden;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+}
