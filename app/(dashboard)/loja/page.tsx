@@ -14,6 +14,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 import { EmblaOptionsType } from 'embla-carousel'
 import EmblaCarousel from "@/app/components/model-carousel/EmblaCarousel";
+import { DataTableMediaBanner } from "@/app/components/tabela-loja-banner";
 
 export default function Shop() {
   const supabase = createClient();
@@ -61,13 +62,66 @@ export default function Shop() {
   const OPTIONS: EmblaOptionsType = { dragFree: true, loop: true }
   const SLIDE_COUNT = 5
   const SLIDES = Array.from(Array(SLIDE_COUNT).keys())
+
+
+  const [data, setData] = useState<MediaBannerProps[]>([]);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const { data, error } = await supabase.from("media-loja").select("*");
+
+        if (error) {
+          throw error;
+        }
+
+        setData(data || []);
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
+    };
+
+    loadData();
+  }, [supabase]);
+
+  useEffect(() => {
+    const subscription = supabase.channel(`realtime:public:media-loja`).on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "media-loja",
+      },
+      (payload) => {
+        setData((prevData) => {
+          switch (payload.eventType) {
+            case "INSERT":
+              return [...prevData, payload.new as MediaBannerProps];
+            case "UPDATE":
+              return prevData.map((item) =>
+                item.id === payload.new.id ? (payload.new as MediaBannerProps) : item
+              );
+            case "DELETE":
+              return prevData.filter((item) => item.id !== payload.old.id);
+            default:
+              return prevData;
+          }
+        });
+      }
+    );
+
+    subscription.subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
   return (
     <div className="p-4">
       <h1 className="text-2xl font-semibold">Configure sua loja</h1>
       <h2>Layout da Loja</h2>
       <div>
         <h2 className="font-semibold">Banner :</h2>
-        
+
         <div className="w-full">
           <section className=" bg-white border rounded-md">
 
@@ -110,6 +164,7 @@ export default function Shop() {
             </div>
           </section>
         </div>
+        <DataTableMediaBanner data={data}></DataTableMediaBanner>
         <Carousel></Carousel>
 
       </div>
