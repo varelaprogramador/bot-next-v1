@@ -19,6 +19,7 @@ import Link from "next/link";
 import EmblaCarousel from "../components/carousel-emblar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Skeleton } from "../components/ui/skeleton";
+import EmblaCarouselCircle from "../components/carousel-emblar-circle";
 
 export default function GiftCardStore() {
   const supabase = createClient();
@@ -67,26 +68,6 @@ export default function GiftCardStore() {
     };
 
     loadData();
-  }, [supabase]);
-  useEffect(() => {
-    const loadData2 = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase.from("media-loja").select("*");
-
-        if (error) {
-          throw error;
-        }
-
-        setDataBanner(data);
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData2();
   }, [supabase]);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
@@ -155,6 +136,31 @@ export default function GiftCardStore() {
     </Link>
 
   ))
+  const SLIDES2 = dataGift.map((card) => (
+    <Link key={card.id} href={`/card/${card.id}`}>
+      <div
+        key={card.id + "-" + "pai"}
+        className=" flex flex-col justify-center items-center gap-2"
+      >
+        <div
+          key={card.id}
+          className="flex-shrink-0 w-[90px] rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
+        >
+          <Image
+            src={card.url || "/placeholder.svg"}
+            alt={card.nome}
+            width={90}
+            height={90}
+            className="object-cover w-full h-full"
+          />
+
+        </div>
+
+
+      </div>
+    </Link>
+
+  ))
 
   return (
     <div className="min-h-screen ">
@@ -165,55 +171,12 @@ export default function GiftCardStore() {
 
 
 
-      <section className="my-12 bg-white border p-4 rounded-md">
+
+
+      <section className="my-12 bg-white border p-4 rounded-md max-md:p-2">
         <h2 className="text-2xl font-bold mb-6">Escolha seu Giftcard</h2>
-        <div className="relative bg-gray-100 p-4 rounded-md">
-          <div
-            ref={carouselRef}
-            className="flex   overflow-x-hidden gap-4 py-4 px-8"
-          >
-            {dataGift.map((card) => (
-
-              <Link key={card.id} href={`/card/${card.id}`}>
-                <div
-                  key={card.id + "-" + "pai"}
-                  className=" flex flex-col justify-center items-center gap-2"
-                >
-                  <div
-                    key={card.id}
-                    className="flex-shrink-0 w-[100px] rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 cursor-pointer flex justify-center items-center"
-                  >
-                    <Image
-                      src={card.url || "/placeholder.svg"}
-                      alt={card.nome}
-                      width={100}
-                      height={100}
-                      className="object-cover w-full h-full"
-                    />
-
-                  </div>
-
-
-                </div>
-              </Link>
-            ))}
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-5 top-1/2 -translate-y-1/2 -translate-x-4 rounded-full"
-            onClick={() => handleScroll("left")}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute right-5  top-1/2 -translate-y-1/2 translate-x-4 rounded-full"
-            onClick={() => handleScroll("right")}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="relative bg-gray-100 p-4 rounded-md max-md:p-0">
+          {loading ? <Skeleton className="min-h-[400px] w-full bg-gray-200 animate-pulse" /> : <EmblaCarouselCircle slides={SLIDES2} options={OPTIONS} />}
         </div>
       </section>
       <section className="bg-white rounded-md p-4">

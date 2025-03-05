@@ -191,3 +191,66 @@
   width:20px;
 }
 
+
+.embla_circle {
+  max-width: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.embla__viewport_circle {
+  overflow: hidden;
+  width: 100%;
+  padding: 16px;
+  border-radius: 8px;
+  z-index: 1;
+}
+
+.embla__container_circle {
+  display: flex;
+  touch-action: pan-y pinch-zoom;
+  gap: 1rem; /* Space between the items */
+  justify-content: start;
+}
+
+.embla__slide_circle {
+  flex: 0 0 auto;
+  width: 96px; /* Fixed size for each circle */
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.embla__controls_circle {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+
+.embla__button_circle {
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid #171717;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.embla__button_circle:hover {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+
