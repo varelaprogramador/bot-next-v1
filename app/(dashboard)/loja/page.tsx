@@ -119,8 +119,10 @@ export default function Shop() {
     <div className="p-4">
       <h1 className="text-2xl font-semibold">Configure sua loja</h1>
       <h2>Layout da Loja</h2>
+
       <div>
         <h2 className="font-semibold">Banner :</h2>
+
 
         <div className="w-full">
           <section className=" bg-white border rounded-md">
@@ -163,6 +165,11 @@ export default function Shop() {
               </Button>
             </div>
           </section>
+        </div>
+        <div className="bg-yellow-50 border-yellow-400 text-orange-700 border rounded-md mt-4 p-4 ">
+          <p> <strong>Dimensões:</strong><br></br> Desktop: 1500 X 400<br></br>
+            Celular: 380 X 400
+          </p>
         </div>
         <DataTableMediaBanner data={data}></DataTableMediaBanner>
         <Carousel></Carousel>
