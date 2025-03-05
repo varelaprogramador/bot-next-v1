@@ -13,7 +13,7 @@ import Carousel from "./_components/carousel/component";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { EmblaOptionsType } from 'embla-carousel'
-import EmblaCarousel from "@/app/components/model-carousel/EmblaCarousel";
+
 import { DataTableMediaBanner } from "@/app/components/tabela-loja-banner";
 
 export default function Shop() {

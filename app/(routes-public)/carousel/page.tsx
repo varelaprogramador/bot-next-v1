@@ -1,7 +1,7 @@
 "use client";
 
 import EmblaCarousel from "@/app/components/carousel-emblar";
-import SimpleSlider from "@/app/components/carousel-slick";
+
 import { MediaBannerProps, MediaProps } from "@/app/utils/media";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { createClient } from "@/lib/supabase/client";
