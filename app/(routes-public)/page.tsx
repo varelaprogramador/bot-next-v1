@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight, Search, User } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
+import { EmblaOptionsType } from 'embla-carousel'
 import {
   Card,
   CardContent,
@@ -15,13 +16,16 @@ import { createClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "../utils/produto";
 import { MediaBannerProps, MediaProps } from "../utils/media";
 import Link from "next/link";
+import EmblaCarousel from "../components/carousel-emblar";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Skeleton } from "../components/ui/skeleton";
 
 export default function GiftCardStore() {
   const supabase = createClient();
   const [loading, setLoading] = useState(true);
 
   const [data, setData] = useState<ProdutosProps[]>([]);
-  const [dataBanner, setDataBanner] = useState<MediaBannerProps[]>([]);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -102,65 +106,60 @@ export default function GiftCardStore() {
       });
     }
   };
-  const carouselRef2 = useRef<HTMLDivElement | null>(null);
-  const handleScroll2 = (direction: "left" | "right") => {
-    const container = carouselRef2.current;
-    if (!container) return; // Verificar se o container existe
 
-    if (direction === "left") {
-      container.scrollBy({
-        left: -container.offsetWidth,
-        behavior: "smooth",
-      });
-    } else {
-      container.scrollBy({
-        left: container.offsetWidth,
-        behavior: "smooth",
-      });
-    }
-  };
+
+
+  const OPTIONS: EmblaOptionsType = { loop: true }
+  const SLIDE_COUNT = 5
+
+  const [dataBannerDesk, setDataBannerDesk] = useState<MediaBannerProps[]>([]);
+  const [dataBannerNote, setDataBannerNote] = useState<MediaBannerProps[]>([]);
+  const [dataBanner, setDataBanner] = useState<MediaBannerProps[]>([]);
+
+
+  const mobile = useIsMobile();
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.from("media-loja").select("*");
+        if (error) throw error;
+
+        setDataBannerDesk(data.filter((item) => item.type === "desktop"));
+        setDataBannerNote(data.filter((item) => item.type === "mobile"));
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
+      finally {
+        setLoading(false)
+      }
+    };
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    setDataBanner(mobile ? dataBannerNote : dataBannerDesk);
+  }, [dataBannerDesk, dataBannerNote, mobile]);
+  const SLIDES = dataBanner.map((card) => (
+    <Link key={card.id} href={`/card/${card.id}`} className="w-full flex-shrink-0 h-[400px] rounded-md">
+      <Image
+        src={card.url || "/placeholder.svg"}
+        unoptimized
+        alt={card.nome}
+        width={1800}
+        height={300}
+        className="w-full h-[400px] rounded-md object-cover bg-center"
+      />
+    </Link>
+
+  ))
+
   return (
     <div className="min-h-screen ">
 
-      <section className=" bg-white border  rounded-md p-0">
-
-        <div className="relative   ">
-          <div
-            ref={carouselRef2}
-            className="flex overflow-hidden rounded-md "
-          >
-            {dataBanner.map((card) => (
-              <Link key={card.id} href={`/card/${card.id}`} className="min-w-full">
-                <Image
-                  src={card.url || "/placeholder.svg"}
-                  unoptimized
-                  alt={card.nome}
-                  width={800}
-                  height={400}
-                  className="w-full rounded-md object-fit bg-center  "
-                />
-              </Link>
-            ))}
-          </div>
-
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute left-5 top-1/2 -translate-y-1/2 -translate-x-4 rounded-full"
-            onClick={() => handleScroll2("left")}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            className="absolute right-5  top-1/2 -translate-y-1/2 translate-x-4 rounded-full"
-            onClick={() => handleScroll2("right")}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </section>
+      {loading ? <Skeleton className="min-h-[400px] w-full bg-gray-200 animate-pulse" /> : <EmblaCarousel slides={SLIDES} options={OPTIONS}></EmblaCarousel>}
 
 
 

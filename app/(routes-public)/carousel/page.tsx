@@ -12,12 +12,12 @@ import Image from "next/image";
 export default function Test() {
 
   const OPTIONS: EmblaOptionsType = { loop: true }
-const SLIDE_COUNT = 5
+  const SLIDE_COUNT = 5
 
   const [dataBannerDesk, setDataBannerDesk] = useState<MediaBannerProps[]>([]);
   const [dataBannerNote, setDataBannerNote] = useState<MediaBannerProps[]>([]);
   const [dataBanner, setDataBanner] = useState<MediaBannerProps[]>([]);
-  
+
   const supabase = createClient();
   const mobile = useIsMobile();
 
@@ -40,26 +40,26 @@ const SLIDE_COUNT = 5
   useEffect(() => {
     setDataBanner(mobile ? dataBannerNote : dataBannerDesk);
   }, [dataBannerDesk, dataBannerNote, mobile]);
-const SLIDES =  dataBanner.map((card) => (
-  <Link key={card.id} href={`/card/${card.id}`} className="w-full flex-shrink-0 h-[300px] rounded-md">
-    <Image
-      src={card.url || "/placeholder.svg"}
-      unoptimized
-      alt={card.nome}
-      width={1800}
-      height={300}
-      className="w-full h-[300px] rounded-md object-cover bg-center"
-    />
-  </Link>
-  
-))
+  const SLIDES = dataBanner.map((card) => (
+    <Link key={card.id} href={`/card/${card.id}`} className="w-full flex-shrink-0 h-[400px] rounded-md">
+      <Image
+        src={card.url || "/placeholder.svg"}
+        unoptimized
+        alt={card.nome}
+        width={1800}
+        height={300}
+        className="w-full h-[400px] rounded-md object-cover bg-center"
+      />
+    </Link>
+
+  ))
 
   return (
     <div className="min-h-screen ">
-     <EmblaCarousel slides={SLIDES} options={OPTIONS}></EmblaCarousel>   
-        
+      <EmblaCarousel slides={SLIDES} options={OPTIONS}></EmblaCarousel>
 
-    
+
+
     </div>
   );
 }
