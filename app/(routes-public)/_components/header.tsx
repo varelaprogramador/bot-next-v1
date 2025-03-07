@@ -43,14 +43,7 @@ export const Menu = () => {
                 </div>
                 <nav className="bg-gray-900 rounded-b-md hidden xl:flex">
                     <div className="container mx-auto px-4">
-                        <div className="flex items-center h-12 gap-6 text-sm">
-                            <Link href="#" className="text-white hover:text-gray-300">
-                                CARD Mensal
-                            </Link>
-                            <Link href="#" className="text-white hover:text-gray-300">
-                                CARD Anual
-                            </Link>
-                        </div>
+
                     </div>
                 </nav>
                 <nav className="bg-gray-900 rounded-b-md p-2 max-xl:flex hidden ">
