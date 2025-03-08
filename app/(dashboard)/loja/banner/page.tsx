@@ -4,7 +4,7 @@ import { DataTableMediaCarousel } from "@/app/components/tabela-loja";
 import { Button } from "@/app/components/ui/button";
 import { MediaBannerProps, MediaProps } from "@/app/utils/media";
 import { createClient } from "@/lib/supabase/client";
-import { ChevronLeft, ChevronRight, GalleryHorizontal, ImageIcon, ShoppingBasketIcon } from "lucide-react";
+import { ArrowLeftCircle, ChevronLeft, ChevronRight, GalleryHorizontal, ImageIcon, ShoppingBasketIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -119,10 +119,15 @@ export default function Shop() {
   }, [supabase]);
   return (
     <div className="p-4 min-h-[85vh] flex flex-col gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold ">Configure sua loja</h1>
-        <h2 className="font-semibold">Layout da Loja</h2>
+      <div className=" flex justify-between bg-white rounded-md p-2 fixed z-10  w-[85%] shadow-md">
+        <div className="flex gap-4 items-center ">
+          <Button onClick={() => window.location.href = "/loja"} className="bg-blue-600 hover:bg-blue-400">
+            <ArrowLeftCircle></ArrowLeftCircle>
+          </Button> <p className="border-l pl-1 font-semibold"> Layout Banner</p>
+        </div>
       </div>
+
+
       <Separator className=" my-4"></Separator>
 
 
