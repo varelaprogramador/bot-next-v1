@@ -12,7 +12,7 @@ export const Menu = () => {
 
     return (
         <>
-            <header className="bg-white  rounded-md sticky top-2 z-40 shadow-md
+            <header className="bg-white w-full  rounded-md sticky top-2 z-40 shadow-md
          shadow-[#00000057]">
                 <div className="container mx-auto px-4">
                     <div className="flex items-center justify-between h-16">

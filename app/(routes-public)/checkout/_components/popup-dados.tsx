@@ -37,7 +37,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/app/components/ui/form";
-import { FilePlus } from "lucide-react";
+import { FilePlus, ShoppingBag } from "lucide-react";
 import { PhoneInput } from "./phone";
 import { useToast } from "@/hooks/use-toast"
 import { ProdutosProps } from "@/app/utils/produto";
@@ -47,13 +47,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 interface DialogInfoCheckout {
-    onConfirmCreate: (args: {
-        data: {
-            nome: string,
-            telefone: string
-        }
-    }) => void;
-    produto: ProdutosProps
+    isOpen: boolean, produto: ProdutosProps, setIsOpen: (open: boolean) => void
 }
 
 const schema = z.object({
@@ -63,23 +57,24 @@ const schema = z.object({
 });
 
 export const InfoCheckout = ({
-    onConfirmCreate,
-    produto
+    isOpen, setIsOpen, produto
 }: DialogInfoCheckout) => {
-    const [open, setOpen] = useState(false);
+
     const [openQR, setOpenQR] = useState(false);
-    const [dataQR, setDataQR] =useState(   {charge: {
-        qrCodeImage:"/placeholder.svg",
-        value: 0,
-        comment: "",
-        identifier: "",
-        status: "",
-        expiresDate: "",
-        pixKey: "",
-        paymentLinkUrl: "#",
-        expiresIn:0,
-        brCode: "#",
-    }});
+    const [dataQR, setDataQR] = useState({
+        charge: {
+            qrCodeImage: "/placeholder.svg",
+            value: 0,
+            comment: "",
+            identifier: "",
+            status: "",
+            expiresDate: "",
+            pixKey: "",
+            paymentLinkUrl: "#",
+            expiresIn: 0,
+            brCode: "#",
+        }
+    });
     const [loading, setLoading] = useState(false);
     const isDesktop = !useIsMobile();
 
@@ -95,9 +90,7 @@ export const InfoCheckout = ({
     });
 
     const onSubmit = (values: z.infer<typeof schema>) => {
-
-        onConfirmCreate({ data: values });
-        setOpen(false);
+        setIsOpen(false);
         form.reset();
     };
     const generatePix = async () => {
@@ -105,7 +98,7 @@ export const InfoCheckout = ({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                produto: { nome: produto.nome, id: produto.id, valor: produto.valor},
+                produto: { nome: produto.nome, id: produto.id, valor: produto.valor },
                 nome: form.getValues('nome'),
                 email: form.getValues('email'),
                 telefone: form.getValues('telefone'),
@@ -181,32 +174,32 @@ export const InfoCheckout = ({
 
             >
                 <Image
-                src={dataQR.charge.qrCodeImage}
-                width={300}
-                height={200}
-                alt="QR-CODE"
-                
+                    src={dataQR.charge.qrCodeImage}
+                    width={300}
+                    height={200}
+                    alt="QR-CODE"
+
                 >
 
                 </Image>
                 <div className="w-full grid grid-cols-2 gap-4">
-                <h1>Valor</h1>
-                <Input placeholder="Valor" value={"R$"+(dataQR.charge.value/100).toFixed(2)||"/"} readOnly />
-                <h1>Nome do produto</h1>
-                <Input placeholder="Comentário" value={dataQR.charge.comment||"/"} readOnly />
-                <h1>Status</h1>
-                <Input placeholder="Status" value={dataQR.charge.status||"/"} readOnly />
-                <h1>Expira em:</h1>
-                <Input placeholder="Expira em" value={dataQR.charge.expiresIn/60 +" Minutos"||"/"} readOnly />
-                <h1>Chave Pix:</h1>
-                <Input placeholder="Pix Key" value={dataQR.charge.pixKey+" M"||"/"}  readOnly />
+                    <h1>Valor</h1>
+                    <Input placeholder="Valor" value={"R$" + (dataQR.charge.value / 100).toFixed(2) || "/"} readOnly />
+                    <h1>Nome do produto</h1>
+                    <Input placeholder="Comentário" value={dataQR.charge.comment || "/"} readOnly />
+                    <h1>Status</h1>
+                    <Input placeholder="Status" value={dataQR.charge.status || "/"} readOnly />
+                    <h1>Expira em:</h1>
+                    <Input placeholder="Expira em" value={dataQR.charge.expiresIn / 60 + " Minutos" || "/"} readOnly />
+                    <h1>Chave Pix:</h1>
+                    <Input placeholder="Pix Key" value={dataQR.charge.pixKey + " M" || "/"} readOnly />
 
                 </div>
-<Link href={dataQR.charge.paymentLinkUrl||"/"}>
-                <Button className="w-full">
-                    Pagar Agora
-                </Button>
-</Link>
+                <Link href={dataQR.charge.paymentLinkUrl || "/"}>
+                    <Button className="w-full">
+                        Pagar Agora
+                    </Button>
+                </Link>
 
 
             </div>
@@ -215,17 +208,13 @@ export const InfoCheckout = ({
 
     return isDesktop ? (
         <Dialog
-            open={open}
-            onOpenChange={(isOpen) => {
-                setOpen(isOpen);
-                if (!isOpen) form.reset();
+            open={isOpen}
+            onOpenChange={(open) => {
+                setIsOpen(open);
+                if (!open) form.reset();
             }}
         >
-            <DialogTrigger asChild>
-                <Button className="w-full text-lg" size="lg">
-                    Comprar via Pix
-                </Button>
-            </DialogTrigger>
+
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>{openQR ? "Dados do pix" : "Informe seus dados"}</DialogTitle>
@@ -239,18 +228,13 @@ export const InfoCheckout = ({
         </Dialog>
     ) : (
         <Drawer
-            open={open}
-            onOpenChange={(isOpen) => {
-                setOpen(isOpen);
-                if (!isOpen) form.reset();
+            open={isOpen}
+            onOpenChange={(open) => {
+                setIsOpen(open);
+                if (!open) form.reset();
             }}
         >
-            <DrawerTrigger asChild>
-                <Button className="w-full text-lg" size="lg">
-                    Comprar via Pix
 
-                </Button>
-            </DrawerTrigger>
             <DrawerContent className="p-4">
                 <DrawerHeader>
                     <DrawerTitle>Criar Novo Produto</DrawerTitle>

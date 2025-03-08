@@ -16,7 +16,7 @@ export default async function Layout({
 
   return (
 
-    <div className="flex flex-col container mx-auto w-full font-poppins  ">
+    <div className="flex flex-col lg:container max-md:px-[2px] w-full font-poppins  ">
       <Menu></Menu>
       <main className=" py-8 overflow-x-hidden">
         {children}
