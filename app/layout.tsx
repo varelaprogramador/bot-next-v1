@@ -6,9 +6,9 @@ import "./globals.css";
 import { Metadata } from "next";
 import Link from "next/link";
 import { Input } from "./components/ui/input";
+import { Toaster } from "./components/ui/sonner";
 import { Search, User } from "lucide-react";
 import { Button } from "./components/ui/button";
-import { Toaster } from "./components/ui/toaster";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -34,7 +34,18 @@ export default function RootLayout({
         <body className="bg-gray-100">
           <NextTopLoader color="blue" />
           {children}
-          <Toaster></Toaster>
+          <Toaster
+            richColors
+            closeButton
+            position="top-center"
+            pauseWhenPageIsHidden
+            toastOptions={{
+              classNames: {
+                toast:
+                  'group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg group-[.toaster]:pointer-events-auto z-[99999]',
+              },
+            }}
+          />
         </body>
       </html>
     </ClerkProvider>

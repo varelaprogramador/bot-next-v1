@@ -31,7 +31,7 @@ export default function GiftCardStore() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase.from("produtos").select("*");
+        const { data, error } = await supabase.from("produtos").select("*").order("position");
 
         if (error) {
           throw error;

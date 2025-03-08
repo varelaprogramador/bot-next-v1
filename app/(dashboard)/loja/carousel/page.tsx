@@ -9,7 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { Separator } from "@/app/components/ui/separator";
-import Carousel from "./_components/carousel/component";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import { EmblaOptionsType } from 'embla-carousel'
@@ -17,9 +17,10 @@ import { EmblaOptionsType } from 'embla-carousel'
 import { DataTableMediaBanner } from "@/app/components/tabela-loja-banner";
 import { Client } from "@/app/demo/components/client";
 import { Card, CardContent } from "@/app/components/ui/card";
-import OptionCard from "./_components/option-card";
+import Carousel from "../_components/carousel/component";
 
-export default function Shop() {
+
+export default function CarouselLayoutShop() {
 
   return (
     <div className="p-4 min-h-[85vh] flex flex-col gap-4">
@@ -29,12 +30,12 @@ export default function Shop() {
       </div>
       <Separator className=" my-4"></Separator>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-        <OptionCard link="/produtos" title="Produtos" icon="produtos" delay={0} />
-        <OptionCard link="/banner" title="Banner" icon="banner" delay={1} />
-        <OptionCard link="/carousel" title="Carousel" icon="carousel" delay={2} />
-      </div>
 
+      <div>
+
+        <Carousel></Carousel>
+
+      </div>
     </div>
   );
 }
