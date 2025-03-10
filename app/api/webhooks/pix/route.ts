@@ -346,14 +346,16 @@ Boas compras!`;
         const phone = additionalInfo.find(
           (info: any) => info.key === "Telefone"
         )?.value;
-
+        const produto = additionalInfo.find(
+          (info: any) => info.key === "Product-Nome"
+        )?.value;
         console.log("Nome:", name);
         console.log("Código:", code);
         console.log("Telefone:", phone);
 
         if (phone) {
           const message =
-            `Olá, *${name}*!\nSeu código *${code}* foi ativado! 🎉\n\n` +
+            `Olá, *${name}*!\nSegue chave de ativação para *${produto}*  ||  *${code}* foi ativado! 🎉\n\n` +
             `Agora basta você resgatar.\n\n` +
             `Atenciosamente,\nEquipe *NEXTRECARGAS*`;
 
