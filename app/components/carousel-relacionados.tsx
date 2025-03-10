@@ -21,7 +21,7 @@ interface CarouselRelacionadosProps {
 }
 
 const CarouselRelacionados: React.FC<CarouselRelacionadosProps> = ({ produtos }) => {
- 
+
 
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const handleScroll = (direction: "left" | "right") => {
@@ -84,7 +84,7 @@ const CarouselRelacionados: React.FC<CarouselRelacionadosProps> = ({ produtos })
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Link href={`/checkout/${product.id}`} className="w-full">
+                  <Link href={`https://nextgiftcards.com/checkout/info/${product.id}`} className="w-full">
                     <Button className="w-full bg-gray-900 hover:bg-gray-800">
                       Comprar
                     </Button>

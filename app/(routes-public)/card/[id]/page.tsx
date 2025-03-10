@@ -122,7 +122,7 @@ export default function VendaDetalhesLoja() {
                 </div>
               </CardContent>
               <CardFooter>
-                <Link href={`/checkout/${product.id}`} className="w-full">
+                <Link href={`/checkout/info/${product.id}`} className="w-full">
                   <Button className="w-full bg-gray-900 hover:bg-gray-800">
                     Comprar
                   </Button>
