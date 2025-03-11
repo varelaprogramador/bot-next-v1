@@ -30,7 +30,10 @@ export async function POST(req: Request) {
             { key: "Product-Nome", value: body.produto.nome },
             { key: "Nome", value: body.nome },
             { key: "Telefone", value: body.telefone }, // Corrigido
-            { key: "Email", value: body.email ? body.email : "sem@gmail.com" }, // Corrigido
+            {
+              key: "Email",
+              value: body.email != "" ? body.email : "sem@gmail.com",
+            }, // Corrigido
             { key: "Invoice", value: body.data || Date.now().toString() }, // Se não tiver `data`, usa timestamp
             { key: "Origin", value: body.origin || "site" },
           ],
