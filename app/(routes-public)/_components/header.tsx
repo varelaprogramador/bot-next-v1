@@ -42,7 +42,7 @@ export const Menu = () => {
                     </div>
                 </div>
                 <nav className="bg-gray-900 rounded-b-md hidden xl:flex">
-                    <div className="container mx-auto px-4">
+                    <div className="min-h-[30px] mx-auto px-4">
 
                     </div>
                 </nav>
