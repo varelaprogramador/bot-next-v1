@@ -173,13 +173,19 @@ export const InfoCheckout = ({
                 className="grid items-center justify-center gap-4"
 
             >
-                {isDesktop ? (<Image
+                {isDesktop ? (<><Image
                     src={dataQR.charge.qrCodeImage || "/placeholder.svg"}
                     width={300}
                     height={200}
                     alt="QR-CODE"
 
-                />) :
+                />
+                    <div className="border rounded-md p-4 w-full overflow-x-auto">
+                        {dataQR.charge.brCode}
+
+                    </div>
+                    <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge.brCode) }}>Copiar codigo pix</Button></>
+                ) :
                     (<><div className="border rounded-md p-4 w-full overflow-x-auto">
                         {dataQR.charge.brCode}
 
