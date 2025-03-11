@@ -39,7 +39,7 @@ import {
 } from "@/app/components/ui/form";
 import { FilePlus, ShoppingBag } from "lucide-react";
 import { PhoneInput } from "./phone";
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner";
 import { ProdutosProps } from "@/app/utils/produto";
 import { v4 } from "uuid";
 import { Value } from "@radix-ui/react-select";
@@ -78,7 +78,6 @@ export const InfoCheckout = ({
     const [loading, setLoading] = useState(false);
     const isDesktop = !useIsMobile();
 
-    const { toast } = useToast()
 
     const form = useForm<z.infer<typeof schema>>({
         resolver: zodResolver(schema),
@@ -184,13 +183,13 @@ export const InfoCheckout = ({
                         {dataQR.charge.brCode}
 
                     </div>
-                    <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge.brCode) }}>Copiar codigo pix</Button></>
+                    <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge.brCode); toast.success("Código pix copiado com sucesso!") }}>Copiar codigo pix</Button></>
                 ) :
                     (<><div className="border rounded-md p-4 w-full overflow-x-auto">
                         {dataQR.charge.brCode}
 
                     </div>
-                        <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge.brCode) }}>Copiar codigo pix</Button></>)
+                        <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge.brCode); toast.success("Código pix copiado com sucesso!") }}>Copiar codigo pix</Button></>)
                 }
                 <div className="w-full grid grid-cols-2 gap-4">
                     <h1>Valor</h1>
