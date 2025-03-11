@@ -5,8 +5,8 @@ export async function POST(req: Request) {
   try {
     // Pegando os dados do request
     const body = await req.json();
-
-    if (!body.produto || !body.nome || !body.email || !body.telefone) {
+    console.log(body);
+    if (!body.produto || !body.nome || !body.telefone) {
       return new Response(JSON.stringify({ error: "Dados incompletos" }), {
         status: 400,
       });
@@ -30,13 +30,13 @@ export async function POST(req: Request) {
             { key: "Product-Nome", value: body.produto.nome },
             { key: "Nome", value: body.nome },
             { key: "Telefone", value: body.telefone }, // Corrigido
-            { key: "Email", value: body.email }, // Corrigido
+            { key: "Email", value: body.email ? body.email : "sem@gmail.com" }, // Corrigido
             { key: "Invoice", value: body.data || Date.now().toString() }, // Se não tiver `data`, usa timestamp
             { key: "Origin", value: body.origin || "site" },
           ],
           payer: {
             name: body.nome,
-            email: body.email,
+            email: body.email || "",
             phone: body.telefone,
           },
         }),

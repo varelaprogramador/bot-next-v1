@@ -100,7 +100,7 @@ export const InfoCheckout = ({
             body: JSON.stringify({
                 produto: { nome: produto.nome, id: produto.id, valor: produto.valor },
                 nome: form.getValues('nome'),
-                email: form.getValues('email'),
+                email: form.getValues('email') || "",
                 telefone: form.getValues('telefone'),
                 origin: "site",
             }),
@@ -173,15 +173,19 @@ export const InfoCheckout = ({
                 className="grid items-center justify-center gap-4"
 
             >
-                <Image
-                    src={dataQR.charge.qrCodeImage}
+                {isDesktop ? (<Image
+                    src={dataQR.charge.qrCodeImage || "/placeholder.svg"}
                     width={300}
                     height={200}
                     alt="QR-CODE"
 
-                >
+                />) :
+                    (<><div className="border rounded-md p-4 w-full overflow-x-auto">
+                        {dataQR.charge.brCode}
 
-                </Image>
+                    </div>
+                        <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge.brCode) }}>Copiar codigo pix</Button></>)
+                }
                 <div className="w-full grid grid-cols-2 gap-4">
                     <h1>Valor</h1>
                     <Input placeholder="Valor" value={"R$" + (dataQR.charge.value / 100).toFixed(2) || "/"} readOnly />
@@ -192,7 +196,7 @@ export const InfoCheckout = ({
                     <h1>Expira em:</h1>
                     <Input placeholder="Expira em" value={dataQR.charge.expiresIn / 60 + " Minutos" || "/"} readOnly />
                     <h1>Chave Pix:</h1>
-                    <Input placeholder="Pix Key" value={dataQR.charge.pixKey + " M" || "/"} readOnly />
+                    <Input placeholder="BR CODE" value={dataQR.charge.brCode + " M" || "/"} readOnly />
 
                 </div>
                 <Link href={dataQR.charge.paymentLinkUrl || "/"}>
