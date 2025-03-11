@@ -354,15 +354,30 @@ Boas compras!`;
         console.log("Telefone:", phone);
 
         if (phone) {
-          const message =
-            `Olá, *${name}*!\nSegue chave de ativação para *${produto}*  ||  *${code}* foi ativado! 🎉\n\n` +
-            `Agora basta você resgatar.\n\n` +
-            `Atenciosamente,\nEquipe *NEXTRECARGAS*`;
+          // const message =
+          //   `Olá, *${name}*!\nSegue chave de ativação para *${produto}*  ||  *${code}* foi ativado! 🎉\n\n` +
+          //   `Agora basta você resgatar.\n\n` +
+          //   `Atenciosamente,\nEquipe *NEXTRECARGAS*`;
 
-          await sendWhatsappNotification({
-            phone,
-            message,
-          });
+          // await sendWhatsappNotification({
+          //   phone,
+          //   message,
+          // });
+          const response = await fetch(
+            "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/N0zmZuEk8fwK/",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                name: name,
+                phone: phone,
+                codigo: code,
+                produto: produto,
+              }),
+            }
+          );
         }
 
         return new Response(
