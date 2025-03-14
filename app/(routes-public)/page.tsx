@@ -207,7 +207,7 @@ export default function GiftCardStore() {
                     no pix R${(product.valor || 0).toFixed(2)}
                   </div>
                   <div className="text-gray-600">
-                    R${(product.valor * 1.1 || 0).toFixed(2)} no cartão
+
                   </div>
                   <Link href={`/checkout/info/${product.id}`} className="w-full hidden max-md:flex">
                     <Button className="w-full bg-gray-900 hover:bg-gray-800">

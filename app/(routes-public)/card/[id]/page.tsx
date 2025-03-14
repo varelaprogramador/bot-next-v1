@@ -118,7 +118,7 @@ export default function VendaDetalhesLoja() {
                   no pix R${(product.valor || 0).toFixed(2)}
                 </div>
                 <div className="text-gray-600">
-                  R${(product.valor * 1.1 || 0).toFixed(2)} no cartão
+
                 </div>
               </CardContent>
               <CardFooter>

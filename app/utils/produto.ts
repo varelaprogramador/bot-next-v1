@@ -16,4 +16,5 @@ export interface ProdutosLojaProps {
   created_at?: string;
   url_image: string;
   position: number;
+  reviews: JSON;
 }
