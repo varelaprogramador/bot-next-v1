@@ -1042,6 +1042,7 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
               email: "",
               phone: "",
               correlationID: userId,
+              Origin: "bot",
             },
           }),
         }
