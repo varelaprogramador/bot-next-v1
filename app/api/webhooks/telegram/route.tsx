@@ -1036,13 +1036,13 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
               { key: "ID", value: id_transacao },
               { key: "Product", value: "Saldo" },
               { key: "Invoice", value: `${new Date().getTime()}` },
+              { key: "Origin", value: `bot` },
             ],
             payer: {
               name: `telegram - ${userId}`,
               email: "",
               phone: "",
               correlationID: userId,
-              Origin: "bot",
             },
           }),
         }
