@@ -201,7 +201,7 @@ export async function POST(req: any) {
 
         const { error: vendaUpdateError } = await supabase
           .from("vendas")
-          .update({ status: "concluida" }) // Atualiza o status da venda
+          .update({ status: "concluida", origin: originValue }) // Atualiza o status da venda
           .eq("id_transacao", id_transacao); // Filtra pela ID da transação
 
         if (vendaUpdateError) {
@@ -380,6 +380,42 @@ Boas compras!`;
           );
         }
 
+        // Atualizar o status da venda existente
+        const idTransacaoField = additionalInfo.find(
+          (info: any) => info.key === "ID"
+        );
+        if (!idTransacaoField) {
+          throw new Error(
+            "ID da transação não encontrado nos campos adicionais."
+          );
+        }
+
+        const id_transacao = idTransacaoField.value; // Obtém o ID da transação
+
+        const { error: vendaUpdateError } = await supabase
+          .from("vendas")
+          .update({ status: "concluida", origin: originValue }) // Atualiza o status da venda
+          .eq("id_transacao", id_transacao); // Filtra pela ID da transação
+
+        if (vendaUpdateError) {
+          console.error(
+            "Erro ao atualizar o status da venda:",
+            vendaUpdateError.message
+          );
+          return new Response(
+            JSON.stringify({
+              message: "Erro ao atualizar o status da venda",
+              error: vendaUpdateError.message,
+            }),
+            {
+              status: 500,
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
+        console.log("Status da venda atualizado com sucesso.");
         return new Response(
           JSON.stringify({
             message:
