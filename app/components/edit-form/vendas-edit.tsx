@@ -35,10 +35,16 @@ import {
 } from "@/app/components/ui/form";
 import { createClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "@/app/utils/produto";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { Edit, Plus } from "lucide-react";
 import { VendasProps } from "@/app/utils/vendas";
-import { v4 as uuidv4 } from 'uuid'; 
+import { v4 as uuidv4 } from "uuid";
 
 // Supondo que você tenha uma função para buscar produtos
 const fetchProducts = async () => {
@@ -65,7 +71,7 @@ interface DialogCreateOrUpdateVendaProps {
 const schema = z.object({
   id_produto: z.string().trim().min(1, "Campo Obrigatório!"),
   id_cliente: z.string().trim().min(1, "Campo Obrigatório!"),
-  valor:z.preprocess(
+  valor: z.preprocess(
     (val) => (typeof val === "string" ? parseFloat(val) : val),
     z.number().min(0, "O preço não pode ser negativo!")
   ),
@@ -86,7 +92,7 @@ export const CreateOrUpdateVenda = ({
     defaultValues: {
       id_produto: venda?.id_produto || "",
       id_cliente: venda?.id_cliente || "",
-      valor:  venda?.valor||0,
+      valor: venda?.valor || 0,
       status: venda?.status || "",
       tipo_pagamento: venda?.tipo_pagamento || "",
     },
@@ -101,11 +107,16 @@ export const CreateOrUpdateVenda = ({
   }, []);
 
   const onSubmit = (values: z.infer<typeof schema>) => {
-    onConfirm({ data: {
-      ...values,
-      uuid: venda?.uuid ? venda.uuid : uuidv4(), // Adiciona o uuid apenas se a venda existir
-      created_at: venda?.created_at ? venda.created_at : new Date().toISOString(), // Adiciona created_at se for uma nova venda
-    } });
+    onConfirm({
+      data: {
+        ...values,
+        origin: "web",
+        uuid: venda?.uuid ? venda.uuid : uuidv4(), // Adiciona o uuid apenas se a venda existir
+        created_at: venda?.created_at
+          ? venda.created_at
+          : new Date().toISOString(), // Adiciona created_at se for uma nova venda
+      },
+    });
     setOpen(false);
     form.reset();
   };
@@ -123,17 +134,15 @@ export const CreateOrUpdateVenda = ({
             <FormItem>
               <FormLabel>ID do Produto</FormLabel>
               <FormControl>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <SelectTrigger className="w-full max-w-xs">
                     <SelectValue placeholder="Selecione um produto" />
                   </SelectTrigger>
                   <SelectContent>
                     {products.map((product) => (
                       <SelectItem key={product.id} value={product.id!}>
-                        {product.nome} - {product.categoria} - (ID: {product.id})
+                        {product.nome} - {product.categoria} - (ID: {product.id}
+                        )
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -223,9 +232,7 @@ export const CreateOrUpdateVenda = ({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {venda ? "Atualizar Venda" : "Criar Venda"}
-          </DialogTitle>
+          <DialogTitle>{venda ? "Atualizar Venda" : "Criar Venda"}</DialogTitle>
           <DialogDescription>
             Preencha as informações da venda abaixo.
           </DialogDescription>
@@ -249,9 +256,7 @@ export const CreateOrUpdateVenda = ({
       </DrawerTrigger>
       <DrawerContent className="p-4">
         <DrawerHeader>
-          <DrawerTitle>
-            {venda ? "Atualizar Venda" : "Criar Venda"}
-          </DrawerTitle>
+          <DrawerTitle>{venda ? "Atualizar Venda" : "Criar Venda"}</DrawerTitle>
           <DrawerDescription>
             Preencha as informações da venda abaixo.
           </DrawerDescription>

@@ -66,6 +66,13 @@ const data = {
       items: [],
     },
     {
+      title: "Códigos WP",
+      url: "/codigos-wp",
+      icon: Binary,
+      isActive: false,
+      items: [],
+    },
+    {
       title: "Combos",
       url: "/combos",
       icon: ShoppingBag,
@@ -117,15 +124,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Ensure that the user data is available
   const userData = user
     ? {
-      name: user.fullName || "",
-      email: user.emailAddresses?.[0]?.emailAddress,
-      avatar: user.imageUrl,
-    }
+        name: user.fullName || "",
+        email: user.emailAddresses?.[0]?.emailAddress,
+        avatar: user.imageUrl,
+      }
     : {
-      name: "",
-      email: "",
-      avatar: "",
-    };
+        name: "",
+        email: "",
+        avatar: "",
+      };
 
   return (
     <Sidebar collapsible="icon" {...props}>

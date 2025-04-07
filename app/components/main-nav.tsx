@@ -54,6 +54,11 @@ const menuItems = [
     href: "/codigos",
   },
   {
+    title: "Codigos WP",
+    icon: Binary,
+    href: "/codigos-wp",
+  },
+  {
     title: "Claro/Escuro",
     icon: SunMoon,
     href: "/tema",

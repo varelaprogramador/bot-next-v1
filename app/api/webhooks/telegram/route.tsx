@@ -4,7 +4,7 @@ import { Telegraf } from "telegraf";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { ButtonsProps } from "@/app/(dashboard)/disparo/page";
+
 // props: {"title": "Interfaces for public tables", "runQuery": "false"}
 
 // Interface para a tabela codigos
@@ -58,6 +58,11 @@ interface Vendas {
   id_produto?: string; // Texto
   tipo_pagamento?: string; // Texto
 }
+interface MessageButton {
+  name: string;
+  type: string;
+  command: string;
+}
 // Inicializando o Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -83,48 +88,60 @@ export async function GET(req: Request) {
   }
 }
 // Função para enviar mensagem para o usuário
-const sendMessageToUser = async (
+async function sendMessageToUser(
   userId: string,
   message: string,
-  buttons: ButtonsProps[],
-  image: any
-) => {
+  buttons: MessageButton[] = [],
+  image?: string
+) {
   try {
-    // Cria o teclado inline com os botões
+    // Create inline keyboard with buttons
     const inlineKeyboard = buttons.map((button) => [
       {
         text: button.name,
         ...(button.type === "link"
           ? { url: button.command }
-          : { callback_data: button.command }), // Define o callback_data
+          : { callback_data: button.command }),
       },
     ]);
-    console.log(inlineKeyboard);
 
-    // Verifica se a imagem foi fornecida
+    // Common options for both message types
+    const options = {
+      reply_markup:
+        inlineKeyboard.length > 0
+          ? { inline_keyboard: inlineKeyboard }
+          : undefined,
+      parse_mode: "HTML" as const, // Enable HTML formatting
+    };
+
+    let result;
+
+    // Send message with image if provided
     if (image) {
-      // Envia uma foto com o texto de mensagem como legenda
-      await bot.telegram.sendPhoto(userId, image, {
+      result = await bot.telegram.sendPhoto(userId, image, {
         caption: message,
-        reply_markup: {
-          inline_keyboard: inlineKeyboard,
-        },
+        ...options,
       });
-      console.log(`Mensagem com foto enviada para o ID: ${userId}`);
+      console.log(`Message with photo sent to user ID: ${userId}`);
     } else {
-      // Envia apenas a mensagem, caso não haja imagem
-      await bot.telegram.sendMessage(userId, message, {
-        reply_markup: {
-          inline_keyboard: inlineKeyboard,
-        },
-      });
-      console.log(`Mensagem enviada para o ID: ${userId}`);
+      // Send text-only message
+      result = await bot.telegram.sendMessage(userId, message, options);
+      console.log(`Text message sent to user ID: ${userId}`);
     }
-  } catch (error) {
-    console.error("Erro ao enviar mensagem:", error);
-    throw new Error("Erro ao enviar mensagem");
+
+    return { success: true, messageId: result.message_id };
+  } catch (error: any) {
+    console.error(`Error sending message to user ${userId}:`, error.message);
+
+    // Return detailed error information
+    return {
+      success: false,
+      error: error.message,
+      code: error.code || "UNKNOWN_ERROR",
+      description: error.description || "An unknown error occurred",
+    };
   }
-};
+}
 // Método POST para receber as atualizações do Telegram
 export async function POST(req: Request) {
   try {
