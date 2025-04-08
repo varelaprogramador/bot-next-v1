@@ -27,7 +27,12 @@ export function setupCommands() {
     if (result && result.message_id) {
       const chatId = ctx.chat.id;
       const userId = ctx.from.id.toString();
-      logMessage(userId, result.message_id, chatId);
+      logMessage(
+        userId,
+        result.message_id,
+        chatId,
+        "✨ Olá, seja Bem vindo ao canal de vendas da next recargas! ✨"
+      );
     }
   });
 
