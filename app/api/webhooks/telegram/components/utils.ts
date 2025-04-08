@@ -53,7 +53,7 @@ export async function sendMessageToUser(
 
     // Registra a mensagem para limpeza futura
     if (result && result.message_id) {
-      logMessage(userId, result.message_id, parseInt(userId), message);
+      logMessage(userId, result.message_id, parseInt(userId));
     }
 
     return { success: true, messageId: result.message_id };

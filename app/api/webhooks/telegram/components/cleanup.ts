@@ -5,20 +5,17 @@ import { bot, supabase } from "./config";
  * @param userId ID do usuário
  * @param messageId ID da mensagem
  * @param chatId ID do chat
- * @param content Conteúdo da mensagem (opcional)
  */
 export async function logMessage(
   userId: string,
   messageId: number,
-  chatId: number,
-  content?: string
+  chatId: number
 ) {
   try {
     const { error } = await supabase.from("message_logs").insert({
       user_id: userId,
       message_id: messageId,
       chat_id: chatId,
-      content: content || null,
     });
 
     if (error) {
