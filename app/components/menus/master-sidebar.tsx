@@ -79,17 +79,17 @@ const data = {
       isActive: false,
       items: [],
     },
-    {
-      title: "Claro/Escuro",
-      url: "/tema",
-      icon: SunMoon,
-      isActive: false,
-      items: [],
-    },
 
     {
       title: "Disparo",
       url: "/disparo",
+      icon: MessageCircle,
+      isActive: false,
+      items: [],
+    },
+    {
+      title: "Disparo via TXT",
+      url: "/disparo-telegram",
       icon: MessageCircle,
       isActive: false,
       items: [],
@@ -124,15 +124,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // Ensure that the user data is available
   const userData = user
     ? {
-        name: user.fullName || "",
-        email: user.emailAddresses?.[0]?.emailAddress,
-        avatar: user.imageUrl,
-      }
+      name: user.fullName || "",
+      email: user.emailAddresses?.[0]?.emailAddress,
+      avatar: user.imageUrl,
+    }
     : {
-        name: "",
-        email: "",
-        avatar: "",
-      };
+      name: "",
+      email: "",
+      avatar: "",
+    };
 
   return (
     <Sidebar collapsible="icon" {...props}>

@@ -562,10 +562,10 @@ export default function MessageConfirmation({
               {!results || results.status === "processing"
                 ? "Enviando mensagens"
                 : results.status === "success"
-                ? "Envio concluído com sucesso"
-                : results.status === "partial"
-                ? "Envio parcialmente concluído"
-                : "Erro no envio"}
+                  ? "Envio concluído com sucesso"
+                  : results.status === "partial"
+                    ? "Envio parcialmente concluído"
+                    : "Erro no envio"}
             </DialogTitle>
           </DialogHeader>
 
@@ -622,8 +622,8 @@ export default function MessageConfirmation({
                 <p className="text-sm text-center text-muted-foreground">
                   {progress < 100
                     ? `Processando ${Math.floor(
-                        (selectedLeads.length * progress) / 100
-                      )} de ${selectedLeads.length} mensagens`
+                      (selectedLeads.length * progress) / 100
+                    )} de ${selectedLeads.length} mensagens`
                     : "Finalizando processamento..."}
                 </p>
               </div>
@@ -689,15 +689,15 @@ export default function MessageConfirmation({
                   results.status === "success"
                     ? "bg-green-50 text-green-700"
                     : results.status === "partial"
-                    ? "bg-yellow-50 text-yellow-700"
-                    : "bg-red-50 text-red-700"
+                      ? "bg-yellow-50 text-yellow-700"
+                      : "bg-red-50 text-red-700"
                 )}
               >
                 {results.status === "success"
                   ? `Todas as ${results.total} mensagens foram enviadas com sucesso!`
                   : results.status === "partial"
-                  ? `${results.successful} mensagens enviadas com sucesso. ${results.failed} mensagens falharam.`
-                  : "Ocorreu um erro ao enviar as mensagens. Por favor, tente novamente."}
+                    ? `${results.successful} mensagens enviadas com sucesso. ${results.failed} mensagens falharam.`
+                    : "Ocorreu um erro ao enviar as mensagens. Por favor, tente novamente."}
               </p>
             )}
           </div>
