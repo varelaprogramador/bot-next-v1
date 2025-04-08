@@ -1,5 +1,9 @@
-import { createSentryRouteHandler } from "@sentry/nextjs";
+// Rota de tunelamento do Sentry removida temporariamente devido a incompatibilidade
+// com a versão atual do @sentry/nextjs
 
-// Esta rota é usada para "tunelar" eventos do Sentry e evitar bloqueadores de anúncios.
-// Consulte https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/ad-blockers/
-export const POST = createSentryRouteHandler();
+export async function POST() {
+  return new Response(JSON.stringify({ status: "ok" }), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
