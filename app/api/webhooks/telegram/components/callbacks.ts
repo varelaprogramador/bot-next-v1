@@ -20,10 +20,22 @@ import { logMessage } from "./cleanup";
 
 // Wrapper para registrar mensagens enviadas por ctx.reply
 async function replyWithLog(ctx: any, text: string, options?: any) {
+  console.log("[TELEGRAM] Preparando resposta com log:", {
+    userId: ctx.from.id,
+    chatId: ctx.chat.id,
+    textLength: text.length,
+    hasOptions: !!options,
+  });
+
   const result = await ctx.reply(text, options);
   if (result && result.message_id) {
     const chatId = ctx.chat.id;
     const userId = ctx.from.id.toString();
+    console.log("[TELEGRAM] Registrando mensagem de resposta:", {
+      userId,
+      chatId,
+      messageId: result.message_id,
+    });
     logMessage(userId, result.message_id, chatId);
   }
   return result;
@@ -38,10 +50,22 @@ async function editMessageTextWithLog(ctx: any, text: string, options?: any) {
 
 // Wrapper para registrar mensagens enviadas por ctx.replyWithPhoto
 async function replyWithPhotoWithLog(ctx: any, photo: any, options?: any) {
+  console.log("[TELEGRAM] Preparando resposta com foto:", {
+    userId: ctx.from.id,
+    chatId: ctx.chat.id,
+    photoUrl: typeof photo === "string" ? photo : "Buffer/Stream",
+    hasOptions: !!options,
+  });
+
   const result = await ctx.replyWithPhoto(photo, options);
   if (result && result.message_id) {
     const chatId = ctx.chat.id;
     const userId = ctx.from.id.toString();
+    console.log("[TELEGRAM] Registrando mensagem com foto:", {
+      userId,
+      chatId,
+      messageId: result.message_id,
+    });
     logMessage(userId, result.message_id, chatId);
   }
   return result;
@@ -52,6 +76,11 @@ async function handleBemVindos(ctx: any) {
   const userId = ctx.from.id;
   const username = ctx.from.first_name;
 
+  console.log("[TELEGRAM] Processando callback bemvindos:", {
+    userId,
+    username,
+  });
+
   // Verificar se o usuário já existe no banco de dados
   const { data, error } = await supabase
     .from("users")
@@ -59,8 +88,12 @@ async function handleBemVindos(ctx: any) {
     .eq("user_id", userId)
     .single();
 
-  // Se o usuário não existir, criar um novo
   if (error || !data) {
+    console.log("[TELEGRAM] Criando novo usuário:", {
+      userId,
+      username,
+    });
+
     const { data: insertedData, error: insertError } = await supabase
       .from("users")
       .insert([
@@ -74,7 +107,10 @@ async function handleBemVindos(ctx: any) {
       .single();
 
     if (insertError) {
-      console.error("Erro ao inserir usuário no Supabase:", insertError);
+      console.error("[TELEGRAM] Erro ao criar usuário:", {
+        userId,
+        error: insertError.message,
+      });
       return replyWithLog(
         ctx,
         "Desculpe, houve um erro ao registrar suas informações."
