@@ -18,7 +18,6 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
-  swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
@@ -30,21 +29,10 @@ const nextConfig: NextConfig = {
       "lucide-react",
     ],
   },
-  // Configuração específica do Sentry (opcional, mas recomendado)
-  sentry: {
-    // Desabilita o upload automático de sourcemaps se você preferir fazer manualmente
-    // disableServerWebpackPlugin: true,
-    // disableClientWebpackPlugin: true,
-    // Esconde sourcemaps do navegador em produção
-    hideSourceMaps: true,
-    // Ajusta automaticamente o tunnneling para evitar bloqueadores de anúncios
-    tunnelRoute: "/api/tunnel",
-  },
 };
 
 const sentryWebpackPluginOptions = {
-  // Opções adicionais do plugin do webpack do Sentry
-  silent: true, // Evita logs excessivos durante o build
+  silent: true,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
 };

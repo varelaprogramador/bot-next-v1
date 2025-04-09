@@ -35,12 +35,17 @@ export async function GET(req: any) {
 
 export async function POST(req: any) {
   try {
-    const data = await req.json(); // Corpo da requisição
+    const data = await req.json();
+    console.log("[PIX] Webhook recebido:", {
+      event: data?.event,
+      timestamp: new Date().toISOString(),
+      correlationId: data?.charge?.correlationID,
+    });
 
     const isTestEvent = data?.event === "teste_webhook";
 
     if (isTestEvent) {
-      console.log("Evento de teste recebido com sucesso.");
+      console.log("[PIX] Evento de teste recebido com sucesso");
       return new Response(
         JSON.stringify({ message: "Evento de teste recebido com sucesso." }),
         {
@@ -55,7 +60,7 @@ export async function POST(req: any) {
     const { additionalInfo } = data?.charge || {};
 
     if (!additionalInfo) {
-      console.log("Campos adicionais não encontrados");
+      console.error("[PIX] Campos adicionais não encontrados no webhook");
       return new Response(
         JSON.stringify({ message: "Campos adicionais não encontrados" }),
         {
@@ -71,7 +76,7 @@ export async function POST(req: any) {
     const allowedEvents = ["OPENPIX:CHARGE_COMPLETED"];
 
     if (!allowedEvents.includes(eventType)) {
-      console.log("Evento não permitido:", eventType);
+      console.log("[PIX] Evento não permitido:", eventType);
       return new Response(JSON.stringify({ error: "Evento não permitido" }), {
         status: 400,
         headers: {
@@ -82,6 +87,7 @@ export async function POST(req: any) {
 
     // Valida se o evento é o esperado
     if (data.event !== "OPENPIX:CHARGE_COMPLETED") {
+      console.error("[PIX] Evento não suportado:", data.event);
       return new Response(JSON.stringify({ error: "Evento não suportado" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
@@ -94,19 +100,11 @@ export async function POST(req: any) {
     );
 
     const originValue = originField?.value;
-
-    if (!originValue) {
-      console.log("Campo Origin não encontrado");
-      return new Response(
-        JSON.stringify({ error: "Campo Origin não encontrado" }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    }
+    console.log("[PIX] Processando pagamento:", {
+      correlationId: data?.charge?.correlationID,
+      origin: originValue,
+      amount: data?.charge?.value / 100,
+    });
 
     const isBotOrigin = originValue === "bot";
     const isSiteOrigin = originValue === "site";
@@ -316,16 +314,14 @@ export async function POST(req: any) {
       });
     }
   } catch (error) {
-    console.error("Erro no processamento do POST:", error);
-    return new Response(
-      JSON.stringify({ message: "Erro", error: (error as Error).message }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    console.error("[PIX] Erro ao processar webhook:", {
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
 
@@ -372,17 +368,24 @@ async function processBotOrigin(
       (info: any) => info.key === "UserID"
     );
     if (!userIdField) {
+      console.error("[PIX] User ID não encontrado nos campos adicionais");
       throw new Error("User ID não encontrado nos campos adicionais.");
     }
 
-    const user_id = userIdField.value; // Obtém o user_id
-    console.log(`User ID extraído: ${user_id}`);
+    const user_id = userIdField.value;
+    console.log("[PIX] Processando pagamento do bot:", {
+      userId: user_id,
+      correlationId: data.charge.correlationID,
+      amount: data.charge.value / 100,
+    });
 
-    const saldo = data.charge.value / 100; // Converte o valor para o formato correto
-    console.log(`Saldo a ser adicionado: ${saldo} (em formato correto)`);
+    const saldo = data.charge.value / 100;
 
-    // Verificar o tipo de saldo
     if (isNaN(saldo) || saldo <= 0) {
+      console.error("[PIX] Valor de saldo inválido:", {
+        userId: user_id,
+        amount: saldo,
+      });
       throw new Error(`Valor de saldo inválido: ${saldo}`);
     }
 
@@ -394,45 +397,53 @@ async function processBotOrigin(
       .single();
 
     if (fetchError) {
-      console.error("Erro ao buscar saldo do usuário:", fetchError.message);
+      console.error("[PIX] Erro ao buscar saldo do usuário:", {
+        userId: user_id,
+        error: fetchError.message,
+      });
       return;
     }
 
-    const newSaldo = user.saldo + saldo; // Incrementa o saldo
+    const newSaldo = user.saldo + saldo;
+    console.log("[PIX] Atualizando saldo do usuário:", {
+      userId: user_id,
+      oldBalance: user.saldo,
+      newBalance: newSaldo,
+      addedAmount: saldo,
+    });
+
     const { error: updateError } = await supabase
       .from("users")
       .update({ saldo: newSaldo })
       .eq("user_id", user_id);
 
     if (updateError) {
-      console.error("Erro ao atualizar saldo do usuário:", updateError.message);
+      console.error("[PIX] Erro ao atualizar saldo do usuário:", {
+        userId: user_id,
+        error: updateError.message,
+      });
       return;
     }
 
-    console.log("Saldo atualizado com sucesso para o usuário:", user_id);
+    console.log("[PIX] Saldo atualizado com sucesso:", {
+      userId: user_id,
+      newBalance: newSaldo,
+    });
 
     // Atualizar o status da venda existente
     const idTransacaoField = additionalInfo.find(
       (info: any) => info.key === "ID"
     );
     if (!idTransacaoField) {
+      console.error("[PIX] ID da transação não encontrado");
       throw new Error("ID da transação não encontrado nos campos adicionais.");
     }
 
-    const id_transacao = idTransacaoField.value; // Obtém o ID da transação
-
-    const { error: vendaUpdateError } = await supabase
-      .from("vendas")
-      .update({ status: "concluida", origin: originValue }) // Atualiza o status da venda
-      .eq("id_transacao", id_transacao); // Filtra pela ID da transação
-
-    if (vendaUpdateError) {
-      console.error(
-        "Erro ao atualizar o status da venda:",
-        vendaUpdateError.message
-      );
-      return;
-    }
+    const id_transacao = idTransacaoField.value;
+    console.log("[PIX] Atualizando status da venda:", {
+      userId: user_id,
+      transactionId: id_transacao,
+    });
 
     const mensagem = `
 🎉 Parabéns! Seu saldo foi adicionado à sua carteira.
@@ -489,7 +500,10 @@ Boas compras!`;
       }
     }
   } catch (error) {
-    console.error("Erro ao processar origem 'bot':", error);
+    console.error("[PIX] Erro ao processar pagamento do bot:", {
+      error: error instanceof Error ? error.message : "Erro desconhecido",
+      stack: error instanceof Error ? error.stack : undefined,
+    });
   }
 }
 
