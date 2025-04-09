@@ -18,7 +18,6 @@ const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
-  swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },
@@ -29,16 +28,6 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-*",
       "lucide-react",
     ],
-  },
-  // Configuração específica do Sentry (opcional, mas recomendado)
-  sentry: {
-    // Desabilita o upload automático de sourcemaps se você preferir fazer manualmente
-    // disableServerWebpackPlugin: true,
-    // disableClientWebpackPlugin: true,
-    // Esconde sourcemaps do navegador em produção
-    hideSourceMaps: true,
-    // Ajusta automaticamente o tunnneling para evitar bloqueadores de anúncios
-    tunnelRoute: "/api/tunnel",
   },
 };
 
