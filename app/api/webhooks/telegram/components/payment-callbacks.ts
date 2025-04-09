@@ -3,6 +3,11 @@ import { randomUUID } from "crypto";
 
 // Função para exibir o menu de saldo
 export async function handleSaldo(ctx: any) {
+  console.log("[TELEGRAM] Menu de saldo solicitado:", {
+    userId: ctx.from.id,
+    username: ctx.from.first_name,
+  });
+
   const options = {
     reply_markup: {
       inline_keyboard: [
@@ -20,6 +25,11 @@ export async function handleSaldo(ctx: any) {
 
 // Função para gerar Pix
 export async function handleGerarPix(ctx: any) {
+  console.log("[TELEGRAM] Solicitação de geração de PIX:", {
+    userId: ctx.from.id,
+    username: ctx.from.first_name,
+  });
+
   // Solicitar ao usuário que insira o valor para recarga
   ctx.editMessageText("Digite o valor da recarga (de R$1 a R$999):", {
     reply_markup: {
@@ -31,7 +41,15 @@ export async function handleGerarPix(ctx: any) {
 // Função para confirmar geração do Pix
 export async function handleConfirmarPix(ctx: any, rechargeAmount: number) {
   const userId = ctx.from.id;
+  const username = ctx.from.first_name;
   const id_transacao = randomUUID();
+
+  console.log("[TELEGRAM] Confirmando geração de PIX:", {
+    userId,
+    username,
+    rechargeAmount,
+    transactionId: id_transacao,
+  });
 
   // Fazer a requisição para o OpenPix para gerar o link de pagamento
   const response = await fetch(
@@ -64,6 +82,12 @@ export async function handleConfirmarPix(ctx: any, rechargeAmount: number) {
   );
 
   const data = await response.json();
+  console.log("[TELEGRAM] Resposta do OpenPix:", {
+    userId,
+    transactionId: id_transacao,
+    status: response.status,
+    paymentLink: data.charge?.paymentLinkUrl,
+  });
 
   ctx.reply(
     `💳 Aqui está o link para recarregar R$${rechargeAmount.toFixed(
@@ -84,18 +108,33 @@ export async function handleConfirmarPix(ctx: any, rechargeAmount: number) {
   );
 
   const novaVenda = {
-    id_cliente: userId, // Usando o user_id como id_cliente
+    id_cliente: userId,
     id_transacao: id_transacao,
     valor: rechargeAmount,
-    status: "pendente", // Status da venda
-    tipo_pagamento: "pix", // Tipo de pagamento
+    status: "pendente",
+    tipo_pagamento: "pix",
   };
+
+  console.log("[TELEGRAM] Registrando nova venda:", {
+    userId,
+    transactionId: id_transacao,
+    amount: rechargeAmount,
+  });
 
   const { error: vendaError } = await supabase
     .from("vendas")
     .insert([novaVenda]);
 
   if (vendaError) {
-    console.error("Erro ao inserir nova venda:", vendaError);
+    console.error("[TELEGRAM] Erro ao registrar venda:", {
+      userId,
+      transactionId: id_transacao,
+      error: vendaError.message,
+    });
+  } else {
+    console.log("[TELEGRAM] Venda registrada com sucesso:", {
+      userId,
+      transactionId: id_transacao,
+    });
   }
 }
