@@ -88,24 +88,233 @@ export async function POST(req: any) {
       });
     }
 
-    // Processa o evento de forma assíncrona e retorna imediatamente
-    // Isso evita o timeout da requisição
-    processChargeCompleted(data, additionalInfo).catch((error) => {
-      console.error("Erro no processamento assíncrono:", error);
-    });
+    // Verifica a origem
+    const originField = additionalInfo.find(
+      (info: any) => info.key === "Origin"
+    );
 
-    // Retorna resposta imediata enquanto o processamento continua em background
-    return new Response(
-      JSON.stringify({
-        message: "Evento recebido e sendo processado em segundo plano.",
-      }),
-      {
-        status: 200,
+    const originValue = originField?.value;
+
+    if (!originValue) {
+      console.log("Campo Origin não encontrado");
+      return new Response(
+        JSON.stringify({ error: "Campo Origin não encontrado" }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    const isBotOrigin = originValue === "bot";
+    const isSiteOrigin = originValue === "site";
+
+    if (isBotOrigin) {
+      // Para o bot, processamos de forma assíncrona para evitar timeout
+      processBotOrigin(data, additionalInfo, originValue).catch((error) => {
+        console.error("Erro no processamento do bot:", error);
+      });
+
+      // Retornamos resposta imediata para o bot
+      return new Response(
+        JSON.stringify({
+          message:
+            "Evento do bot recebido e sendo processado em segundo plano.",
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    } else if (isSiteOrigin) {
+      // Para o site, processamos de forma síncrona para obter o código
+      console.log("========Site=========");
+
+      try {
+        const produtoId = additionalInfo?.find(
+          (info: any) => info.key === "Product"
+        )?.value;
+
+        // Recuperar códigos do produto apenas se o status for "ativo"
+        const { data: codigos, error: codigoError } = await supabase
+          .from("codigos")
+          .select("*")
+          .eq("id_produto", produtoId);
+
+        // Filtrar códigos ativos
+        const defaultData = [
+          {
+            id_codigo: "",
+            id_produto: "",
+            codigo: "",
+            status: "",
+          },
+        ];
+        const codigosAtivos: CodigosProps[] =
+          codigos?.filter(
+            (codigo) => codigo.status.toLowerCase() === "ativo"
+          ) || defaultData;
+
+        if (codigoError || !codigosAtivos || codigosAtivos.length <= 0) {
+          console.log(
+            "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id."
+          );
+          return new Response(
+            JSON.stringify({ error: "Nenhum código ativo encontrado" }),
+            {
+              status: 400,
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
+
+        // Atualizar o status do primeiro código ativo para "resgatado"
+        const codigoData = codigosAtivos[0]; // Usar o primeiro código ativo
+        const { error: updateCodigoError } = await supabase
+          .from("codigos")
+          .update({ status: "Resgatado" })
+          .eq("id_codigo", codigoData.id_codigo);
+
+        if (updateCodigoError) {
+          console.error(
+            `Erro ao atualizar o código ${codigoData.codigo}:`,
+            updateCodigoError
+          );
+        }
+
+        const name =
+          additionalInfo.find((info: any) => info.key === "Nome")?.value ||
+          "Cliente";
+        const code = codigoData.codigo || "N/A";
+        const phone = additionalInfo.find(
+          (info: any) => info.key === "Telefone"
+        )?.value;
+        const produto = additionalInfo.find(
+          (info: any) => info.key === "Product-Nome"
+        )?.value;
+
+        console.log("Nome:", name);
+        console.log("Código:", code);
+        console.log("Telefone:", phone);
+
+        if (phone) {
+          try {
+            // Timeout de 5 segundos para não bloquear resposta
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch(
+              "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/N0zmZuEk8fwK/",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  name: name,
+                  phone: phone,
+                  codigo: code,
+                  produto: produto,
+                }),
+                signal: controller.signal,
+              }
+            );
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+              console.error("Erro na resposta do webhook:", response.status);
+            }
+          } catch (error: any) {
+            if (error.name === "AbortError") {
+              console.log("Requisição de webhook cancelada por timeout");
+            } else {
+              console.error("Erro ao chamar webhook:", error);
+            }
+          }
+        }
+
+        // Atualizar o status da venda existente
+        const idTransacaoField = additionalInfo.find(
+          (info: any) => info.key === "ID"
+        );
+        if (!idTransacaoField) {
+          throw new Error(
+            "ID da transação não encontrado nos campos adicionais."
+          );
+        }
+
+        const id_transacao = idTransacaoField.value; // Obtém o ID da transação
+
+        const { error: vendaUpdateError } = await supabase
+          .from("vendas")
+          .update({ status: "concluida", origin: originValue })
+          .eq("id_transacao", id_transacao);
+
+        if (vendaUpdateError) {
+          console.error(
+            "Erro ao atualizar o status da venda:",
+            vendaUpdateError.message
+          );
+          return new Response(
+            JSON.stringify({
+              message: "Erro ao atualizar o status da venda",
+              error: vendaUpdateError.message,
+            }),
+            {
+              status: 500,
+              headers: {
+                "Content-Type": "application/json",
+              },
+            }
+          );
+        }
+
+        console.log("Status da venda atualizado com sucesso.");
+        return new Response(
+          JSON.stringify({
+            message:
+              "Saldo atualizado e status da venda atualizado com sucesso.",
+            codigo: code,
+            produto: produto,
+          }),
+          {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      } catch (error) {
+        console.error("Erro ao processar origem 'site':", error);
+        return new Response(
+          JSON.stringify({
+            message: "Erro no processamento da compra via site",
+            error: (error as Error).message,
+          }),
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+      }
+    } else {
+      console.log("Origem não reconhecida:", originValue);
+      return new Response(JSON.stringify({ error: "Origem não reconhecida" }), {
+        status: 400,
         headers: {
           "Content-Type": "application/json",
         },
-      }
-    );
+      });
+    }
   } catch (error) {
     console.error("Erro no processamento do POST:", error);
     return new Response(
@@ -254,7 +463,7 @@ Boas compras!`;
       };
 
       const response = await fetch(
-        "https://www.n8nworks.shop/api/webhooks/telegram",
+        "https://nextgiftcards.com/api/webhooks/telegram",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
