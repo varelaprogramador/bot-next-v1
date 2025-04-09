@@ -3,9 +3,10 @@ import { supabase } from "@/app/api/webhooks/telegram/components/config";
 
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const resolvedParams = await params;
     const { data: messages, error } = await supabase
       .from("message_logs")
       .select(
@@ -20,7 +21,7 @@ export async function GET(
         )
       `
       )
-      .eq("user_id", params.userId)
+      .eq("user_id", resolvedParams.userId)
       .order("created_at", { ascending: true });
 
     if (error) {
