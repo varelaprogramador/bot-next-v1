@@ -18,8 +18,7 @@ export const Menu = () => {
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center gap-8">
                             <Link href="/" className="text-gray-900 font-bold text-2xl">
-                                NextRecargas
-                            </Link>
+                                Next Gift Cards                            </Link>
                             <nav className="hidden xl:flex items-center gap-6 ">
                                 <Link href="/" className="text-gray-600 hover:text-gray-900">
                                     Inicial
