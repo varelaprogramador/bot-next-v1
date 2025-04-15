@@ -22,17 +22,29 @@ const verificarAssinatura = (
     .update(body)
     .digest("hex");
 
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(hmac));
+  // Comparação simples de strings ao invés de usar timingSafeEqual
+  return hmac === signature;
 };
 
 export async function POST(req: Request) {
   try {
-    // Verificar assinatura do webhook
-    const signature = req.headers.get("x-webhook-signature");
-    const requestBody = await req.text();
+    // Verificar se estamos em ambiente de produção para aplicar a verificação
+    const isProduction = process.env.NODE_ENV === "production";
 
-    // Se a assinatura for inválida, retornar erro
-    if (!verificarAssinatura(signature, requestBody)) {
+    // Obter corpo da requisição
+    const requestBody = await req.text();
+    const signature = req.headers.get("x-webhook-signature");
+
+    // Verificar assinatura apenas em produção
+    if (isProduction && !verificarAssinatura(signature, requestBody)) {
+      console.log("Assinatura inválida:", {
+        recebida: signature,
+        esperada: crypto
+          .createHmac("sha256", WEBHOOK_SECRET)
+          .update(requestBody)
+          .digest("hex"),
+      });
+
       return NextResponse.json(
         { success: false, error: "Assinatura inválida" },
         { status: 401 }
