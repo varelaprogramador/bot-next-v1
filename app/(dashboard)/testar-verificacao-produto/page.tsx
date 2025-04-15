@@ -4,6 +4,7 @@ import { useState } from "react";
 
 const TestarVerificacaoProduto = () => {
     const [nomeProduto, setNomeProduto] = useState("");
+    const [tipo, setTipo] = useState("");
     const [resultado, setResultado] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [erro, setErro] = useState("");
@@ -19,13 +20,18 @@ const TestarVerificacaoProduto = () => {
         setResultado(null);
 
         try {
+            const payload = {
+                nome_produto: nomeProduto,
+                ...(tipo && { tipo })
+            };
+
             const response = await fetch("/api/webhooks/verificar-produto", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "x-api-key": "teste000645+65"
                 },
-                body: JSON.stringify({ nome_produto: nomeProduto })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
@@ -51,6 +57,22 @@ const TestarVerificacaoProduto = () => {
                         placeholder="Digite o nome do produto"
                         className="w-full p-2 border border-gray-300 rounded"
                     />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block mb-2 font-medium">Tipo:</label>
+                    <select
+                        value={tipo}
+                        onChange={(e) => setTipo(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded"
+                    >
+                        <option value="">Todos</option>
+                        <option value="mensal">Mensal</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                        Opcional: Filtrar por tipo de produto
+                    </p>
                 </div>
 
                 {erro && (
@@ -104,6 +126,11 @@ const TestarVerificacaoProduto = () => {
                             <div className="mb-2">
                                 <span className="font-medium">Categoria:</span> {resultado.produto.categoria}
                             </div>
+                            {resultado.produto.tipo && (
+                                <div className="mb-2">
+                                    <span className="font-medium">Tipo:</span> {resultado.produto.tipo}
+                                </div>
+                            )}
                             <div className="mb-2">
                                 <span className="font-medium">Quantidade Disponível:</span> {resultado.produto.quantidade_disponivel}
                             </div>
