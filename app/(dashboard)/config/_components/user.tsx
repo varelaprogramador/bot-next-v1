@@ -29,6 +29,7 @@ import {
 } from "@/app/components/ui/form";
 import { MoveRight, UserPlus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { createUser } from "@/app/actions/user-actions";
 
 // Definindo o esquema de validação com Zod
 const createUserSchema = z.object({
@@ -74,31 +75,19 @@ export const CreateUserDialog = () => {
 
   const onSubmit = async (data: z.infer<typeof createUserSchema>) => {
     try {
-      const response = await fetch("/api/users/create-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+      await createUser(data);
+
+      toast({
+        title: "Usuário criado",
+        description: `${data.firstName} ${data.lastName} foi criado com sucesso.`,
       });
+      form.reset(); // Limpa o formulário após a criação
+      setOpen(false); // Fecha o diálogo
 
-      const result = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Usuário criado",
-          description: `${data.firstName} ${data.lastName} foi criado com sucesso.`,
-        });
-        form.reset(); // Limpa o formulário após a criação
-        setOpen(false); // Fecha o diálogo
-
-        // Recarregar a lista de usuários
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      } else {
-        throw new Error(result.message || "Erro ao criar usuário");
-      }
+      // Recarregar a lista de usuários
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
       console.error("Erro:", error);
       toast({

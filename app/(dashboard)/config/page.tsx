@@ -1,6 +1,7 @@
 "use client";
 
 import { SetStateAction, useEffect, useState } from "react";
+import { getUsers, deleteUser } from "@/app/actions/user-actions";
 
 import { Button } from "@/app/components/ui/button";
 import { Separator } from "@/app/components/ui/separator";
@@ -29,6 +30,7 @@ import { Loader2, RefreshCw, Search, Trash } from "lucide-react";
 import { Badge } from "@/app/components/ui/badge";
 import { CreateUserDialog } from "./_components/user";
 
+
 interface User {
   id: string;
   firstName: string;
@@ -52,13 +54,7 @@ export default function UserList() {
   const fetchUsers = async () => {
     try {
       setRefreshing(true);
-      const response = await fetch("/api/users/get-users");
-
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar os usuários: ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await getUsers();
       setUsers(data);
       setFilteredUsers(data);
       setError(null);
@@ -102,19 +98,7 @@ export default function UserList() {
     if (!userToDelete) return;
 
     try {
-      const response = await fetch("/api/users/delete-user", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: userToDelete.id }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Erro ao excluir usuário: ${response.status}`);
-      }
-
-      await response.json();
+      await deleteUser(userToDelete.id);
 
       // Update local state
       setUsers((prevUsers) =>

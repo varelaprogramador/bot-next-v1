@@ -1,8 +1,13 @@
-  // Importando o cliente Clerk
-import { clerkClient } from '@clerk/express';
-import { NextResponse } from 'next/server';
+// Importando o cliente Clerk
+import { clerkClient } from "@clerk/express";
+import { NextResponse } from "next/server";
+import { verifySecretHeader } from "../../middlewares/authMiddleware";
 
 export async function POST(req: Request) {
+  // Verificar autenticação
+  const authResponse = verifySecretHeader(req);
+  if (authResponse) return authResponse;
+
   const { firstName, lastName, email, password } = await req.json();
 
   try {
@@ -12,9 +17,12 @@ export async function POST(req: Request) {
       emailAddress: [email],
       password,
     });
-    return NextResponse.json(newUser);  // Retorna o novo usuário criado
+    return NextResponse.json(newUser); // Retorna o novo usuário criado
   } catch (error) {
     console.error("Erro ao criar novo usuário:", error);
-    return NextResponse.json({ error: 'Erro ao criar novo usuário' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erro ao criar novo usuário" },
+      { status: 500 }
+    );
   }
 }

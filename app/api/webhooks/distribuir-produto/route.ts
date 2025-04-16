@@ -33,11 +33,19 @@ export async function POST(req: Request) {
     const data = await req.json();
 
     // Extrair dados do pedido
-    const { nome_produto, tipo } = data;
+    const { nome_produto, tipo, customer } = data;
 
     if (!nome_produto) {
       return NextResponse.json(
         { success: false, error: "Nome do produto não fornecido" },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se os dados do cliente foram fornecidos
+    if (!customer || !customer.name || !customer.phone) {
+      return NextResponse.json(
+        { success: false, error: "Dados do cliente incompletos" },
         { status: 400 }
       );
     }
@@ -156,27 +164,13 @@ export async function POST(req: Request) {
     const produto = produtosFiltrados[0];
     console.log("Produto encontrado:", produto);
 
-    // Primeiro, vamos consultar todos os códigos para diagnóstico
-    const { data: todosCodigos, error: todoCodigosError } = await supabase
-      .from("codigos")
-      .select("*")
-      .eq("id_produto", produto.id)
-      .limit(10);
-
-    console.log("Consulta diagnóstica - todos os códigos do produto:", {
-      total: todosCodigos?.length || 0,
-      codigos: todosCodigos,
-      erro: todoCodigosError?.message,
-    });
-
     // Consultar códigos ativos para o produto - versão mais flexível
     const { data: codigos, error: codigoError } = await supabase
       .from("codigos")
       .select("*")
       .eq("id_produto", produto.id)
-      .or(`status.eq.ativo,status.eq.Ativo,status.eq.ATIVO`);
-
-    console.log("Códigos ativos encontrados:", codigos?.length || 0);
+      .or(`status.eq.ativo,status.eq.Ativo,status.eq.ATIVO`)
+      .limit(1); // Pegamos apenas um código
 
     if (codigoError) {
       console.error("Erro ao consultar códigos:", codigoError.message);
@@ -191,43 +185,52 @@ export async function POST(req: Request) {
 
     // Verificar se existem códigos disponíveis
     if (!codigos || codigos.length === 0) {
-      // Tentar entender qual é o valor real do status
-      const { data: statusValores, error: statusError } = await supabase
-        .from("codigos")
-        .select("status")
-        .eq("id_produto", produto.id)
-        .limit(5);
-
-      console.log("Valores de status encontrados:", {
-        valores: statusValores,
-        erro: statusError?.message,
-      });
-
       return NextResponse.json(
         {
           success: false,
           message: "Produto indisponível no momento",
-          debug: {
-            produto_id: produto.id,
-            status_valores: statusValores,
-          },
         },
         { status: 200 }
       );
     }
 
-    // Retornar informações do produto e disponibilidade
+    // Pegar o primeiro código disponível
+    const codigoParaDistribuir = codigos[0];
+
+    // Atualizar o código para status "distribuído" e adicionar info do cliente
+    const { error: updateError } = await supabase
+      .from("codigos")
+      .update({
+        status: "Resgatado",
+      })
+      .eq("id_codigo", codigoParaDistribuir.id_codigo);
+
+    if (updateError) {
+      console.error("Erro ao atualizar código:", updateError.message);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Erro ao distribuir código: " + updateError.message,
+        },
+        { status: 500 }
+      );
+    }
+
+    // Retornar o código distribuído
     return NextResponse.json({
       success: true,
-      disponivel: true,
       produto: {
         id: produto.id,
         nome: produto.nome,
-        descricao: produto.descricao,
-        valor: produto.valor,
-        categoria: produto.categoria,
-        quantidade_disponivel: codigos.length,
-        tipo: tipoNormalizado || "não especificado",
+      },
+      codigo: {
+        id: codigoParaDistribuir.id_codigo,
+        codigo: codigoParaDistribuir.codigo,
+      },
+      cliente: {
+        nome: customer.name,
+        telefone: customer.phone,
+        correlationID: customer.correlationID,
       },
     });
   } catch (error) {

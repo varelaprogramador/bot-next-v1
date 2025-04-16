@@ -1,0 +1,15 @@
+{
+    "success": true,
+    "produto": {
+        "id": "2d8e735b-1f98-42aa-9149-43e59f5ab12e",
+        "nome": "TVEXPRESS"
+    },
+    "codigo": {
+        "codigo": "0310590682962286"
+    },
+    "cliente": {
+        "nome": "Neimar de Paula",
+        "telefone": "+555496865321",
+        "correlationID": "ea75ce9e-b140-4c5b-864b-6b13a2cccd4b"
+    }
+}
