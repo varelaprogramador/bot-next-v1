@@ -11,6 +11,7 @@ import {
     Loader2,
     FileText,
     Save,
+    UserPlus,
 } from "lucide-react";
 import Image from "next/image";
 import GaleriaPopup from "@/app/components/popup-imagens";
@@ -43,6 +44,13 @@ interface MessageTemplate {
     created_at: string;
 }
 
+interface TelegramContact {
+    id: number;
+    name: string;
+    telegram_id: string;
+    created_at: string;
+}
+
 export default function DisparoTelegramPage() {
     const [loading, setLoading] = useState(false);
     const [telegramContacts, setTelegramContacts] = useState<string[]>([]);
@@ -52,10 +60,14 @@ export default function DisparoTelegramPage() {
     const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
     const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
     const [showTemplatesDialog, setShowTemplatesDialog] = useState(false);
+    const [showAddContactDialog, setShowAddContactDialog] = useState(false);
     const [templateTitle, setTemplateTitle] = useState("");
     const [savingTemplate, setSavingTemplate] = useState(false);
     const [templates, setTemplates] = useState<MessageTemplate[]>([]);
     const [loadingTemplates, setLoadingTemplates] = useState(false);
+    const [savingContact, setSavingContact] = useState(false);
+    const [contactName, setContactName] = useState("");
+    const [contactTelegramId, setContactTelegramId] = useState("");
 
     const handleImportContacts = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -168,6 +180,66 @@ export default function DisparoTelegramPage() {
         }
     };
 
+    const handleSaveContact = async () => {
+        if (!contactName.trim()) {
+            toast({
+                title: "Erro",
+                description: "Por favor, forneça um nome para o contato.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (!contactTelegramId.trim() || !/^\d+$/.test(contactTelegramId)) {
+            toast({
+                title: "Erro",
+                description: "Por favor, forneça um ID do Telegram válido (apenas números).",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        setSavingContact(true);
+
+        try {
+            const response = await fetch("/api/telegram-contacts", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    name: contactName,
+                    telegram_id: contactTelegramId,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Falha ao salvar o contato");
+            }
+
+            toast({
+                title: "Sucesso",
+                description: "Contato salvo com sucesso.",
+            });
+
+            // Adicionar o novo contato à lista local
+            setTelegramContacts(prev => [...prev, contactTelegramId]);
+
+            setShowAddContactDialog(false);
+            setContactName("");
+            setContactTelegramId("");
+        } catch (error) {
+            console.error("Erro ao salvar contato:", error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível salvar o contato.",
+                variant: "destructive",
+            });
+        } finally {
+            setSavingContact(false);
+        }
+    };
+
     const handleLoadTemplate = (template: MessageTemplate) => {
         setMessage(template.content);
         if (template.image_url) {
@@ -216,23 +288,34 @@ export default function DisparoTelegramPage() {
                     <CardHeader className="pb-3">
                         <CardTitle className="text-lg flex justify-between items-center">
                             <span>Lista de Contatos</span>
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                asChild
-                                className="flex items-center gap-1"
-                            >
-                                <label>
-                                    <Upload className="h-4 w-4" />
-                                    <span>Importar Contatos</span>
-                                    <input
-                                        type="file"
-                                        accept=".txt"
-                                        className="hidden"
-                                        onChange={handleImportContacts}
-                                    />
-                                </label>
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setShowAddContactDialog(true)}
+                                    className="flex items-center gap-1"
+                                >
+                                    <UserPlus className="h-4 w-4" />
+                                    <span>Adicionar Contato</span>
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    asChild
+                                    className="flex items-center gap-1"
+                                >
+                                    <label>
+                                        <Upload className="h-4 w-4" />
+                                        <span>Importar Contatos</span>
+                                        <input
+                                            type="file"
+                                            accept=".txt"
+                                            className="hidden"
+                                            onChange={handleImportContacts}
+                                        />
+                                    </label>
+                                </Button>
+                            </div>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="flex-1 overflow-auto p-0">
@@ -421,6 +504,71 @@ export default function DisparoTelegramPage() {
                                 <>
                                     <Save className="mr-2 h-4 w-4" />
                                     Salvar Modelo
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Add Contact Dialog */}
+            <Dialog
+                open={showAddContactDialog}
+                onOpenChange={setShowAddContactDialog}
+            >
+                <DialogContent className="sm:max-w-[500px]">
+                    <DialogHeader>
+                        <DialogTitle>Adicionar Contato do Telegram</DialogTitle>
+                        <DialogDescription>
+                            Cadastre um novo contato para disparo de mensagens.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="contactName">Nome do Contato</Label>
+                            <Input
+                                id="contactName"
+                                placeholder="Ex: João Silva"
+                                value={contactName}
+                                onChange={(e) => setContactName(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="contactTelegramId">ID do Telegram</Label>
+                            <Input
+                                id="contactTelegramId"
+                                placeholder="Ex: 123456789"
+                                value={contactTelegramId}
+                                onChange={(e) => setContactTelegramId(e.target.value)}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                O ID do Telegram deve conter apenas números.
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowAddContactDialog(false)}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={handleSaveContact}
+                            disabled={savingContact || !contactName.trim() || !contactTelegramId.trim()}
+                        >
+                            {savingContact ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Salvando...
+                                </>
+                            ) : (
+                                <>
+                                    <UserPlus className="mr-2 h-4 w-4" />
+                                    Salvar Contato
                                 </>
                             )}
                         </Button>

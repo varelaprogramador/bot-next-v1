@@ -176,6 +176,60 @@ const DocPage = () => {
         ]}
       />
 
+      <h3 className="text-xl font-bold mt-8 mb-4">Produtos e Combos</h3>
+
+      <Endpoint
+        name="Listar Todos os Produtos e Combos"
+        method="GET"
+        url="/api/products"
+        description="Este endpoint retorna a lista completa de todos os produtos e combos disponíveis no sistema."
+        successResponse={`{
+  "success": true,
+  "produtos": [
+    {
+      "id": 123,
+      "nome": "Produto A",
+      "descricao": "Descrição do Produto A",
+      "tipo": "produto",
+      "preco": 99.90,
+      "status": "ativo",
+      "periodo": "mensal"
+    },
+    {
+      "id": 456,
+      "nome": "Combo Premium",
+      "descricao": "Combo que inclui vários produtos",
+      "tipo": "combo",
+      "preco": 199.90,
+      "itens": [
+        {
+          "id": 123,
+          "nome": "Produto A"
+        },
+        {
+          "id": 124,
+          "nome": "Produto B"
+        }
+      ],
+      "status": "ativo",
+      "periodo": "anual"
+    }
+  ],
+  "total": 2,
+  "pagina": 1,
+  "totalPaginas": 1
+}`}
+        errorResponses={[
+          {
+            title: "Erro de autenticação:",
+            json: `{
+  "success": false,
+  "message": "Autenticação inválida"
+}`
+          }
+        ]}
+      />
+
       <h3 className="text-xl font-bold mt-8 mb-4">Usuários</h3>
 
       <Endpoint
@@ -294,6 +348,60 @@ const DocPage = () => {
             json: `{
   "success": false,
   "error": "Incomplete customer data"
+}`
+          }
+        ]}
+      />
+
+      <h3 className="text-xl font-bold mt-8 mb-4">Products and Combos</h3>
+
+      <Endpoint
+        name="List All Products and Combos"
+        method="GET"
+        url="/api/products"
+        description="This endpoint returns the complete list of all products and combos available in the system."
+        successResponse={`{
+  "success": true,
+  "produtos": [
+    {
+      "id": 123,
+      "nome": "Product A",
+      "descricao": "Description of Product A",
+      "tipo": "produto",
+      "preco": 99.90,
+      "status": "active",
+      "periodo": "monthly"
+    },
+    {
+      "id": 456,
+      "nome": "Premium Combo",
+      "descricao": "Combo that includes multiple products",
+      "tipo": "combo",
+      "preco": 199.90,
+      "itens": [
+        {
+          "id": 123,
+          "nome": "Product A"
+        },
+        {
+          "id": 124,
+          "nome": "Product B"
+        }
+      ],
+      "status": "active",
+      "periodo": "yearly"
+    }
+  ],
+  "total": 2,
+  "pagina": 1,
+  "totalPaginas": 1
+}`}
+        errorResponses={[
+          {
+            title: "Authentication error:",
+            json: `{
+  "success": false,
+  "message": "Invalid authentication"
 }`
           }
         ]}

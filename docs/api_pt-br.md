@@ -83,6 +83,71 @@ Este endpoint permite buscar um produto pelo nome e distribuir um código de ace
   }
   ```
 
+### Produtos e Combos
+
+#### Listar Todos os Produtos e Combos
+
+**Endpoint:** `GET /api/products`
+
+Este endpoint retorna a lista completa de todos os produtos e combos disponíveis no sistema.
+
+**Parâmetros de Consulta (opcionais):**
+
+- `?tipo=produto` - Filtra apenas produtos
+- `?tipo=combo` - Filtra apenas combos
+- `?status=ativo` - Filtra por status (ativo, inativo)
+
+**Resposta de Sucesso:**
+
+```json
+{
+  "success": true,
+  "produtos": [
+    {
+      "id": 123,
+      "nome": "Produto A",
+      "descricao": "Descrição do Produto A",
+      "tipo": "produto",
+      "preco": 99.9,
+      "status": "ativo",
+      "periodo": "mensal"
+    },
+    {
+      "id": 456,
+      "nome": "Combo Premium",
+      "descricao": "Combo que inclui vários produtos",
+      "tipo": "combo",
+      "preco": 199.9,
+      "itens": [
+        {
+          "id": 123,
+          "nome": "Produto A"
+        },
+        {
+          "id": 124,
+          "nome": "Produto B"
+        }
+      ],
+      "status": "ativo",
+      "periodo": "anual"
+    }
+  ],
+  "total": 2,
+  "pagina": 1,
+  "totalPaginas": 1
+}
+```
+
+**Respostas de Erro:**
+
+- Erro de autenticação:
+  ```json
+  {
+    "success": false,
+    "message": "Autenticação inválida"
+  }
+  ```
+
 ### Usuários
 
 #### Criar Usuário
@@ -162,6 +227,13 @@ curl -X POST https://seu-dominio.com/api/webhooks/distribuir-produto \
       "correlationID": "id-de-correlacao-unico"
     }
   }'
+```
+
+### Listar Todos os Produtos usando cURL
+
+```bash
+curl -X GET https://seu-dominio.com/api/products \
+  -H "x-api-key: sua-api-key-aqui"
 ```
 
 ## Códigos de Status HTTP
