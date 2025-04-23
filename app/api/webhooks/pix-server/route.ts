@@ -2,6 +2,7 @@ import axios, { AxiosRequestConfig } from "axios";
 import { createClient } from "@supabase/supabase-js";
 
 import { CodigosProps } from "@/app/utils/codigos";
+
 require("dotenv").config(); // Carregar variáveis de ambiente
 
 const supabase = createClient(
@@ -453,40 +454,3 @@ Boas compras!`;
     );
   }
 }
-
-const sendWhatsappNotification = async ({
-  message,
-  phone,
-}: {
-  phone: string;
-  message: string;
-}) => {
-  try {
-    const config: AxiosRequestConfig = {
-      method: "post",
-      url: `${process.env.EVOLUTION_API_URL}/message/sendText/${process.env.EVOLUTION_INSTANCE_ID}`,
-      headers: {
-        "Content-Type": "application/json",
-        apikey: process.env.EVOLUTION_API_KEY,
-      },
-    };
-
-    await axios({
-      ...config,
-      data: JSON.stringify({
-        delay: 500,
-        number: phone,
-        text: message,
-        linkPreview: true,
-      }),
-    });
-  } catch (error) {
-    console.log("Erro ao enviar notificação via WhatsApp:");
-    console.error(
-      JSON.stringify({
-        message: "Erro ao enviar notificação via WhatsApp",
-        error: (error as any).message,
-      })
-    );
-  }
-};
