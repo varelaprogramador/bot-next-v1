@@ -1,5 +1,11 @@
 "use server";
 import { v4 } from "uuid";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_KEY!
+);
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +17,25 @@ export async function POST(req: Request) {
         status: 400,
       });
     }
+    const id_transacao = v4();
+    const rechargeAmount = body.produto.valor;
+    const novaVenda = {
+      id_cliente: "site", // Usando o user_id como id_cliente
+      nome_cliente: body.nome,
+      id_transacao: id_transacao,
+      valor: rechargeAmount,
+      status: "pendente", // Status da venda
+      tipo_pagamento: "pix", // Tipo de pagamento
+      origin: "site",
+    };
+    console.log(novaVenda);
+    const { error: vendaError } = await supabase
+      .from("vendas")
+      .insert([novaVenda]);
 
+    if (vendaError) {
+      console.error("Erro ao inserir nova venda:", vendaError);
+    }
     const response = await fetch(
       "https://api.openpix.com.br/api/v1/charge?return_existing=true",
       {
@@ -26,6 +50,7 @@ export async function POST(req: Request) {
           comment: body.produto.nome,
           expiresIn: 420,
           additionalInfo: [
+            { key: "ID", value: id_transacao },
             { key: "Product", value: body.produto.id },
             { key: "Product-Nome", value: body.produto.nome },
             { key: "Nome", value: body.nome },
@@ -47,13 +72,16 @@ export async function POST(req: Request) {
     );
 
     const responseData = await response.json();
-
+    console.log(responseData);
     return new Response(JSON.stringify(responseData), {
       status: response.status,
     });
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: "Erro ao processar a requisição" }),
+      JSON.stringify({
+        message: "Erro ao processar a requisição",
+        error: error,
+      }),
       { status: 500 }
     );
   }

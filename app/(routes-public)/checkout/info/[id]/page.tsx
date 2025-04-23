@@ -229,9 +229,7 @@ export default function VendaDetalhesLoja() {
   if (!produto) {
     return <div className="text-center mt-10">Produto não encontrado.</div>;
   }
-  const redirectToPayament = () => {
 
-  }
 
   return (
 

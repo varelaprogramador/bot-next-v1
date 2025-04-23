@@ -173,38 +173,38 @@ export const InfoCheckout = ({
 
             >
                 {isDesktop ? (<><Image
-                    src={dataQR.charge.qrCodeImage || "/placeholder.svg"}
+                    src={dataQR.charge?.qrCodeImage || "/placeholder.svg"}
                     width={300}
                     height={200}
                     alt="QR-CODE"
 
                 />
                     <div className="border rounded-md p-4 w-full overflow-x-auto">
-                        {dataQR.charge.brCode}
+                        {dataQR.charge?.brCode}
 
                     </div>
-                    <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge.brCode); toast.success("Código pix copiado com sucesso!") }}>Copiar codigo pix</Button></>
+                    <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge?.brCode); toast.success("Código pix copiado com sucesso!") }}>Copiar codigo pix</Button></>
                 ) :
                     (<><div className="border rounded-md p-4 w-full overflow-x-auto">
-                        {dataQR.charge.brCode}
+                        {dataQR.charge?.brCode}
 
                     </div>
-                        <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge.brCode); toast.success("Código pix copiado com sucesso!") }}>Copiar codigo pix</Button></>)
+                        <Button onClick={() => { navigator.clipboard.writeText(dataQR.charge?.brCode); toast.success("Código pix copiado com sucesso!") }}>Copiar codigo pix</Button></>)
                 }
                 <div className="w-full grid grid-cols-2 gap-4">
                     <h1>Valor</h1>
-                    <Input placeholder="Valor" value={"R$" + (dataQR.charge.value / 100).toFixed(2) || "/"} readOnly />
+                    <Input placeholder="Valor" value={"R$" + (dataQR.charge?.value / 100).toFixed(2) || "/"} readOnly />
                     <h1>Nome do produto</h1>
-                    <Input placeholder="Comentário" value={dataQR.charge.comment || "/"} readOnly />
+                    <Input placeholder="Comentário" value={dataQR.charge?.comment || "/"} readOnly />
                     <h1>Status</h1>
-                    <Input placeholder="Status" value={dataQR.charge.status || "/"} readOnly />
+                    <Input placeholder="Status" value={dataQR.charge?.status || "/"} readOnly />
                     <h1>Expira em:</h1>
-                    <Input placeholder="Expira em" value={dataQR.charge.expiresIn / 60 + " Minutos" || "/"} readOnly />
+                    <Input placeholder="Expira em" value={dataQR.charge?.expiresIn / 60 + " Minutos" || "/"} readOnly />
                     <h1>Chave Pix:</h1>
-                    <Input placeholder="BR CODE" value={dataQR.charge.brCode + " M" || "/"} readOnly />
+                    <Input placeholder="BR CODE" value={dataQR.charge?.brCode + " M" || "/"} readOnly />
 
                 </div>
-                <Link href={dataQR.charge.paymentLinkUrl || "/"}>
+                <Link href={dataQR.charge?.paymentLinkUrl || "/"}>
                     <Button className="w-full">
                         Pagar Agora
                     </Button>
