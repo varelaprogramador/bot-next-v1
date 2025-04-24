@@ -31,27 +31,13 @@ export default function NotAllowedPage() {
             Você não possui permissão para acessar esta página. Entre em contato com o administrador do sistema para
             solicitar acesso.
           </p>
-          <div className="bg-muted/50 rounded-lg p-4 text-sm">
-            <p className="font-medium">Possíveis razões:</p>
-            <ul className="mt-2 space-y-1 list-disc list-inside text-left">
-              <li>Seu nível de acesso não é suficiente</li>
-              <li>Sua conta precisa de verificação adicional</li>
-              <li>Esta funcionalidade está temporariamente indisponível</li>
-            </ul>
-          </div>
+
         </CardContent>
         <CardFooter className="flex flex-col sm:flex-row gap-2 justify-center">
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto flex items-center gap-2"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Voltar
-          </Button>
-          <Button className="w-full sm:w-auto flex items-center gap-2" onClick={() => router.push("/dashboard")}>
+
+          <Button className="w-full sm:w-auto flex items-center gap-2" onClick={() => router.push("/")}>
             <Home className="h-4 w-4" />
-            Ir para Dashboard
+            Ir para site
           </Button>
         </CardFooter>
       </Card>

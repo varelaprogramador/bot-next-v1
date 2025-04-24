@@ -22,7 +22,7 @@ import { usePathname } from "next/navigation"
 import { UserButton } from "@clerk/nextjs"
 import { useUser } from "@clerk/nextjs"
 import { useState } from "react"
-
+import Image from "next/image"
 import { Switch } from "@/app/components/ui/switch"
 import { Label } from "@/app/components/ui/label"
 import { useTheme } from "next-themes"
@@ -113,12 +113,9 @@ export function AppSidebar() {
     <>
       <Preloader isVisible={showPreloader} onComplete={handlePreloaderComplete} />
       <Sidebar className="bg-background">
-        <SidebarHeader className="flex items-center justify-center py-6">
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">DB</span>
-            </div>
-            <span className="font-bold text-lg">Dashboard</span>
+        <SidebarHeader className="flex px-6 py-6">
+          <div className="flex items-center gap-2 font-bold text-2xl">
+            Next Git Cards
           </div>
         </SidebarHeader>
         <div className="px-3">
@@ -140,7 +137,7 @@ export function AppSidebar() {
             ))}
           </nav>
         </div>
-        <SidebarFooter className="px-3 py-4">
+        <SidebarFooter className="px-3 py-4 absolute bottom-0 w-full">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

@@ -1,225 +1,512 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation"; // Correção na importação
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import {
   CircleDollarSign,
   Binary,
   Calendar,
-  Trash2Icon,
-  ArrowRight,
   ArrowLeft,
-  BarChart3,
-  Edit,
   Trash2,
-} from "lucide-react";
+  Package,
+  Plus,
+  ShoppingCart,
+  Tag,
+  Info,
+  AlertCircle,
+  ChevronRight,
+} from "lucide-react"
 
-import { Button } from "@/app/components/ui/button";
-
-import { CombosProps } from "@/app/utils/combos";
+import { Button } from "@/app/components/ui/button"
+import type { CombosProps } from "@/app/utils/combos"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/app/components/ui/accordion"
+import { CreateOrUpdateCombo } from "@/app/components/edit-form/combos"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card"
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/app/components/ui/accordion";
-import { CreateOrUpdateCombo } from "@/app/components/edit-form/combos";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog"
+import { Badge } from "@/app/components/ui/badge"
+import { Skeleton } from "@/app/components/ui/skeleton"
+import { toast } from "@/hooks/use-toast"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbSeparator,
+} from "@/app/components/ui/breadcrumb"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip"
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 
-const supabase = createClient();
+const supabase = createClient()
 
-export default function ComnbosDetalhes() {
-  const [combos, setCombos] = useState<CombosProps | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const { id: productId } = useParams(); // Uso correto do useParams
-  const router = useRouter();
-  console.log(productId);
+export default function ComboDetalhes() {
+  const [combo, setCombo] = useState<CombosProps | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleteProductDialogOpen, setDeleteProductDialogOpen] = useState(false)
+  const [productToDelete, setProductToDelete] = useState<string | null>(null)
+  const { id: comboId } = useParams()
+  const router = useRouter()
+
   const handleConfirmEdit = async ({ data }: { data: CombosProps }) => {
-    const { error } = await supabase
-      .from("combos")
-      .update(data)
-      .eq("id", data.id);
-    if (error) {
-      console.error("Erro ao atualizar combos:", error);
-    } else {
-      console.log("Produto atualizado com sucesso");
+    try {
+      const { error } = await supabase.from("combos").update(data).eq("id", data.id)
+      if (error) {
+        throw error
+      }
+      setCombo(data)
+      toast({
+        title: "Combo atualizado",
+        description: "O combo foi atualizado com sucesso.",
+      })
+    } catch (error) {
+      console.error("Erro ao atualizar combo:", error)
+      toast({
+        title: "Erro ao atualizar combo",
+        description: "Não foi possível atualizar o combo. Tente novamente.",
+        variant: "destructive",
+      })
     }
-  };
+  }
 
   useEffect(() => {
-    const fetchProduto = async () => {
-      if (!productId) return;
+    const fetchCombo = async () => {
+      if (!comboId) return
 
-      setLoading(true);
+      setLoading(true)
 
       try {
-        const { data, error } = await supabase
-          .from("combos")
-          .select("*")
-          .eq("id", productId)
-          .single();
+        const { data, error } = await supabase.from("combos").select("*").eq("id", comboId).single()
 
         if (error) {
-          console.error("Erro ao carregar combos:", error);
-          router.push("/combos"); // Redirecionar em caso de erro
-          return;
+          throw error
         }
 
-        setCombos(data);
+        setCombo(data)
       } catch (error) {
-        console.error("Erro na requisição:", error);
+        console.error("Erro ao carregar combo:", error)
+        toast({
+          title: "Erro ao carregar combo",
+          description: "Não foi possível carregar os detalhes do combo.",
+          variant: "destructive",
+        })
+        router.push("/combos")
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
+    }
 
-    fetchProduto();
-  }, [productId, router]);
+    fetchCombo()
+  }, [comboId, router])
+
+  const handleDeleteProduct = async (productId: string) => {
+    setProductToDelete(productId)
+    setDeleteProductDialogOpen(true)
+  }
+
+  const confirmDeleteProduct = async () => {
+    if (!combo || !productToDelete) return
+
+    try {
+      // Filter out the product with the given ID
+      const updatedProducts = combo.produtos.filter((produto) => produto.id !== productToDelete)
+
+      // Update the combo in Supabase
+      const { error } = await supabase.from("combos").update({ produtos: updatedProducts }).eq("id", combo.id)
+
+      if (error) {
+        throw error
+      }
+
+      // Update local state
+      setCombo({
+        ...combo,
+        produtos: updatedProducts,
+      })
+
+      toast({
+        title: "Produto removido",
+        description: "O produto foi removido do combo com sucesso.",
+      })
+    } catch (error) {
+      console.error("Erro ao remover produto:", error)
+      toast({
+        title: "Erro ao remover produto",
+        description: "Não foi possível remover o produto do combo.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteProductDialogOpen(false)
+      setProductToDelete(null)
+    }
+  }
+
+  const handleDeleteCombo = () => {
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDeleteCombo = async () => {
+    if (!combo) return
+
+    try {
+      const { error } = await supabase.from("combos").delete().eq("id", combo.id)
+
+      if (error) {
+        throw error
+      }
+
+      toast({
+        title: "Combo excluído",
+        description: "O combo foi excluído com sucesso.",
+      })
+      router.push("/combos")
+    } catch (error) {
+      console.error("Erro ao excluir combo:", error)
+      toast({
+        title: "Erro ao excluir combo",
+        description: "Não foi possível excluir o combo.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteDialogOpen(false)
+    }
+  }
 
   if (loading) {
     return (
-      <div className="text-center mt-10">Carregando detalhes do combos...</div>
-    );
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center space-x-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-40" />
+          <Skeleton className="h-10 w-24" />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-20 w-full" />
+            <div className="flex gap-4 mt-4">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-24" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="border rounded-md p-4">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-6 w-20" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
-  if (!combos) {
-    return <div className="text-center mt-10">Produto não encontrado.</div>;
+  if (!combo) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card className="w-full p-6 flex flex-col items-center justify-center text-center">
+          <AlertCircle className="h-16 w-16 text-destructive mb-4" />
+          <h3 className="text-xl font-semibold">Combo não encontrado</h3>
+          <p className="text-muted-foreground mt-2 mb-6">O combo solicitado não existe ou foi removido.</p>
+          <Button onClick={() => router.push("/combos")}>Voltar para Combos</Button>
+        </Card>
+      </div>
+    )
   }
-  const handleDeleteProduto = async (produtoId: string) => {
-    if (!combos) return;
 
-    // Filtra os produtos para remover o produto com o ID fornecido
-    const updatedProdutos = combos.produtos.filter(
-      (produto) => produto.id !== produtoId
-    );
+  const productIds = combo.produtos.map((produto) => produto.id).join(",")
+  const totalProducts = combo.produtos.length
 
-    // Atualiza o combo no Supabase
-    const { error } = await supabase
-      .from("combos")
-      .update({ produtos: updatedProdutos })
-      .eq("id", combos.id);
-
-    if (error) {
-      console.error("Erro ao deletar produto:", error);
-    } else {
-      console.log("Produto deletado com sucesso");
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setCombos((prevCombos: any) => ({
-        ...prevCombos,
-        produtos: updatedProdutos,
-      }));
-    }
-  };
-  const handleDeleteCombo = async (comboId: string) => {
-    if (!combos) return;
-
-    // Atualiza o combo no Supabase
-    const { error } = await supabase
-      .from("combos")
-      .delete()
-      .eq("id", combos.id);
-
-    if (error) {
-      console.error("Erro ao deletar produto:", error);
-    } else {
-      console.log("Produto deletado com sucesso");
-      window.alert("Combo excluido com sucesso");
-      window.location.href = "/combos";
-    }
-  };
-  const productIds = combos.produtos.map(produto => produto.id).join(",");
   return (
-    <div className="container mx-auto p-6 space-y-4">
-      <Button
-        onClick={() => (window.location.href = "/combos")}
-        className="rounded-full bg-blue-500 hover:bg-blue-400"
-      >
-        <ArrowLeft></ArrowLeft>{" "}
-      </Button>
-      <article key={combos.id} className="border p-4 rounded ">
-        <div className="flex justify-between">
-          <h1 className="text-2xl font-bold mb-4">{combos.nome}</h1>{" "}
-          <div className="flex gap-2">
-            <Button>
-              <CreateOrUpdateCombo
-                combo={combos}
-                onConfirm={handleConfirmEdit}
-              ></CreateOrUpdateCombo>
-            </Button>
+    <div className="container mx-auto p-6 space-y-6">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/combos">Combos</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator>
+            <ChevronRight className="h-4 w-4" />
+          </BreadcrumbSeparator>
+          <BreadcrumbItem>
+            <BreadcrumbLink>{combo.nome}</BreadcrumbLink>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">{combo.nome}</h1>
+          <p className="text-muted-foreground">Detalhes e gerenciamento do combo</p>
+        </div>
+
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => router.push("/combos")}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+          </Button>
+
+          <CreateOrUpdateCombo combo={combo} onConfirm={handleConfirmEdit} />
+
+          <Button variant="destructive" onClick={handleDeleteCombo}>
+            <Trash2 className="mr-2 h-4 w-4" /> Excluir
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Detalhes do Combo</CardTitle>
+            <CardDescription>Informações gerais sobre o combo</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-muted/50 p-4 rounded-md">
+              <h3 className="font-medium mb-2">Descrição</h3>
+              <p className="text-muted-foreground">
+                {combo.descricao || "Nenhuma descrição disponível para este combo."}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="pt-6 flex flex-col items-center justify-center text-center">
+                  <CircleDollarSign className="h-8 w-8 text-green-500 mb-2" />
+                  <h3 className="text-lg font-medium">Valor</h3>
+                  <p className="text-2xl font-bold">R$ {combo.valor?.toFixed(2) || "0.00"}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6 flex flex-col items-center justify-center text-center">
+                  <Package className="h-8 w-8 text-blue-500 mb-2" />
+                  <h3 className="text-lg font-medium">Produtos</h3>
+                  <p className="text-2xl font-bold">{totalProducts}</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6 flex flex-col items-center justify-center text-center">
+                  <Calendar className="h-8 w-8 text-purple-500 mb-2" />
+                  <h3 className="text-lg font-medium">Criado em</h3>
+                  <p className="text-lg">
+                    {combo.created_at ? new Date(combo.created_at).toLocaleDateString() : "Sem data"}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ações Rápidas</CardTitle>
+            <CardDescription>Operações disponíveis para este combo</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <Button
-              onClick={() => handleDeleteCombo(combos.id || "")}
-              variant={"destructive"}
+              className="w-full justify-start"
+              variant="outline"
+              onClick={() => (window.location.href = `/codigos-combo/${productIds}`)}
+              disabled={totalProducts === 0}
             >
-              <Trash2 />
+              <Binary className="mr-2 h-5 w-5" />
+              Gerenciar Códigos
             </Button>
-          </div>
-        </div>
-        <p className="mb-6 text-gray-700">{combos.descricao}</p>
-        <div className="flex items-center gap-4 justify-start text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <CircleDollarSign size={20} className="text-green-500" />
-            <span>R$ {combos.valor?.toFixed(2) || "0.00"}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Binary size={20} className="text-blue-500" />
-            <span>Código: {combos.id}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar size={20} className="text-purple-500" />
-            <span>
-              Criado em:{" "}
-              {combos.created_at ? combos.created_at.split("T")[0] : "Sem data"}
-            </span>
-          </div>
-        </div>
-      </article>
 
-      <div className="bg-gray-100 border rounded-md p-4">
-        <h1 className="text-xl font-semibold border-b pb-4">
-          Produtos do combo
-        </h1>
-        <Accordion type="single" collapsible className="w-full">
-          {combos.produtos.map((item, index) => (
-            <AccordionItem key={item.id + "|" + index} value={"item" + index}>
-              <AccordionTrigger>
-                <div className="flex justify-between items-center p-4 ">
-                  <h3 className="text-lg font-semibold">{item.nome}</h3>
-                  <span className="text-gray-500">
-                    R$ {item.valor.toFixed(2)}
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="border-t">
-                <div className="p-4">
-                  <p>
-                    <strong>Descrição:</strong> {item.descricao}
-                  </p>
-                  <p>
-                    <strong>Categoria:</strong> {item.categoria}
-                  </p>
-                  <p>
-                    <strong>Criado em:</strong> {item.created_at}
-                  </p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button className="w-full justify-start" variant="outline" disabled>
+                      <ShoppingCart className="mr-2 h-5 w-5" />
+                      Ver Vendas
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Em breve</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button className="w-full justify-start" variant="outline" disabled>
+                      <Tag className="mr-2 h-5 w-5" />
+                      Adicionar à Loja
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Em breve</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-8">
-    
-        <div
-          onClick={() => {
-            window.location.href = `/codigos-combo/${productIds}`;
-          }}
-          className="border p-4 rounded  flex flex-col justify-center items-center gap-2 min-h-[300px] hover:scale-105 transition-all duration-300  hover:border-blue-500 hover:text-blue-500"
-        >
-          <Binary size={60}></Binary>
-          <h2 className="text-2xl">Códigos</h2>
-        </div>
-      </div>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Produtos do Combo</CardTitle>
+            <CardDescription>{totalProducts} produto(s) incluído(s) neste combo</CardDescription>
+          </div>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button variant="outline" size="sm" disabled>
+                    <Plus className="mr-2 h-4 w-4" /> Adicionar Produto
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Em breve</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardHeader>
+
+        <CardContent>
+          {totalProducts === 0 ? (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Nenhum produto</AlertTitle>
+              <AlertDescription>
+                Este combo não possui produtos. Adicione produtos para disponibilizá-lo para venda.
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Accordion type="single" collapsible className="w-full">
+              {combo.produtos.map((item, index) => (
+                <AccordionItem key={`${item.id}-${index}`} value={`item-${index}`}>
+                  <AccordionTrigger className="hover:bg-muted/50 px-4 rounded-md">
+                    <div className="flex justify-between items-center max-md:flex-col gap-2 w-full pr-4">
+                      <div className="flex items-center">
+                        <Badge variant="outline" className="mr-3">
+                          {index + 1}
+                        </Badge>
+                        <h3 className="text-lg font-medium">{item.nome}</h3>
+                      </div>
+                      <Badge>R$ {item.valor.toFixed(2)}</Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="border-t mt-2 pt-4">
+                    <div className="px-4 space-y-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-muted-foreground mb-1">Descrição</h4>
+                        <p>{item.descricao || "Sem descrição"}</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-1">Categoria</h4>
+                          <Badge variant="outline">{item.categoria || "Sem categoria"}</Badge>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-1">ID do Produto</h4>
+                          <code className="text-xs bg-muted px-2 py-1 rounded">{item.id}</code>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-1">Criado em</h4>
+                          <p>{item.created_at ? new Date(item.created_at).toLocaleDateString() : "Sem data"}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteProduct(item.id || "")}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Remover do Combo
+                        </Button>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este combo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCombo}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteProductDialogOpen} onOpenChange={setDeleteProductDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover produto</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover este produto do combo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteProduct}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-  );
+  )
 }

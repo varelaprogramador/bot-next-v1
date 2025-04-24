@@ -179,7 +179,7 @@ export const CreateMedia = ({
             listProductSelecionados.map((item, index) => (
               <div
                 key={`${item.id}//${index}`}
-                className="bg-blue-600 p-2 text-sm flex justify-between items-center rounded-md text-white"
+                className="bg-blue-600 p-2 text-sm flex justify-between items-center max-md:flex-col gap-2 rounded-md text-white"
               >
                 <p
                   className="m-0 overflow-hidden whitespace-nowrap text-ellipsis"

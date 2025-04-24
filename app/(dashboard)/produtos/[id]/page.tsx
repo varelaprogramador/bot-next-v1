@@ -316,7 +316,7 @@ export default function ProdutoDetalhes() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center max-md:flex-col gap-2 mb-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <ShoppingCart className="h-6 w-6 text-primary" />
                 </div>
@@ -333,7 +333,7 @@ export default function ProdutoDetalhes() {
 
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center max-md:flex-col gap-2 mb-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <Clock className="h-6 w-6 text-primary" />
                 </div>
@@ -351,7 +351,7 @@ export default function ProdutoDetalhes() {
 
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center max-md:flex-col gap-2 mb-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <CircleDollarSign className="h-6 w-6 text-primary" />
                 </div>
@@ -368,7 +368,7 @@ export default function ProdutoDetalhes() {
 
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center max-md:flex-col gap-2 mb-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <Users className="h-6 w-6 text-primary" />
                 </div>

@@ -74,8 +74,8 @@ export default function Produtos() {
 
         // Calculate stats
         if (data) {
-          const mensal = data.filter((item) => item.categoria === "mensal").length
-          const anual = data.filter((item) => item.categoria === "anual").length
+          const mensal = data.filter((item) => item.categoria === "Mensal").length
+          const anual = data.filter((item) => item.categoria === "Anual").length
           const avgPrice = data.reduce((acc, item) => acc + (item.valor || 0), 0) / (data.length || 1)
 
           setStats({
@@ -253,7 +253,7 @@ export default function Produtos() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center max-md:flex-col gap-2 mb-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <Tag className="h-6 w-6 text-primary" />
                 </div>
@@ -270,7 +270,7 @@ export default function Produtos() {
 
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center max-md:flex-col gap-2 mb-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <Calendar className="h-6 w-6 text-primary" />
                 </div>
@@ -288,7 +288,7 @@ export default function Produtos() {
 
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center max-md:flex-col gap-2 mb-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <Calendar className="h-6 w-6 text-primary" />
                 </div>
@@ -306,7 +306,7 @@ export default function Produtos() {
 
           <Card className="bg-card border-border">
             <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center max-md:flex-col gap-2 mb-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <CircleDollarSign className="h-6 w-6 text-primary" />
                 </div>
