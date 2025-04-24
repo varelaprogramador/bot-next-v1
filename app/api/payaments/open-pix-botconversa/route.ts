@@ -18,6 +18,12 @@ export async function POST(req: Request) {
         status: 400,
       });
     }
+    // Buscar itens do bot_conversa
+    const { data: bot_conversa, error: botError } = await supabase
+      .from("bot_conversa_com_produto")
+      .select("*")
+      .eq("nome", body.produto.nome);
+
     const id_transacao = v4();
     const rechargeAmount = body.produto.valor;
     const novaVenda = {
@@ -37,6 +43,11 @@ export async function POST(req: Request) {
     if (vendaError) {
       console.error("Erro ao inserir nova venda:", vendaError);
     }
+
+    if (botError) {
+      throw botError;
+    }
+    const produto = bot_conversa[0];
     const response = await fetch(
       "https://api.openpix.com.br/api/v1/charge?return_existing=true",
       {
@@ -52,10 +63,11 @@ export async function POST(req: Request) {
           expiresIn: 420,
           additionalInfo: [
             { key: "ID", value: id_transacao },
-            { key: "Product", value: body.produto.id },
-            { key: "Product-Nome", value: body.produto.nome },
+            { key: "Product", value: produto.id_produto_vinculado },
+            { key: "Product-Nome", value: produto.nome_vinculado },
             { key: "Nome", value: body.nome },
-            { key: "Telefone", value: body.telefone }, // Corrigido
+            { key: "Telefone", value: body.telefone }, //
+            // Corrigido
             {
               key: "Email",
               value: body.email != "" ? body.email : "sem@gmail.com",
