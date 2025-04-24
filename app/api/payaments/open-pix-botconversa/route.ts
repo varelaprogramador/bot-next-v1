@@ -13,7 +13,12 @@ export async function POST(req: Request) {
     // Pegando os dados do request
     const body = await req.json();
     console.log(body);
-    if (!body.produto || !body.nome || !body.telefone) {
+    if (
+      !body.produto_nome ||
+      !body.produto_valor ||
+      !body.nome ||
+      !body.telefone
+    ) {
       return new Response(JSON.stringify({ error: "Dados incompletos" }), {
         status: 400,
       });
@@ -22,10 +27,10 @@ export async function POST(req: Request) {
     const { data: bot_conversa, error: botError } = await supabase
       .from("bot_conversa_com_produto")
       .select("*")
-      .eq("nome", body.produto.nome);
+      .eq("nome", body.produto_nome);
 
     const id_transacao = v4();
-    const rechargeAmount = body.produto.valor;
+    const rechargeAmount = body.produto_valor;
     const novaVenda = {
       id_cliente: "bot_conversa", // Usando o user_id como id_cliente
       nome_cliente: body.nome,
@@ -57,9 +62,9 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          correlationID: `${body.produto.nome}+${v4()}`.replace(/\s+/g, ""), // Remove espaços
-          value: body.produto.valor * 100,
-          comment: body.produto.nome,
+          correlationID: `${body.produto_nome}+${v4()}`.replace(/\s+/g, ""), // Remove espaços
+          value: body.produto_valor * 100,
+          comment: body.produto_nome,
           expiresIn: 420,
           additionalInfo: [
             { key: "ID", value: id_transacao },
