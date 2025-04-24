@@ -36,7 +36,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/app/components/ui/form";
-import { FilePlus } from "lucide-react";
+import { FilePlus, Plus } from "lucide-react";
 import { ProdutosProps } from "@/app/utils/produto";
 import ImageSelector from "../popup-imagens";
 
@@ -69,7 +69,7 @@ export const CreateProduto = ({
       descricao: "",
       valor: 0,
       categoria: "",
-      url_image:""
+      url_image: ""
     },
   });
 
@@ -78,8 +78,8 @@ export const CreateProduto = ({
     setOpen(false);
     form.reset();
   };
-  function handlerUrl(url:string){
-    form.setValue("url_image",url);
+  function handlerUrl(url: string) {
+    form.setValue("url_image", url);
 
   }
   const FormContent = (
@@ -149,7 +149,7 @@ export const CreateProduto = ({
             </FormItem>
           )}
         />
-        <ImageSelector defaultValue="" sendData={handlerUrl} onClose={()=>{}}></ImageSelector>
+        <ImageSelector defaultValue="" sendData={handlerUrl} onClose={() => { }}></ImageSelector>
         <FormField
           control={form.control}
           name="url_image"
@@ -179,11 +179,16 @@ export const CreateProduto = ({
       }}
     >
       <DialogTrigger asChild>
-        <div className="border border-dashed p-8 flex justify-center items-center rounded text-gray-200 transition-all duration-300 hover:border-gray-400 hover:text-gray-500">
-          <div className="flex flex-col gap-8 justify-center items-center">
-            <FilePlus size={80} />
-            <p className="font-medium">Criar Produto</p>
+        <div className="group relative overflow-hidden bg-secondary  hover:bg-secondary/90 rounded-md border border-gray-200  transition-all duration-300 flex flex-col items-center justify-center p-8 min-h-[320px]">
+          <div className="relative z-10 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 flex items-center justify-center rounded-full bg-primary text-white mb-6">
+              <Plus size={24} />
+            </div>
+            <h3 className="text-xl font-bold text-primary mb-2">Adicionar Produto</h3>
+            <p className="text-muted-foreground mb-6">Crie um novo produto para seu catálogo</p>
+
           </div>
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
         </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">

@@ -1,73 +1,98 @@
-import React, { useState } from 'react';
-import { cn } from '@/lib/utils';
-import { ShoppingBasket, Image, Layers } from 'lucide-react';
-import Link from 'next/link';
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
+import { ShoppingBasket, ImageIcon, Layers, ArrowRight } from "lucide-react"
+import Link from "next/link"
+import { Card, CardContent, CardFooter } from "@/app/components/ui/card"
+import { Button } from "@/app/components/ui/button"
 
 interface OptionCardProps {
-    title: string;
-    icon: 'produtos' | 'banner' | 'carousel';
-    className?: string;
-    delay?: number;
-
+    title: string
+    icon: "produtos" | "banner" | "carousel"
+    className?: string
+    delay?: number
     link: string
 }
 
-const OptionCard: React.FC<OptionCardProps> = ({
-    title,
-    icon,
-    className,
-    delay = 0,
-    link
-}) => {
-    const [isHovered, setIsHovered] = useState(false);
+const OptionCard: React.FC<OptionCardProps> = ({ title, icon, className, delay = 0, link }) => {
+    const [isHovered, setIsHovered] = useState(false)
 
     const getIcon = () => {
         switch (icon) {
-            case 'produtos':
-                return <ShoppingBasket size={36} />;
-            case 'banner':
-                return <Image size={36} />;
-            case 'carousel':
-                return <Layers size={36} />;
+            case "produtos":
+                return <ShoppingBasket size={36} />
+            case "banner":
+                return <ImageIcon size={36} />
+            case "carousel":
+                return <Layers size={36} />
             default:
-                return null;
+                return null
         }
-    };
+    }
+
+    const getDescription = () => {
+        switch (icon) {
+            case "produtos":
+                return "Organize e gerencie os produtos exibidos na sua loja"
+            case "banner":
+                return "Configure banners promocionais para sua página inicial"
+            case "carousel":
+                return "Personalize carrosséis de produtos e categorias"
+            default:
+                return ""
+        }
+    }
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 },
+    }
 
     return (
-        <Link href={"/loja" + link}>
-            <div
-                className={cn(
-                    "relative bg-white border rounded-2xl neo-morphism p-8 flex flex-col items-center justify-center cursor-pointer card-hover h-64 opacity-0 animate-fade-in",
-                    isHovered && "ring-2 ring-gray-100",
-                    className
-                )}
-                style={{
-                    animationDelay: `${0.3 + delay * 0.1}s`,
-                    animationFillMode: 'forwards'
-                }}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-            >
-                <div
+        <motion.div variants={item} whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+            <Link href={"/loja" + link} className="block h-full">
+                <Card
                     className={cn(
-                        "text-gray-800 mb-6 transition-all duration-500 ease-in-out",
-                        isHovered ? "scale-110" : "animate-float"
+                        "h-full overflow-hidden transition-all border",
+                        "hover:border-primary/50 hover:shadow-md",
+                        "dark:bg-card/80 dark:hover:bg-card/95",
+                        isHovered && "ring-1 ring-primary/20",
+                        className,
                     )}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
                 >
-                    {getIcon()}
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2 transition-all duration-300">{title}</h3>
+                    <CardContent className="p-6 flex flex-col items-center text-center">
+                        <div
+                            className={cn(
+                                "mb-4 p-3 rounded-full bg-primary/10 text-primary",
+                                "transition-all duration-300 ease-in-out",
+                                isHovered ? "scale-110" : "animate-pulse",
+                            )}
+                        >
+                            {getIcon()}
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+                        <p className="text-sm text-muted-foreground">{getDescription()}</p>
+                    </CardContent>
+                    <CardFooter className="p-4 pt-0 flex justify-center">
+                        <Button
+                            variant={isHovered ? "default" : "secondary"}
+                            size="sm"
+                            className="w-full transition-all duration-300"
+                        >
+                            Configurar
+                            <ArrowRight size={16} className="ml-2" />
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </Link>
+        </motion.div>
+    )
+}
 
-                <div
-                    className={cn(
-                        "absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-gray-100 via-gray-300 to-gray-100 transform scale-x-0 transition-transform duration-300 rounded-b-2xl",
-                        isHovered && "scale-x-100"
-                    )}
-                />
-            </div>
-        </Link>
-    );
-};
-
-export default OptionCard;
+export default OptionCard

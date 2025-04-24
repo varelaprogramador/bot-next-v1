@@ -1,94 +1,76 @@
-"use client";
+"use client"
 
-import { DataTableMediaCarousel } from "@/app/components/tabela-loja";
-import { Button } from "@/app/components/ui/button";
-import { MediaBannerProps, MediaProps } from "@/app/utils/media";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useRef, useState } from "react"
+import { Button } from "@/app/components/ui/button"
+import { Separator } from "@/app/components/ui/separator"
+import { ArrowLeft, ChevronLeft, ChevronRight, Home, ChevronRightIcon, ImageIcon, Info } from 'lucide-react'
+import Link from "next/link"
+import Image from "next/image"
+import { createClient } from "@/lib/supabase/client"
+import type { MediaBannerProps } from "@/app/utils/media"
+import { DataTableMediaBanner } from "@/app/components/tabela-loja-banner"
 import {
-  ArrowLeftCircle,
-  ChevronLeft,
-  ChevronRight,
-  GalleryHorizontal,
-  ImageIcon,
-  ShoppingBasketIcon,
-} from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { Separator } from "@/app/components/ui/separator";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@/app/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { motion } from "framer-motion"
+import { Skeleton } from "@/app/components/ui/skeleton"
 
-import { useIsMobile } from "@/hooks/use-mobile";
+export default function BannerPage() {
+  const supabase = createClient()
+  const isMobile = useIsMobile()
+  const carouselRef = useRef<HTMLDivElement | null>(null)
 
-import { EmblaOptionsType } from "embla-carousel";
+  const [dataBannerDesk, setDataBannerDesk] = useState<MediaBannerProps[]>([])
+  const [dataBannerNote, setDataBannerNote] = useState<MediaBannerProps[]>([])
+  const [data, setData] = useState<MediaBannerProps[]>([])
+  const [loading, setLoading] = useState(true)
+  const [currentSlide, setCurrentSlide] = useState(0)
 
-import { DataTableMediaBanner } from "@/app/components/tabela-loja-banner";
+  const handleScroll = (direction: "left" | "right") => {
+    const container = carouselRef.current
+    if (!container) return
 
-import { Card, CardContent } from "@/app/components/ui/card";
+    const banners = isMobile ? dataBannerNote : dataBannerDesk
+    const newIndex = direction === "left"
+      ? Math.max(0, currentSlide - 1)
+      : Math.min(banners.length - 1, currentSlide + 1)
 
-export default function Shop() {
-  const supabase = createClient();
+    setCurrentSlide(newIndex)
 
-  const [dataBannerDesk, setDataBannerDesk] = useState<MediaBannerProps[]>([]);
-  const [dataBannerNote, setDataBannerNote] = useState<MediaBannerProps[]>([]);
-  const carouselRef2 = useRef<HTMLDivElement | null>(null);
-  const handleScroll2 = (direction: "left" | "right") => {
-    const container = carouselRef2.current;
-    if (!container) return; // Verificar se o container existe
+    container.scrollTo({
+      left: container.offsetWidth * newIndex,
+      behavior: "smooth",
+    })
+  }
 
-    if (direction === "left") {
-      container.scrollBy({
-        left: -container.offsetWidth,
-        behavior: "smooth",
-      });
-    } else {
-      container.scrollBy({
-        left: container.offsetWidth,
-        behavior: "smooth",
-      });
-    }
-  };
-  useEffect(() => {
-    const loadData2 = async () => {
-      try {
-        const { data, error } = await supabase.from("media-loja").select("*");
-
-        if (error) {
-          throw error;
-        }
-
-        setDataBannerDesk(data.filter((value) => value.type === "desktop"));
-        setDataBannerNote(data.filter((value) => value.type === "mobile"));
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      }
-    };
-
-    loadData2();
-  }, [supabase]);
-  const mobile = useIsMobile();
-
-  const OPTIONS: EmblaOptionsType = { dragFree: true, loop: true };
-  const SLIDE_COUNT = 5;
-  const SLIDES = Array.from(Array(SLIDE_COUNT).keys());
-
-  const [data, setData] = useState<MediaBannerProps[]>([]);
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true)
       try {
-        const { data, error } = await supabase.from("media-loja").select("*");
+        const { data, error } = await supabase.from("media-loja").select("*")
 
         if (error) {
-          throw error;
+          throw error
         }
 
-        setData(data || []);
+        setDataBannerDesk(data.filter((value) => value.type === "desktop"))
+        setDataBannerNote(data.filter((value) => value.type === "mobile"))
+        setData(data || [])
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        console.error("Erro ao carregar dados:", error)
+      } finally {
+        setLoading(false)
       }
-    };
+    }
 
-    loadData();
-  }, [supabase]);
+    loadData()
+  }, [supabase])
 
   useEffect(() => {
     const subscription = supabase.channel(`realtime:public:media-loja`).on(
@@ -102,100 +84,178 @@ export default function Shop() {
         setData((prevData) => {
           switch (payload.eventType) {
             case "INSERT":
-              return [...prevData, payload.new as MediaBannerProps];
+              return [...prevData, payload.new as MediaBannerProps]
             case "UPDATE":
-              return prevData.map((item) =>
-                item.id === payload.new.id
-                  ? (payload.new as MediaBannerProps)
-                  : item
-              );
+              return prevData.map((item) => (item.id === payload.new.id ? (payload.new as MediaBannerProps) : item))
             case "DELETE":
-              return prevData.filter((item) => item.id !== payload.old.id);
+              return prevData.filter((item) => item.id !== payload.old.id)
             default:
-              return prevData;
+              return prevData
           }
-        });
-      }
-    );
+        })
+      },
+    )
 
-    subscription.subscribe();
+    subscription.subscribe()
 
     return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
+      subscription.unsubscribe()
+    }
+  }, [supabase])
+
+  const banners = isMobile ? dataBannerNote : dataBannerDesk
+
   return (
-    <div className="p-4 min-h-[85vh] flex flex-col gap-4">
-      <div className=" flex justify-between bg-white rounded-md p-2 fixed z-10  w-[85%] shadow-md">
-        <div className="flex gap-4 items-center ">
-          <Button
-            onClick={() => (window.location.href = "/loja")}
-            className="bg-blue-600 hover:bg-blue-400"
-          >
-            <ArrowLeftCircle></ArrowLeftCircle>
-          </Button>{" "}
-          <p className="border-l pl-1 font-semibold"> Layout Banner</p>
+    <div className="p-4 md:p-6 min-h-[85vh] flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <Link href="/dashboard" className="hover:text-primary transition-colors">
+            <Home size={16} className="inline mr-1" />
+            Dashboard
+          </Link>
+          <ChevronRightIcon size={16} className="mx-1" />
+          <Link href="/loja" className="hover:text-primary transition-colors">
+            Loja
+          </Link>
+          <ChevronRightIcon size={16} className="mx-1" />
+          <span className="font-medium text-foreground">Banners</span>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Gerenciar Banners</h1>
+            <p className="text-muted-foreground">Configure os banners promocionais da sua loja</p>
+          </div>
+
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/loja" className="flex items-center gap-2">
+              <ArrowLeft size={16} />
+              Voltar para Loja
+            </Link>
+          </Button>
         </div>
       </div>
 
-      <Separator className=" my-4"></Separator>
+      <Separator className="my-4" />
 
-      <div>
-        <h2 className="font-semibold">Banner :</h2>
-
-        <div className="w-full">
-          <section className=" bg-white border rounded-md">
-            <div className="relative  rounded-md ">
-              <div ref={carouselRef2} className="flex overflow-hidden ">
-                {(mobile ? dataBannerNote : dataBannerDesk)?.map(
-                  (card, index) => (
-                    <Link
-                      key={card.id}
-                      href={`/card/${card.id}`}
-                      className="w-full flex-shrink-0   max-h-[420px]  rounded-md"
-                    >
-                      <Image
-                        src={card.url || "/placeholder.svg"}
-                        unoptimized
-                        alt={card.nome}
-                        width={2000}
-                        height={2000}
-                        className="w-full rounded-md object-fit bg-center  max-h-[420px]"
-                      />
-                    </Link>
-                  )
-                )}
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute left-5 top-1/2 -translate-y-1/2 -translate-x-4 rounded-full"
-                onClick={() => handleScroll2("left")}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="absolute right-5  top-1/2 -translate-y-1/2 translate-x-4 rounded-full"
-                onClick={() => handleScroll2("right")}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ImageIcon className="h-5 w-5" />
+            Visualização do Banner
+          </CardTitle>
+          <CardDescription>
+            Prévia de como o banner aparecerá na sua loja
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="relative rounded-md overflow-hidden border bg-card">
+            <div
+              ref={carouselRef}
+              className="flex overflow-hidden scroll-smooth snap-x snap-mandatory"
+              style={{ scrollbarWidth: 'none' }}
+            >
+              {loading ? (
+                <div className="w-full flex-shrink-0 aspect-[16/4]">
+                  <Skeleton className="w-full h-full" />
+                </div>
+              ) : banners.length > 0 ? (
+                banners.map((banner) => (
+                  <div
+                    key={banner.id}
+                    className="w-full flex-shrink-0 snap-center"
+                  >
+                    <Image
+                      src={banner.url || "/placeholder.svg?height=400&width=1500&query=banner"}
+                      alt={banner.nome || "Banner"}
+                      width={1500}
+                      height={400}
+                      className="w-full object-cover aspect-[16/4]"
+                      priority
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="w-full flex-shrink-0 aspect-[16/4] bg-muted flex items-center justify-center">
+                  <p className="text-muted-foreground">Nenhum banner disponível</p>
+                </div>
+              )}
             </div>
-          </section>
-        </div>
-        <div className="bg-yellow-50 border-yellow-400 text-orange-700 border rounded-md mt-4 p-4 ">
-          <p>
-            {" "}
-            <strong>Dimensões:</strong>
-            <br></br> Desktop: 1500 X 400<br></br>
-            Celular: 380 X 400
-          </p>
-        </div>
-        <DataTableMediaBanner data={data}></DataTableMediaBanner>
-      </div>
+
+            {banners.length > 1 && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full opacity-80 hover:opacity-100 shadow-md"
+                  onClick={() => handleScroll("left")}
+                  disabled={currentSlide === 0}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full opacity-80 hover:opacity-100 shadow-md"
+                  onClick={() => handleScroll("right")}
+                  disabled={currentSlide === banners.length - 1}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+
+            {banners.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {banners.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`w-2 h-2 rounded-full transition-all ${index === currentSlide
+                        ? "bg-primary w-4"
+                        : "bg-primary/30 hover:bg-primary/50"
+                      }`}
+                    onClick={() => {
+                      setCurrentSlide(index)
+                      carouselRef.current?.scrollTo({
+                        left: carouselRef.current.offsetWidth * index,
+                        behavior: "smooth",
+                      })
+                    }}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Alert className="mb-6 bg-card border-amber-200 dark:border-amber-900">
+        <Info className="h-4 w-4 text-amber-500" />
+        <AlertTitle>Dimensões recomendadas</AlertTitle>
+        <AlertDescription className="flex flex-col gap-1">
+          <p><strong>Desktop:</strong> 1500 × 400 pixels</p>
+          <p><strong>Mobile:</strong> 380 × 400 pixels</p>
+        </AlertDescription>
+      </Alert>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Gerenciar Banners</CardTitle>
+          <CardDescription>
+            Adicione, edite ou remova banners da sua loja
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <DataTableMediaBanner data={data} />
+          </motion.div>
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }

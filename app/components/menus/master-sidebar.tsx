@@ -1,148 +1,175 @@
-"use client";
+"use client"
 
-import * as React from "react";
+import { cn } from "@/lib/utils"
+import { Button } from "@/app/components/ui/button"
+import { Sidebar, SidebarFooter, SidebarHeader } from "@/app/components/ui/sidebar"
 import {
-  Settings,
-  SunMoon,
-  Binary,
-  Building2,
-  Package,
   BarChart3,
-  LayoutDashboard,
   ShoppingBag,
-  MessageCircle,
-  Image,
-} from "lucide-react";
+  Package,
+  Layers,
+  MessageSquare,
+  ImageIcon,
+  Settings,
+  LogOut,
+  Code,
+  PanelLeft,
+  Palette,
+  Users,
+} from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { UserButton } from "@clerk/nextjs"
+import { useUser } from "@clerk/nextjs"
+import { useState } from "react"
 
-import { NavMain } from "./_components/nav-main";
-import { NavProjects } from "./_components/nav-projects";
-import { NavUser } from "./_components/nav-user";
+import { Switch } from "@/app/components/ui/switch"
+import { Label } from "@/app/components/ui/label"
+import { useTheme } from "next-themes"
+import { Preloader } from "@/app/components/ui/preloader"
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
-} from "@/app/components/ui/sidebar";
-import { useUser } from "@clerk/nextjs";
+export function AppSidebar() {
+  const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
+  const { user } = useUser()
+  const [showPreloader, setShowPreloader] = useState(false)
+  const [targetTheme, setTargetTheme] = useState<"light" | "dark">("light")
 
-// This is sample data, make sure to conditionally set the user data
-const data = {
-  navMain: [
+  const handleThemeChange = (checked: boolean) => {
+    const newTheme = checked ? "dark" : "light"
+    setTargetTheme(newTheme)
+    setShowPreloader(true)
+  }
+
+  const handlePreloaderComplete = () => {
+    setTheme(targetTheme)
+    setShowPreloader(false)
+  }
+
+  const routes = [
     {
       title: "Dashboard",
-      url: "/dashboard",
-      icon: LayoutDashboard,
-      isActive: true,
-      items: [],
-    },
-    {
-      title: "Vendas",
-      url: "/vendas",
-      icon: BarChart3,
-      isActive: false,
-      items: [],
+      href: "/dashboard",
+      icon: <BarChart3 className="h-5 w-5" />,
     },
     {
       title: "Produtos",
-      url: "/produtos",
-      icon: Package,
-      isActive: false,
-      items: [],
+      href: "/produtos",
+      icon: <ShoppingBag className="h-5 w-5" />,
     },
     {
-      title: "Integrações",
-      url: "/integracao",
-      icon: Building2,
-      isActive: false,
-      items: [],
+      title: "Vendas",
+      href: "/vendas",
+      icon: <Package className="h-5 w-5" />,
     },
     {
       title: "Códigos",
-      url: "/codigos",
-      icon: Binary,
-      isActive: false,
-      items: [],
-    },
-    {
-      title: "Códigos WP",
-      url: "/codigos-wp",
-      icon: Binary,
-      isActive: false,
-      items: [],
+      href: "/codigos",
+      icon: <Code className="h-5 w-5" />,
     },
     {
       title: "Combos",
-      url: "/combos",
-      icon: ShoppingBag,
-      isActive: false,
-      items: [],
+      href: "/combos",
+      icon: <Layers className="h-5 w-5" />,
     },
-
     {
       title: "Disparo",
-      url: "/disparo",
-      icon: MessageCircle,
-      isActive: false,
-      items: [],
+      href: "/disparo",
+      icon: <MessageSquare className="h-5 w-5" />,
     },
     {
-      title: "Disparo via TXT",
-      url: "/disparo-telegram",
-      icon: MessageCircle,
-      isActive: false,
-      items: [],
+      title: "Disparo Telegram",
+      href: "/disparo-telegram",
+      icon: <MessageSquare className="h-5 w-5" />,
     },
     {
-      title: "Galeria",
-      url: "/imagens",
-      icon: Image,
-      isActive: false,
-      items: [],
+      title: "Loja",
+      href: "/loja",
+      icon: <PanelLeft className="h-5 w-5" />,
     },
     {
-      title: "Layout Loja",
-      url: "/loja",
-      icon: LayoutDashboard,
-      isActive: false,
-      items: [],
+      title: "Imagens",
+      href: "/imagens",
+      icon: <ImageIcon className="h-5 w-5" />,
+    },
+    {
+      title: "Tema",
+      href: "/tema",
+      icon: <Palette className="h-5 w-5" />,
     },
     {
       title: "Configurações",
-      url: "/config",
-      icon: Settings,
-      isActive: false,
-      items: [],
+      href: "/config",
+      icon: <Settings className="h-5 w-5" />,
     },
-  ],
-};
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user } = useUser(); // Use the hook inside the component
-
-  // Ensure that the user data is available
-  const userData = user
-    ? {
-      name: user.fullName || "",
-      email: user.emailAddresses?.[0]?.emailAddress,
-      avatar: user.imageUrl,
-    }
-    : {
-      name: "",
-      email: "",
-      avatar: "",
-    };
+    {
+      title: "Integrações",
+      href: "/integracao",
+      icon: <Users className="h-5 w-5" />,
+    },
+  ]
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={userData} />
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
-  );
+    <>
+      <Preloader isVisible={showPreloader} onComplete={handlePreloaderComplete} />
+      <Sidebar className="bg-background">
+        <SidebarHeader className="flex items-center justify-center py-6">
+          <div className="flex items-center gap-2">
+            <div className="size-8 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold">DB</span>
+            </div>
+            <span className="font-bold text-lg">Dashboard</span>
+          </div>
+        </SidebarHeader>
+        <div className="px-3">
+          <nav className="grid gap-1">
+            {routes.map((route) => (
+              <Link
+                key={route.href}
+                href={route.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors",
+                  pathname === route.href
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
+                )}
+              >
+                {route.icon}
+                <span>{route.title}</span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <SidebarFooter className="px-3 py-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="dark-mode"
+                  checked={theme === "dark"}
+                  onCheckedChange={handleThemeChange}
+                />
+                <Label htmlFor="dark-mode">Modo escuro</Label>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserButton afterSignOutUrl="/" />
+                <div className="text-sm">
+                  <p className="font-medium">{user?.fullName}</p>
+                  <p className="text-xs text-muted-foreground">{user?.emailAddresses[0].emailAddress}</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/sign-out">
+                  <LogOut className="h-5 w-5" />
+                  <span className="sr-only">Sair</span>
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+    </>
+  )
 }
