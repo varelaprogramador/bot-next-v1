@@ -13,12 +13,7 @@ export async function POST(req: Request) {
     // Pegando os dados do request
     const body = await req.json();
     console.log(body);
-    if (
-      !body.produto_nome ||
-      !body.produto_valor ||
-      !body.nome ||
-      !body.telefone
-    ) {
+    if (!body.produto_nome || !body.nome || !body.telefone) {
       return new Response(JSON.stringify({ error: "Dados incompletos" }), {
         status: 400,
       });
@@ -30,72 +25,78 @@ export async function POST(req: Request) {
       .eq("nome", body.produto_nome);
 
     const id_transacao = v4();
-    const rechargeAmount = body.produto_valor;
-    const novaVenda = {
-      id_cliente: "bot_conversa", // Usando o user_id como id_cliente
-      nome_cliente: body.nome,
-      id_transacao: id_transacao,
-      valor: rechargeAmount,
-      status: "pendente", // Status da venda
-      tipo_pagamento: "pix", // Tipo de pagamento
-      origin: "bot-conversa",
-    };
+    if (bot_conversa) {
+      const rechargeAmount = bot_conversa[0]?.valor;
+      const novaVenda = {
+        id_cliente: "bot_conversa", // Usando o user_id como id_cliente
+        nome_cliente: body.nome,
+        id_transacao: id_transacao,
+        valor: rechargeAmount,
+        status: "pendente", // Status da venda
+        tipo_pagamento: "pix", // Tipo de pagamento
+        origin: "bot-conversa",
+      };
 
-    const { error: vendaError } = await supabase
-      .from("vendas")
-      .insert([novaVenda]);
+      const { error: vendaError } = await supabase
+        .from("vendas")
+        .insert([novaVenda]);
 
-    if (vendaError) {
-      console.error("Erro ao inserir nova venda:", vendaError);
-    }
-
-    if (botError) {
-      throw botError;
-    }
-    const produto = bot_conversa[0];
-    const response = await fetch(
-      "https://api.openpix.com.br/api/v1/charge?return_existing=true",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Q2xpZW50X0lkXzM4NmEwYjIxLTRhZTMtNGUzMi05NmMzLTg0NmI1NmRkYzc4ZTpDbGllbnRfU2VjcmV0X0d4WmJZZ0VkUElEbDRobUU3RUxNQW5ybmtuNkhtTkRjNmVRT2JXNVhVT289`, // No backend, não use NEXT_PUBLIC_
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          correlationID: `${body.produto_nome}+${v4()}`.replace(/\s+/g, ""), // Remove espaços
-          value: body.produto_valor * 100,
-          comment: body.produto_nome,
-          expiresIn: 420,
-          additionalInfo: [
-            { key: "ID", value: id_transacao },
-            { key: "Product", value: produto.id_produto_vinculado },
-            { key: "Product-Nome", value: produto.nome_vinculado },
-            { key: "Nome", value: body.nome },
-            { key: "Telefone", value: body.telefone }, //
-            // Corrigido
-            {
-              key: "Email",
-              value: body.email != "" ? body.email : "sem@gmail.com",
-            }, // Corrigido
-            { key: "Invoice", value: body.data || Date.now().toString() }, // Se não tiver `data`, usa timestamp
-            { key: "Origin", value: "bot-conversa" },
-          ],
-          payer: {
-            name: body.nome,
-            email: body.email || "",
-            phone: body.telefone,
-          },
-        }),
+      if (vendaError) {
+        console.error("Erro ao inserir nova venda:", vendaError);
       }
-    );
 
-    const responseData = await response.json();
-    console.log(responseData);
-    return new Response(JSON.stringify(responseData), {
-      status: response.status,
-      ...response.headers,
-      ...responseData,
-    });
+      if (botError) {
+        throw botError;
+      }
+      const produto = bot_conversa[0];
+      const response = await fetch(
+        "https://api.openpix.com.br/api/v1/charge?return_existing=true",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Q2xpZW50X0lkXzM4NmEwYjIxLTRhZTMtNGUzMi05NmMzLTg0NmI1NmRkYzc4ZTpDbGllbnRfU2VjcmV0X0d4WmJZZ0VkUElEbDRobUU3RUxNQW5ybmtuNkhtTkRjNmVRT2JXNVhVT289`, // No backend, não use NEXT_PUBLIC_
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            correlationID: `${body.produto_nome}+${v4()}`.replace(/\s+/g, ""), // Remove espaços
+            value: rechargeAmount * 100,
+            comment: body.produto_nome,
+            expiresIn: 420,
+            additionalInfo: [
+              { key: "ID", value: id_transacao },
+              { key: "Product", value: produto.id_produto_vinculado },
+              { key: "Product-Nome", value: produto.nome_vinculado },
+              { key: "Nome", value: body.nome },
+              { key: "Telefone", value: body.telefone }, //
+              // Corrigido
+              {
+                key: "Email",
+                value: body.email != "" ? body.email : "sem@gmail.com",
+              }, // Corrigido
+              { key: "Invoice", value: body.data || Date.now().toString() }, // Se não tiver `data`, usa timestamp
+              { key: "Origin", value: "bot-conversa" },
+            ],
+            payer: {
+              name: body.nome,
+              email: body.email || "",
+              phone: body.telefone,
+            },
+          }),
+        }
+      );
+
+      const responseData = await response.json();
+      console.log(responseData);
+      return new Response(JSON.stringify(responseData), {
+        status: response.status,
+        ...response.headers,
+        ...responseData,
+      });
+    } else {
+      return new Response(JSON.stringify({ error: "Produto não encontrado" }), {
+        status: 400,
+      });
+    }
   } catch (error) {
     return new Response(
       JSON.stringify({ error: "Erro ao processar a requisição" }),
