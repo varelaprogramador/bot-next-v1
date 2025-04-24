@@ -323,7 +323,7 @@ bot.on("callback_query", async (ctx) => {
    Estamos aqui para ajudar você a encontrar a melhor opção para suas necessidades! 😊
     `;
       await ctx.deleteMessage();
-      const imageUrl = "https://www.n8nworks.shop/banner.jpeg";
+      const imageUrl = "https://nextgiftcards.com/banner.jpeg";
       ctx.replyWithPhoto(imageUrl, {
         caption: mensagem,
         reply_markup: {
@@ -374,8 +374,8 @@ bot.on("callback_query", async (ctx) => {
 
       const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
       Escolha um produto para confirmar a compra:\n\n${produtosUnique
-        .map((item) => `🔹 ${item.nome}`)
-        .join("\n")}
+          .map((item) => `🔹 ${item.nome}`)
+          .join("\n")}
       
       =====================
       
@@ -420,8 +420,8 @@ bot.on("callback_query", async (ctx) => {
 
       const mensagem = `🎖️ PRODUTOS | PREMIUM 🎖️
       Você selecionou o produto: ${produtoNome}\n\nEscolha a opção para compra:\n\n${produtos
-        .map((item) => `🔹 ${item.nome} - ${item.categoria}`)
-        .join("\n")}
+          .map((item) => `🔹 ${item.nome} - ${item.categoria}`)
+          .join("\n")}
       
       =====================
       
@@ -491,7 +491,7 @@ bot.on("callback_query", async (ctx) => {
     💎 Experiência Premium, feita para você!`;*/
       }
       const mensagem = "Escolha um dos combos acima:";
-      const imageUrl = "https://www.n8nworks.shop/banner.jpeg";
+      const imageUrl = "https://nextgiftcards.com/banner.jpeg";
       await ctx.deleteMessage();
       ctx.replyWithPhoto(imageUrl, {
         caption: mensagem,
@@ -562,7 +562,7 @@ bot.on("callback_query", async (ctx) => {
       if (saldoAtual < valorProduto) {
         ctx.editMessageText(
           `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
-            `💰 Recarregue seu saldo para continuar.`,
+          `💰 Recarregue seu saldo para continuar.`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -597,10 +597,10 @@ bot.on("callback_query", async (ctx) => {
 
       ctx.editMessageText(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
-          `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
-          `💵 Preço: R$${valorProduto.toFixed(2)}\n` +
-          `💰 Saldo atual: R$${saldoAtual.toFixed(2)}\n\n` +
-          `Deseja confirmar a compra?`,
+        `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
+        `💵 Preço: R$${valorProduto.toFixed(2)}\n` +
+        `💰 Saldo atual: R$${saldoAtual.toFixed(2)}\n\n` +
+        `Deseja confirmar a compra?`,
         confirmacaoOptions
       );
     } else if (callbackData.startsWith("2comprar_")) {
@@ -665,7 +665,7 @@ bot.on("callback_query", async (ctx) => {
       if (saldoAtual < valorProduto) {
         ctx.reply(
           `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
-            `💰 Recarregue seu saldo para continuar.`,
+          `💰 Recarregue seu saldo para continuar.`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -700,10 +700,10 @@ bot.on("callback_query", async (ctx) => {
 
       ctx.reply(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
-          `🔹 ${combo.nome}\n\n` + // Corrigido para exibir o nome do produto
-          `💵 Preço: R$${valorProduto}\n` +
-          `💰 Saldo atual: R$${saldoAtual.toFixed(2) || 0}\n\n` +
-          `Deseja confirmar a compra?`,
+        `🔹 ${combo.nome}\n\n` + // Corrigido para exibir o nome do produto
+        `💵 Preço: R$${valorProduto}\n` +
+        `💰 Saldo atual: R$${saldoAtual.toFixed(2) || 0}\n\n` +
+        `Deseja confirmar a compra?`,
         confirmacaoOptions
       );
     } else if (callbackData.startsWith("confirmar_compra_")) {
@@ -779,7 +779,7 @@ bot.on("callback_query", async (ctx) => {
       if (codigoError || !codigosAtivos || codigosAtivos.length === 0) {
         await ctx.editMessageText(
           "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." +
-            `\nSeu id: ${userId}`,
+          `\nSeu id: ${userId}`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -813,10 +813,10 @@ bot.on("callback_query", async (ctx) => {
 
       await ctx.editMessageText(
         `🎉 Compra realizada com sucesso!\n` +
-          `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
-          `💵 Preço: R$${valorProduto}\n` +
-          `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
-          `Aproveite seu novo produto!`
+        `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
+        `💵 Preço: R$${valorProduto}\n` +
+        `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
+        `Aproveite seu novo produto!`
       );
 
       await ctx.reply(`
@@ -930,10 +930,10 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
       // Se todos os códigos estão ativos, prosseguir com a compra
       ctx.editMessageText(
         `🎉 Compra realizada com sucesso!\n` +
-          `🔹 Combo: ${combo.nome}\n` + // Exibindo o nome do combo
-          `💵 Preço: R$${valorProduto}\n` +
-          `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
-          `Aproveite seu novo combo!`
+        `🔹 Combo: ${combo.nome}\n` + // Exibindo o nome do combo
+        `💵 Preço: R$${valorProduto}\n` +
+        `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
+        `Aproveite seu novo combo!`
       );
 
       const mensagensCodigos = codigosAtivos
@@ -941,9 +941,8 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
           const produto = produtosCombo.find(
             (item: { id: any }) => codigo.id_produto === item.id
           );
-          return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${
-            codigo.codigo
-          }`;
+          return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${codigo.codigo
+            }`;
         })
         .join("\n");
       for (const codigo of codigosAtivos) {

@@ -246,7 +246,7 @@ Boas compras!`;
           disparo: true,
         };
         const response = await fetch(
-          "https://www.n8nworks.shop/api/webhooks/telegram",
+          "https://nextgiftcards.com/api/webhooks/telegram",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
