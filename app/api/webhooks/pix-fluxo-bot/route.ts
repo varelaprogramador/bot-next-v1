@@ -191,14 +191,19 @@ export async function POST(req: any) {
             name: name,
             phone: phone,
             combo: comboNome,
-            produtos: codigosResgatados,
+            message: `🙋‍♀️ Olá ${name}, segue chave de ativação:
+✅ ${produtosNoCombo.map((produto) => produto.nome).join(", ")}
+🔑 Código de Recargas: ${codigosResgatados
+              .map((codigo) => codigo.codigo)
+              .join(", ")}
+✨ Obrigado pela sua compra!  Até a próxima`,
           };
 
           console.log("Enviando códigos do combo:", dadosCombo);
 
           // Send to BotConversa webhook for combo
           const response = await fetch(
-            "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/ComboWebhook/",
+            "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/j9e9TDrKaU22/",
             {
               method: "POST",
               headers: {
