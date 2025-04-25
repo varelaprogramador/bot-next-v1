@@ -70,7 +70,10 @@ export async function POST(req: any) {
     }
 
     const eventType = data?.event;
-    const allowedEvents = ["OPENPIX:CHARGE_COMPLETED"];
+    const allowedEvents = [
+      "OPENPIX:CHARGE_COMPLETED",
+      "OPENPIX:TRANSACTION_RECEIVED",
+    ];
 
     if (!allowedEvents.includes(eventType)) {
       console.log("Evento não permitido:", eventType);
