@@ -153,7 +153,6 @@ export async function POST(req: Request) {
     if (vendaError) {
       console.error("Erro ao inserir nova venda:", vendaError);
     }
-
     const response = await fetch(
       "https://api.openpix.com.br/api/v1/charge?return_existing=true",
       {
@@ -191,9 +190,24 @@ export async function POST(req: Request) {
         }),
       }
     );
-
     const responseData = await response.json();
     console.log("Resposta OpenPix:", responseData);
+    const disparoCobranca = await fetch(
+      "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/GHINRtf3PYQ6/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          Link: responseData.charge.paymentLinkUrl,
+          Nome: dadosProcessados.nome,
+          Telefone: dadosProcessados.telefone,
+          Copiacolar: responseData.charge.brCode,
+        }),
+      }
+    );
+
     return new Response(JSON.stringify(responseData), {
       status: response.status,
       ...response.headers,
