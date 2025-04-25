@@ -78,7 +78,7 @@ export default function DisparoTelegramPage() {
             const text = await file.text();
             const contacts = text.split('\n')
                 .map(contact => contact.trim())
-                .filter(contact => contact && /^\d+$/.test(contact)); // Apenas números válidos
+                .filter(contact => contact && /^-?\d+$/.test(contact)); // Permitir números com sinal negativo
 
             if (contacts.length === 0) {
                 throw new Error("Nenhum contato válido encontrado no arquivo");
@@ -190,10 +190,10 @@ export default function DisparoTelegramPage() {
             return;
         }
 
-        if (!contactTelegramId.trim() || !/^\d+$/.test(contactTelegramId)) {
+        if (!contactTelegramId.trim() || !/^-?\d+$/.test(contactTelegramId)) {
             toast({
                 title: "Erro",
-                description: "Por favor, forneça um ID do Telegram válido (apenas números).",
+                description: "Por favor, forneça um ID do Telegram válido (números, pode começar com sinal negativo para grupos).",
                 variant: "destructive",
             });
             return;
