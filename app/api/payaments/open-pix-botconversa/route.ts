@@ -74,11 +74,16 @@ export async function POST(req: Request) {
     const dadosProcessados = {
       nome: body.nome || body.name || "",
       telefone: body.telefone || body.phonenumber || "",
-      type_product: body.type_product || "produto", // Default to "produto" if not specified
       produto: {
         nome: body.produto ? body.produto.nome : body.produto_nome || "",
       } as Produto,
+      type_product: "", // Adicionando o campo type_product na definição
     };
+
+    // Determina se é combo ou produto com base na presença do "+" no nome
+    dadosProcessados.type_product = dadosProcessados.produto.nome.includes("+")
+      ? "combo"
+      : "produto";
 
     // Validação dos dados básicos
     if (
