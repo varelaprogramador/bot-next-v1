@@ -240,7 +240,38 @@ export async function POST(req: any) {
           },
         }
       );
+    } else if (data.event === "OPENPIX:TRANSACTION_RECEIVED") {
+      console.log("========Transação Recebida=========");
+      console.log(data);
+
+      // Processar transação recebida
+      // É possível adicionar mais lógica aqui conforme necessário
+
+      return new Response(
+        JSON.stringify({
+          message: "Transação recebida processada com sucesso.",
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
     }
+
+    // Resposta padrão caso nenhum dos eventos específicos seja processado
+    return new Response(
+      JSON.stringify({
+        message: "Requisição processada, mas nenhuma ação específica tomada.",
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error) {
     console.error("Erro no processamento do POST:", error);
 
