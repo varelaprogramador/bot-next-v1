@@ -8,10 +8,11 @@ const supabase = createClient(
   process.env.SUPABASE_KEY!
 );
 
-// Definir interface para o produto
+// Interfaces for products and combos
 interface Produto {
   nome: string;
   valor?: number;
+  id?: string;
 }
 
 export async function POST(req: Request) {
@@ -50,11 +51,17 @@ export async function POST(req: Request) {
         const productMatch = rawText.match(
           /["']?produto_nome["']?\s*[:=]\s*["']?([^"',}]*)["']?/i
         );
+        const typeProductMatch = rawText.match(
+          /["']?type[-_]product["']?\s*[:=]\s*["']?([^"',}]*)["']?/i
+        );
 
         body = {
           nome: nameMatch ? nameMatch[1].trim() : "",
           telefone: phoneMatch ? phoneMatch[1].trim() : "",
           produto_nome: productMatch ? productMatch[1].trim() : "",
+          type_product: typeProductMatch
+            ? typeProductMatch[1].trim()
+            : "produto",
         };
 
         console.log("Dados extraídos manualmente:", body);
@@ -67,6 +74,7 @@ export async function POST(req: Request) {
     const dadosProcessados = {
       nome: body.nome || body.name || "",
       telefone: body.telefone || body.phonenumber || "",
+      type_product: body.type_product || "produto", // Default to "produto" if not specified
       produto: {
         nome: body.produto ? body.produto.nome : body.produto_nome || "",
       } as Produto,
@@ -89,42 +97,144 @@ export async function POST(req: Request) {
       );
     }
 
-    // Buscar produto no banco de dados para obter o valor
-    const { data: produtos, error: produtoError } = await supabase
-      .from("bot_conversa_com_produto")
-      .select("*")
-      .eq("nome", dadosProcessados.produto.nome);
+    let rechargeAmount = 0;
+    let productDetails: any = {};
+    let productComment = "";
+    let additionalProductInfo: any[] = [];
 
-    if (produtoError || !produtos || produtos.length === 0) {
-      console.error(
-        "Produto não encontrado no banco de dados:",
-        produtoError || "Sem resultados"
-      );
-      return new Response(
-        JSON.stringify({
-          error: "Produto não encontrado. Verifique o nome do produto.",
-          produto: dadosProcessados.produto.nome,
-        }),
-        { status: 404 }
-      );
+    // Based on type_product, fetch from appropriate table and process accordingly
+    if (dadosProcessados.type_product === "combo") {
+      // Fetching combo details from the combo table
+      const { data: combos, error: comboError } = await supabase
+        .from("bot_conversa_com_combo")
+        .select("*")
+        .eq("nome_combo", dadosProcessados.produto.nome);
+
+      if (comboError || !combos || combos.length === 0) {
+        console.error(
+          "Combo não encontrado no banco de dados:",
+          comboError || "Sem resultados"
+        );
+        return new Response(
+          JSON.stringify({
+            error: "Combo não encontrado. Verifique o nome do combo.",
+            combo: dadosProcessados.produto.nome,
+          }),
+          { status: 404 }
+        );
+      }
+
+      const comboDB = combos[0];
+
+      // Verificar se o combo tem valor definido
+      if (!comboDB.valor_combo_vinculado) {
+        return new Response(
+          JSON.stringify({
+            error: "Combo encontrado, mas sem valor definido no sistema.",
+          }),
+          { status: 400 }
+        );
+      }
+
+      // Usar o valor do combo
+      rechargeAmount = comboDB.valor_combo_vinculado;
+
+      // Parse produtos array if it's a string
+      let produtosArray = comboDB.produtos;
+      if (typeof produtosArray === "string") {
+        try {
+          produtosArray = JSON.parse(produtosArray);
+        } catch (e) {
+          console.error("Erro ao processar array de produtos do combo:", e);
+          produtosArray = [];
+        }
+      }
+
+      // Add product info for each product in the combo
+      if (Array.isArray(produtosArray)) {
+        productComment = `Combo: ${comboDB.nome_combo}`;
+
+        // Add combo info
+        additionalProductInfo = [
+          { key: "Combo-ID", value: comboDB.id || "" },
+          { key: "Combo-Nome", value: comboDB.nome_combo || "" },
+          {
+            key: "Combo-Valor",
+            value: comboDB.valor_combo_vinculado.toString() || "",
+          },
+        ];
+
+        // Add each product in the combo
+        produtosArray.forEach((produto, index) => {
+          additionalProductInfo.push(
+            { key: `Produto-${index + 1}-ID`, value: produto.id || "" },
+            { key: `Produto-${index + 1}-Nome`, value: produto.nome || "" },
+            {
+              key: `Produto-${index + 1}-Valor`,
+              value: produto.valor?.toString() || "",
+            }
+          );
+        });
+      }
+
+      productDetails = {
+        id: comboDB.id,
+        nome: comboDB.nome_combo,
+        valor: comboDB.valor_combo_vinculado,
+        tipo: "combo",
+      };
+    } else {
+      // Original logic for single product
+      const { data: produtos, error: produtoError } = await supabase
+        .from("bot_conversa_com_produto")
+        .select("*")
+        .eq("nome", dadosProcessados.produto.nome);
+
+      if (produtoError || !produtos || produtos.length === 0) {
+        console.error(
+          "Produto não encontrado no banco de dados:",
+          produtoError || "Sem resultados"
+        );
+        return new Response(
+          JSON.stringify({
+            error: "Produto não encontrado. Verifique o nome do produto.",
+            produto: dadosProcessados.produto.nome,
+          }),
+          { status: 404 }
+        );
+      }
+
+      // Verificar se o produto tem valor definido
+      if (!produtos[0].valor_vinculado) {
+        return new Response(
+          JSON.stringify({
+            error: "Produto encontrado, mas sem valor definido no sistema.",
+          }),
+          { status: 400 }
+        );
+      }
+
+      // Atribuir o valor do produto encontrado no banco
+      const produtoDB = produtos[0];
+      dadosProcessados.produto.valor = produtoDB.valor_vinculado;
+      rechargeAmount = produtoDB.valor_vinculado;
+      productComment =
+        produtoDB.nome_vinculado || dadosProcessados.produto.nome;
+
+      additionalProductInfo = [
+        { key: "Product", value: produtoDB.id_produto_vinculado },
+        { key: "Product-Nome", value: produtoDB.nome_vinculado },
+      ];
+
+      productDetails = {
+        id: produtoDB.id_produto_vinculado,
+        nome: produtoDB.nome_vinculado,
+        valor: produtoDB.valor_vinculado,
+        tipo: "produto",
+      };
     }
-
-    // Verificar se o produto tem valor definido
-    if (!produtos[0].valor_vinculado) {
-      return new Response(
-        JSON.stringify({
-          error: "Produto encontrado, mas sem valor definido no sistema.",
-        }),
-        { status: 400 }
-      );
-    }
-
-    // Atribuir o valor do produto encontrado no banco
-    const produtoDB = produtos[0];
-    dadosProcessados.produto.valor = produtoDB.valor_vinculado;
 
     const id_transacao = v4();
-    const rechargeAmount = dadosProcessados.produto.valor;
 
     // Verificação adicional (isso não deveria acontecer, mas é uma proteção)
     if (typeof rechargeAmount !== "number") {
@@ -144,6 +254,8 @@ export async function POST(req: Request) {
       status: "pendente",
       tipo_pagamento: "pix",
       origin: "bot-conversa",
+      tipo_produto: dadosProcessados.type_product,
+      detalhes_produto: productDetails,
     };
 
     const { error: vendaError } = await supabase
@@ -153,6 +265,19 @@ export async function POST(req: Request) {
     if (vendaError) {
       console.error("Erro ao inserir nova venda:", vendaError);
     }
+
+    // Concatenar informações básicas com informações de produtos
+    const allAdditionalInfo = [
+      { key: "ID", value: id_transacao },
+      { key: "Nome", value: dadosProcessados.nome },
+      { key: "Telefone", value: dadosProcessados.telefone },
+      { key: "Email", value: "sem@gmail.com" },
+      { key: "Invoice", value: body.data || Date.now().toString() },
+      { key: "Origin", value: "bot-conversa" },
+      { key: "Tipo", value: dadosProcessados.type_product },
+      ...additionalProductInfo,
+    ];
+
     const response = await fetch(
       "https://api.openpix.com.br/api/v1/charge?return_existing=true",
       {
@@ -167,21 +292,9 @@ export async function POST(req: Request) {
             ""
           ),
           value: rechargeAmount * 100,
-          comment: dadosProcessados.produto.nome,
+          comment: productComment,
           expiresIn: 420,
-          additionalInfo: [
-            { key: "ID", value: id_transacao },
-            { key: "Product", value: produtoDB.id_produto_vinculado },
-            { key: "Product-Nome", value: produtoDB.nome_vinculado },
-            { key: "Nome", value: dadosProcessados.nome },
-            { key: "Telefone", value: dadosProcessados.telefone },
-            {
-              key: "Email",
-              value: "sem@gmail.com",
-            },
-            { key: "Invoice", value: body.data || Date.now().toString() },
-            { key: "Origin", value: "bot-conversa" },
-          ],
+          additionalInfo: allAdditionalInfo,
           payer: {
             name: dadosProcessados.nome,
             email: "",
@@ -190,8 +303,10 @@ export async function POST(req: Request) {
         }),
       }
     );
+
     const responseData = await response.json();
     console.log("Resposta OpenPix:", responseData);
+
     const disparoCobranca = await fetch(
       "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/GHINRtf3PYQ6/",
       {
