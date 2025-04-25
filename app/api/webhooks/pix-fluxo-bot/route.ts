@@ -286,7 +286,7 @@ export async function POST(req: any) {
 
         if (phone) {
           const response = await fetch(
-            "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/N0zmZuEk8fwK/",
+            "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/j9e9TDrKaU22/",
             {
               method: "POST",
               headers: {
@@ -295,8 +295,12 @@ export async function POST(req: any) {
               body: JSON.stringify({
                 name: name,
                 phone: phone,
-                codigo: code,
                 produto: produto,
+                codigo: code,
+                message: `🙋‍♀️ Olá ${name}, segue chave de ativação:
+✅ ${produto}
+🔑 Código de Recargas: ${code}
+✨ Obrigado pela sua compra!  Até a próxima`,
               }),
             }
           );
