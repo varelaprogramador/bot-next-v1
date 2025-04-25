@@ -106,10 +106,10 @@ export async function POST(req: Request) {
     if (dadosProcessados.type_product === "combo") {
       // Fetching combo details from the combo table
       const { data: combos, error: comboError } = await supabase
-        .from("bot_conversa_com_combo")
+        .from("bot_conversa_com_combos")
         .select("*")
         .eq("nome_combo", dadosProcessados.produto.nome);
-
+      console.log("Combos encontrados:", combos);
       if (comboError || !combos || combos.length === 0) {
         console.error(
           "Combo não encontrado no banco de dados:",
