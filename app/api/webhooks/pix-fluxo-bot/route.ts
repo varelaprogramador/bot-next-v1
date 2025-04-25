@@ -89,7 +89,10 @@ export async function POST(req: any) {
     // console.log("Corpo da requisição:", JSON.stringify(data, null, 2)); // Log para verificar o corpo da requisição
 
     // Valida se o evento é o esperado
-    if (data.event === "OPENPIX:CHARGE_COMPLETED") {
+    if (
+      data.event === "OPENPIX:CHARGE_COMPLETED" ||
+      data.event === "OPENPIX:TRANSACTION_RECEIVED"
+    ) {
       console.log("========Site=========");
 
       // console.log(data);
@@ -232,24 +235,6 @@ export async function POST(req: any) {
       return new Response(
         JSON.stringify({
           message: "Saldo atualizado e status da venda atualizado com sucesso.",
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-    } else if (data.event === "OPENPIX:TRANSACTION_RECEIVED") {
-      console.log("========Transação Recebida=========");
-      console.log(data);
-
-      // Processar transação recebida
-      // É possível adicionar mais lógica aqui conforme necessário
-
-      return new Response(
-        JSON.stringify({
-          message: "Transação recebida processada com sucesso.",
         }),
         {
           status: 200,
