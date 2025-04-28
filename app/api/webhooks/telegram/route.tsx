@@ -5,9 +5,6 @@ import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 
-// props: {"title": "Interfaces for public tables", "runQuery": "false"}
-
-// Interface para a tabela codigos
 interface Codigos {
   id_codigo: string; // UUID
   id_produto?: string; // Texto
@@ -58,11 +55,24 @@ interface Vendas {
   id_produto?: string; // Texto
   tipo_pagamento?: string; // Texto
 }
+
 interface MessageButton {
   name: string;
   type: string;
   command: string;
 }
+
+interface Message {
+  id: string;
+  user_id: string;
+  message: string;
+  buttons?: MessageButton[];
+  image?: string;
+  created_at: string;
+  status: 'sent' | 'failed';
+  error?: string;
+}
+
 // Inicializando o Supabase
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -75,6 +85,18 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 // Configurar a resposta para o método GET
 export async function GET(req: Request) {
   try {
+    const url = new URL(req.url);
+    const userId = url.searchParams.get('userId');
+    const limit = parseInt(url.searchParams.get('limit') || '50');
+
+    if (userId) {
+      const messages = await getUserMessages(userId, limit);
+      return new NextResponse(
+        JSON.stringify({ messages }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     return new NextResponse(
       JSON.stringify({ message: "Webhook configurado corretamente!" }),
       { status: 200, headers: { "Content-Type": "application/json" } }
@@ -87,6 +109,7 @@ export async function GET(req: Request) {
     );
   }
 }
+
 // Função para enviar mensagem para o usuário
 async function sendMessageToUser(
   userId: string,
@@ -129,9 +152,28 @@ async function sendMessageToUser(
       console.log(`Text message sent to user ID: ${userId}`);
     }
 
+    // Salvar mensagem no Supabase
+    await saveMessage({
+      user_id: userId,
+      message,
+      buttons,
+      image,
+      status: 'sent'
+    });
+
     return { success: true, messageId: result.message_id };
   } catch (error: any) {
     console.error(`Error sending message to user ${userId}:`, error.message);
+
+    // Salvar mensagem com erro no Supabase
+    await saveMessage({
+      user_id: userId,
+      message,
+      buttons,
+      image,
+      status: 'failed',
+      error: error.message
+    });
 
     // Return detailed error information
     return {
@@ -142,6 +184,54 @@ async function sendMessageToUser(
     };
   }
 }
+
+// Função para salvar mensagem no Supabase
+async function saveMessage(message: Omit<Message, 'id' | 'created_at'>) {
+  try {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([{
+        ...message,
+        id: randomUUID(),
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao salvar mensagem:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao salvar mensagem:', error);
+    return null;
+  }
+}
+
+// Função para buscar mensagens do usuário
+async function getUserMessages(userId: string, limit: number = 50) {
+  try {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Erro ao buscar mensagens:', error);
+      return [];
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar mensagens:', error);
+    return [];
+  }
+}
+
 // Método POST para receber as atualizações do Telegram
 export async function POST(req: Request) {
   try {
