@@ -5,47 +5,47 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 221.2 83.2% 53.3%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 6.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 6.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 217.2 91.2% 59.8%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -118,7 +118,6 @@
   @apply bg-primary text-primary-foreground;
 }
 
-
 .embla {
   max-width:100%;
  
@@ -190,15 +189,12 @@
   background-color: rgb(255, 255, 255); /* Fundo levemente visível */
 }
 
-
-
 .embla__button:disabled {
   color: var(--detail-high-contrast);
 }
 .embla__button__svg {
   width:20px;
 }
-
 
 .embla_circle {
   max-width: 100%;
@@ -233,7 +229,6 @@
   justify-content: center;
 }
 
-
 .embla__controls_circle {
   position: absolute;
   top: 50%;
@@ -261,7 +256,6 @@
   background-color: rgba(255, 255, 255, 1);
 }
 
-
 @media (max-width:750px) {
   .embla__slide_circle {
     flex: 0 0 auto;
@@ -275,4 +269,68 @@
     justify-content: center;
   }
   
+}
+
+/* Estilos para o Emoji Picker */
+.emoji-picker-container {
+  position: relative;
+  z-index: 50;
+}
+
+.emoji-picker-container em-emoji-picker {
+  --background: var(--background);
+  --border-color: var(--border);
+  --button-active-background: var(--muted);
+  --button-hover-background: var(--muted);
+  --category-emoji-color: var(--foreground);
+  --category-emoji-selected-color: var(--primary);
+  --category-font-color: var(--foreground);
+  --category-font-selected-color: var(--primary);
+  --indicator-color: var(--primary);
+  --input-border-color: var(--border);
+  --input-font-color: var(--foreground);
+  --input-placeholder-color: var(--muted-foreground);
+  --num-columns: 8;
+  --outline-color: var(--ring);
+  --outline-size: 1px;
+  --skintone-border-radius: 4px;
+  --category-font-size: 0.8rem;
+  --indicator-height: 2px;
+  --indicator-offset: 0px;
+  --num-rows: 6;
+  --outline: var(--outline-size) solid var(--outline-color);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow: 0 0 0 1px var(--shadow-color);
+  --radius: var(--radius);
+}
+
+.emoji-picker-container em-emoji-picker::part(search) {
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--foreground);
+  padding: 0.5rem;
+}
+
+.emoji-picker-container em-emoji-picker::part(category-button) {
+  color: var(--muted-foreground);
+}
+
+.emoji-picker-container em-emoji-picker::part(category-button).active {
+  color: var(--primary);
+}
+
+.emoji-picker-container em-emoji-picker::part(emoji) {
+  font-size: 1.5rem;
+}
+
+.emoji-picker-container em-emoji-picker::part(emoji):hover {
+  background: var(--muted);
+  border-radius: var(--radius);
+}
+
+.emoji-picker-container em-emoji-picker::part(emoji).selected {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: var(--radius);
 }

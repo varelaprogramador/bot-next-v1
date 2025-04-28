@@ -235,6 +235,26 @@ async function getUserMessages(userId: string, limit: number = 50) {
   }
 }
 
+// Função para limpar mensagens do usuário
+async function clearUserMessages(userId: string) {
+  try {
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Erro ao limpar mensagens:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Erro ao limpar mensagens:', error);
+    return false;
+  }
+}
+
 // Método POST para receber as atualizações do Telegram
 export async function POST(req: Request) {
   try {
@@ -276,6 +296,41 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("Erro no POST:", error);
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+}
+
+// Método DELETE para limpar mensagens
+export async function DELETE(req: Request) {
+  try {
+    const url = new URL(req.url);
+    const userId = url.searchParams.get('userId');
+
+    if (!userId) {
+      return new NextResponse(
+        JSON.stringify({ error: "ID do usuário não fornecido" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const success = await clearUserMessages(userId);
+
+    if (success) {
+      return new NextResponse(
+        JSON.stringify({ message: "Mensagens limpas com sucesso" }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    } else {
+      return new NextResponse(
+        JSON.stringify({ error: "Erro ao limpar mensagens" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+  } catch (error) {
+    console.error("Erro no DELETE:", error);
     return new NextResponse(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { "Content-Type": "application/json" } }

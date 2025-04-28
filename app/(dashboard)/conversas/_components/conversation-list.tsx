@@ -41,13 +41,13 @@ export default function ConversationList({ onSelectConversation }: ConversationL
     );
 
     return (
-        <div className="w-80 border-r border-border bg-background h-full">
+        <div className="w-80 border-r border-border bg-background h-full border-x border-b rounded-bl-lg">
             <div className="p-4">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative flex-1 mx-2">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6d7883]" />
                     <Input
-                        placeholder="Pesquisar conversa..."
-                        className="pl-10"
+                        placeholder="Pesquisar"
+                        className="pl-9 bg-[#242f3d] border-none text-[#fff] placeholder:text-[#6d7883] h-9 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -83,4 +83,4 @@ export default function ConversationList({ onSelectConversation }: ConversationL
             </ScrollArea>
         </div>
     );
-} 
+}
