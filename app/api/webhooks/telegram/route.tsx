@@ -69,8 +69,11 @@ interface Message {
   buttons?: MessageButton[];
   image?: string;
   created_at: string;
-  status: 'sent' | 'failed';
+  status: 'sent' | 'failed' | 'received';
   error?: string;
+  chat_type?: string;
+  chat_id?: string;
+  username?: string;
 }
 
 // Inicializando o Supabase
@@ -236,9 +239,22 @@ async function getUserMessages(userId: string, limit: number = 50) {
 export async function POST(req: Request) {
   try {
     const data = await req.json(); // Receber a atualização do Telegram
-    if (data.data.chat.type != "supergroup") {
-      console.log("Atualização recebida:", data);
+
+    // Salvar mensagem no Supabase se não for de supergroup
+    if (data.message && data.message.chat.type !== "supergroup") {
+      const messageData: Omit<Message, 'id' | 'created_at'> = {
+        user_id: data.message.from.id.toString(),
+        message: data.message.text || '',
+        chat_type: data.message.chat.type,
+        chat_id: data.message.chat.id.toString(),
+        username: data.message.from.username || data.message.from.first_name,
+        status: 'received' as const
+      };
+
+      await saveMessage(messageData);
+      console.log("Mensagem salva:", messageData);
     }
+
     if (data.disparo) {
       const { userId, message, button, image } = data;
       await sendMessageToUser(userId, message, button, image);
