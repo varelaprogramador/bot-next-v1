@@ -240,8 +240,8 @@ export async function POST(req: Request) {
   try {
     const data = await req.json(); // Receber a atualização do Telegram
 
-    // Salvar mensagem no Supabase se não for de supergroup
-    if (data.message && data.message.chat.type !== "supergroup") {
+    // Salvar mensagem no Supabase se for uma mensagem válida
+    if (data.message?.from?.id && data.message?.chat?.type && data.message?.chat?.type !== "supergroup") {
       const messageData: Omit<Message, 'id' | 'created_at'> = {
         user_id: data.message.from.id.toString(),
         message: data.message.text || '',
@@ -266,6 +266,7 @@ export async function POST(req: Request) {
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
+
     // Passar a atualização para o Telegraf processar
     await bot.handleUpdate(data);
 
