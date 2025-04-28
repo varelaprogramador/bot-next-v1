@@ -113,7 +113,8 @@ export async function POST(req: Request) {
       const { data: combos, error: comboError } = await supabase
         .from("bot_conversa_com_combos")
         .select("*")
-        .eq("nome_combo", dadosProcessados.produto.nome);
+        .ilike("nome_combo", dadosProcessados.produto.nome);
+
       console.log("Combos encontrados:", combos);
       if (comboError || !combos || combos.length === 0) {
         console.error(
@@ -193,7 +194,7 @@ export async function POST(req: Request) {
       const { data: produtos, error: produtoError } = await supabase
         .from("bot_conversa_com_produto")
         .select("*")
-        .eq("nome", dadosProcessados.produto.nome);
+        .ilike("nome_vinculado", dadosProcessados.produto.nome);
 
       if (produtoError || !produtos || produtos.length === 0) {
         console.error(
