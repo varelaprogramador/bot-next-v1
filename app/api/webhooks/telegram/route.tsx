@@ -236,7 +236,9 @@ async function getUserMessages(userId: string, limit: number = 50) {
 export async function POST(req: Request) {
   try {
     const data = await req.json(); // Receber a atualização do Telegram
-    console.log("Atualização recebida:", data);
+    if (data.data.chat.type != "supergroup") {
+      console.log("Atualização recebida:", data);
+    }
     if (data.disparo) {
       const { userId, message, button, image } = data;
       await sendMessageToUser(userId, message, button, image);
