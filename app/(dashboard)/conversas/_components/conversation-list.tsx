@@ -41,10 +41,10 @@ export default function ConversationList({ onSelectConversation }: ConversationL
     );
 
     return (
-        <div className="w-80 border-r border-gray-200 bg-white">
+        <div className="w-80 border-r border-border bg-background h-full">
             <div className="p-4">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Pesquisar conversa..."
                         className="pl-10"
@@ -53,11 +53,11 @@ export default function ConversationList({ onSelectConversation }: ConversationL
                     />
                 </div>
             </div>
-            <ScrollArea className="h-[calc(100vh-80px)]">
+            <ScrollArea className="h-[calc(100%-4rem)]">
                 {filteredConversations.map((conversation) => (
                     <div
                         key={conversation.user_id}
-                        className="flex items-center gap-3 p-4 hover:bg-gray-100 cursor-pointer"
+                        className="flex items-center gap-3 p-4 hover:bg-muted cursor-pointer"
                         onClick={() => onSelectConversation(conversation.user_id, conversation.username)}
                     >
                         <Avatar>
@@ -67,14 +67,14 @@ export default function ConversationList({ onSelectConversation }: ConversationL
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
                                 <p className="font-medium truncate">{conversation.username}</p>
-                                <span className="text-sm text-gray-500">
+                                <span className="text-sm text-muted-foreground">
                                     {new Date(conversation.last_message_date).toLocaleTimeString()}
                                 </span>
                             </div>
-                            <p className="text-sm text-gray-500 truncate">{conversation.last_message}</p>
+                            <p className="text-sm text-muted-foreground truncate">{conversation.last_message}</p>
                         </div>
                         {conversation.unread_count > 0 && (
-                            <div className="bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+                            <div className="bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
                                 {conversation.unread_count}
                             </div>
                         )}

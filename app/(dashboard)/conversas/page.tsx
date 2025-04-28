@@ -14,7 +14,7 @@ export default function ConversationsPage() {
     };
 
     return (
-        <div className="flex h-screen">
+        <div className="flex h-[calc(100vh-4rem)] w-full">
             <ConversationList
                 onSelectConversation={(userId, username) =>
                     handleSelectConversation(userId, username)
@@ -23,8 +23,8 @@ export default function ConversationsPage() {
             {selectedUserId && selectedUsername ? (
                 <ChatWindow userId={selectedUserId} username={selectedUsername} />
             ) : (
-                <div className="flex-1 flex items-center justify-center bg-gray-100">
-                    <p className="text-gray-500">Selecione uma conversa para começar</p>
+                <div className="flex-1 flex items-center justify-center bg-muted/50">
+                    <p className="text-muted-foreground">Selecione uma conversa para começar</p>
                 </div>
             )}
         </div>

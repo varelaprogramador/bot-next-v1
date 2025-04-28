@@ -76,8 +76,8 @@ export default function ChatWindow({ userId, username }: ChatWindowProps) {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-gray-100">
-            <div className="bg-white p-4 border-b">
+        <div className="flex flex-col h-full w-full bg-muted/50">
+            <div className="bg-background p-4 border-b border-border">
                 <div className="flex items-center gap-3">
                     <Avatar>
                         <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${username}`} />
@@ -85,7 +85,7 @@ export default function ChatWindow({ userId, username }: ChatWindowProps) {
                     </Avatar>
                     <div>
                         <h2 className="font-medium">{username}</h2>
-                        <p className="text-sm text-gray-500">Online</p>
+                        <p className="text-sm text-muted-foreground">Online</p>
                     </div>
                 </div>
             </div>
@@ -99,8 +99,8 @@ export default function ChatWindow({ userId, username }: ChatWindowProps) {
                         >
                             <div
                                 className={`max-w-[70%] rounded-lg p-3 ${message.status === 'received'
-                                        ? 'bg-white'
-                                        : 'bg-green-500 text-white'
+                                    ? 'bg-background'
+                                    : 'bg-primary text-primary-foreground'
                                     }`}
                             >
                                 <p className="text-sm">{message.message}</p>
@@ -113,7 +113,7 @@ export default function ChatWindow({ userId, username }: ChatWindowProps) {
                 </div>
             </ScrollArea>
 
-            <div className="bg-white p-4 border-t">
+            <div className="bg-background p-4 border-t border-border">
                 <div className="flex gap-2">
                     <Input
                         placeholder="Digite sua mensagem..."
