@@ -313,22 +313,33 @@ export async function POST(req: Request) {
     const responseData = await response.json();
     console.log("Resposta OpenPix:", responseData);
 
-    const disparoCobranca = await fetch(
-      "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/GHINRtf3PYQ6/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          Link: responseData.charge.paymentLinkUrl,
-          Nome: dadosProcessados.nome,
-          Telefone: dadosProcessados.telefone,
-          Copiacolar: responseData.charge.brCode,
-        }),
-      }
-    );
+    if (dadosProcessados.telefone) {
+      const response = await fetch(
+        "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/1MkfIW9naU7u/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: dadosProcessados.nome,
+            phone: dadosProcessados.telefone,
+            produto: dadosProcessados.produto.nome,
+            codigo: responseData.charge.brCode,
+            message: `🔔 ${dadosProcessados.nome}, seu acesso está quase liberado!
+Para concluir seu pedido de IPTV, siga as instruções abaixo:
 
+💳 Pagamento via PIX:
+Acesse o link abaixo para efetuar o pagamento de forma rápida e segura:
+
+🔗 ${responseData.charge.paymentLinkUrl}`,
+            message2: `📋 Ou copie e cole o código abaixo no app do seu banco:
+
+${responseData.charge.brCode}`,
+          }),
+        }
+      );
+    }
     return new Response(JSON.stringify(responseData), {
       status: response.status,
       ...response.headers,
