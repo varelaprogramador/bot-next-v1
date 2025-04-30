@@ -194,7 +194,7 @@ export async function POST(req: Request) {
       const { data: produtos, error: produtoError } = await supabase
         .from("bot_conversa_com_produto")
         .select("*")
-        .ilike("nome_vinculado", dadosProcessados.produto.nome);
+        .ilike("nome", dadosProcessados.produto.nome);
 
       if (produtoError || !produtos || produtos.length === 0) {
         console.error(
