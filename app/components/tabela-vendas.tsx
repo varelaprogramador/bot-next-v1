@@ -142,10 +142,9 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
       <p><strong>Produto:</strong> Adição de Saldo</p>
       <p><strong>Valor:</strong> ${formatCurrency(venda.valor)}</p>
       <p><strong>Status:</strong> ${venda.status}</p>
-      ${
-        venda.tipo_pagamento
-          ? `<p><strong>Pagamento:</strong> ${venda.tipo_pagamento}</p>`
-          : ""
+      ${venda.tipo_pagamento
+        ? `<p><strong>Pagamento:</strong> ${venda.tipo_pagamento}</p>`
+        : ""
       }
     </div>
   
@@ -360,6 +359,20 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
                       ))}
                   </div>
                 </TableHead>
+                <TableHead>
+                  <div
+                    className="flex items-center cursor-pointer"
+                    onClick={() => toggleSort("tipo_produto")}
+                  >
+                    Tipo
+                    {sortConfig.key === "tipo_produto" &&
+                      (sortConfig.direction === "asc" ? (
+                        <SortAsc className="ml-1 h-4 w-4" />
+                      ) : (
+                        <SortDesc className="ml-1 h-4 w-4" />
+                      ))}
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -390,6 +403,9 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
                     <TableCell>{renderStatusBadge(venda.status)}</TableCell>
                     <TableCell className="font-medium">
                       {venda.origin || "Não informado"}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {venda.tipo_produto === "produto" ? "Produto" : "Combo"}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -490,6 +506,25 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
                     <p className="text-sm">
                       {selectedVenda.tipo_pagamento || "Não informado"}
                     </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Tipo de Produto
+                    </p>
+                    <p className="text-sm">
+                      {selectedVenda.tipo_produto === "produto" ? "Produto" : "Combo"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Detalhes do Produto
+                    </p>
+                    <div className="text-sm">
+                      <p><strong>ID:</strong> {selectedVenda.detalhes_produto.id}</p>
+                      <p><strong>Nome:</strong> {selectedVenda.detalhes_produto.nome}</p>
+                      <p><strong>Valor:</strong> {formatCurrency(selectedVenda.detalhes_produto.valor)}</p>
+                      <p><strong>Tipo:</strong> {selectedVenda.detalhes_produto.tipo}</p>
+                    </div>
                   </div>
                 </div>
 

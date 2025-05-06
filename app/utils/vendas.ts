@@ -8,4 +8,11 @@ export interface VendasProps {
   valor: number;
   status: string;
   tipo_pagamento?: string;
+  tipo_produto: string;
+  detalhes_produto: {
+    id: string;
+    nome: string;
+    valor: number;
+    tipo: string;
+  };
 }
