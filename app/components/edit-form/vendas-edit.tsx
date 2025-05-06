@@ -68,6 +68,13 @@ interface DialogCreateOrUpdateVendaProps {
   onConfirm: (args: { data: VendasProps }) => void;
 }
 
+interface DetalhesProduto {
+  id: string;
+  nome: string;
+  valor: number;
+  tipo: "produto" | "combo";
+}
+
 const schema = z.object({
   id_produto: z.string().trim().min(1, "Campo Obrigatório!"),
   id_cliente: z.string().trim().min(1, "Campo Obrigatório!"),
@@ -103,11 +110,11 @@ export const CreateOrUpdateVenda = ({
       status: venda?.status || "",
       tipo_pagamento: venda?.tipo_pagamento || "",
       tipo_produto: (venda?.tipo_produto as "produto" | "combo") || "produto",
-      detalhes_produto: venda?.detalhes_produto || {
+      detalhes_produto: (venda?.detalhes_produto as DetalhesProduto) || {
         id: "",
         nome: "",
         valor: 0,
-        tipo: "produto" as const
+        tipo: "produto"
       }
     },
   });
