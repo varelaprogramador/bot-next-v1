@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot } from "lucide-react";
+import { Bot, Webhook } from "lucide-react";
 import Link from "next/link";
 
 interface OptionCardIntegraProps {
@@ -14,6 +14,8 @@ const OptionCardIntegra: React.FC<OptionCardIntegraProps> = ({ title, icon, link
         switch (icon) {
             case 'bot':
                 return <Bot size={36} />;
+            case 'webhook':
+                return <Webhook size={36} />;
             default:
                 return null;
         }

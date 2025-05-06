@@ -12,6 +12,7 @@ export default function Integracao() {
             <Separator className="my-4"></Separator>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                 <OptionCardIntegra key={1} icon="bot" title="Bot Conversa" link="/integracao/bot-conversa" />
+                <OptionCardIntegra key={2} icon="webhook" title="Webhook" link="/integracao/webhook" />
             </div>
         </div>
     );
