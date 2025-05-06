@@ -77,12 +77,12 @@ const schema = z.object({
   ),
   status: z.string().trim().min(1, "Campo Obrigatório!"),
   tipo_pagamento: z.string().optional(),
-  tipo_produto: z.string().trim().min(1, "Campo Obrigatório!"),
+  tipo_produto: z.enum(["produto", "combo"]),
   detalhes_produto: z.object({
     id: z.string(),
     nome: z.string(),
     valor: z.number(),
-    tipo: z.string()
+    tipo: z.enum(["produto", "combo"])
   })
 });
 
@@ -102,12 +102,12 @@ export const CreateOrUpdateVenda = ({
       valor: venda?.valor || 0,
       status: venda?.status || "",
       tipo_pagamento: venda?.tipo_pagamento || "",
-      tipo_produto: venda?.tipo_produto || "produto",
+      tipo_produto: (venda?.tipo_produto as "produto" | "combo") || "produto",
       detalhes_produto: venda?.detalhes_produto || {
         id: "",
         nome: "",
         valor: 0,
-        tipo: "produto"
+        tipo: "produto" as const
       }
     },
   });
@@ -127,9 +127,9 @@ export const CreateOrUpdateVenda = ({
         id: selectedProduct.id || "",
         nome: selectedProduct.nome || "",
         valor: selectedProduct.valor || 0,
-        tipo: selectedProduct.tipo || "produto"
+        tipo: (selectedProduct.tipo || "produto") as "produto" | "combo"
       });
-      form.setValue("tipo_produto", selectedProduct.tipo || "produto");
+      form.setValue("tipo_produto", (selectedProduct.tipo || "produto") as "produto" | "combo");
     }
   }, [form.watch("id_produto"), products]);
 
@@ -307,7 +307,15 @@ export const CreateOrUpdateVenda = ({
             <FormItem>
               <FormLabel>Tipo do Produto</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger className="w-full max-w-xs">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="produto">Produto</SelectItem>
+                    <SelectItem value="combo">Combo</SelectItem>
+                  </SelectContent>
+                </Select>
               </FormControl>
               <FormMessage />
             </FormItem>

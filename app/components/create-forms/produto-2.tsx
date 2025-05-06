@@ -64,6 +64,7 @@ const produtoSchema = z.object({
   categoria: z.string().min(1, "A categoria do produto é obrigatória"),
   url_image: z.string().trim().min(1, "Campo Obrigatório!"),
   created_at: z.string().optional(),
+  tipo: z.enum(["produto", "combo"])
 });
 
 const schema = z.object({
@@ -165,9 +166,12 @@ export const CreateMedia = ({
               }
               setListProductSelecionados((prevProducts) => [
                 ...prevProducts,
-                products.find(
-                  (product) => product.id === productSelecionados
-                ) as ProdutosProps,
+                {
+                  ...products.find(
+                    (product) => product.id === productSelecionados
+                  ) as ProdutosProps,
+                  tipo: "produto" as const
+                }
               ]);
             }}
           >
