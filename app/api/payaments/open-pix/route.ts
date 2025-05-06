@@ -19,15 +19,25 @@ export async function POST(req: Request) {
         status: 400,
       });
     }
+    console.log(
+      "==================Iniciando processo de nova venda==================="
+    );
     const id_transacao = v4();
     const rechargeAmount = body.produto.valor;
     const novaVenda = {
+      id_cliente: "site",
       nome_cliente: body.nome,
-      id_transacao: id_transacao,
       valor: rechargeAmount,
-      status: "pendente", // Status da venda
-      tipo_pagamento: "pix", // Tipo de pagamento
+      status: "pendente",
+      tipo_pagamento: "pix",
       origin: "site",
+      tipo_produto: "produto",
+      detalhes_produto: {
+        id: body.produto.id,
+        nome: body.produto.nome,
+        valor: body.produto.valor,
+        tipo: "produto",
+      },
     };
     console.log(novaVenda);
     const { error: vendaError } = await supabase
