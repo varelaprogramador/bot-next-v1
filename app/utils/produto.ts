@@ -6,6 +6,7 @@ export interface ProdutosProps {
   categoria: string;
   created_at?: string;
   url_image: string;
+  tipo: string;
 }
 export interface ProdutosLojaProps {
   id: string;

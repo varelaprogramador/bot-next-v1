@@ -77,6 +77,13 @@ const schema = z.object({
   ),
   status: z.string().trim().min(1, "Campo Obrigatório!"),
   tipo_pagamento: z.string().optional(),
+  tipo_produto: z.string().trim().min(1, "Campo Obrigatório!"),
+  detalhes_produto: z.object({
+    id: z.string(),
+    nome: z.string(),
+    valor: z.number(),
+    tipo: z.string()
+  })
 });
 
 export const CreateOrUpdateVenda = ({
@@ -95,6 +102,13 @@ export const CreateOrUpdateVenda = ({
       valor: venda?.valor || 0,
       status: venda?.status || "",
       tipo_pagamento: venda?.tipo_pagamento || "",
+      tipo_produto: venda?.tipo_produto || "produto",
+      detalhes_produto: venda?.detalhes_produto || {
+        id: "",
+        nome: "",
+        valor: 0,
+        tipo: "produto"
+      }
     },
   });
 
@@ -106,15 +120,28 @@ export const CreateOrUpdateVenda = ({
     loadProducts();
   }, []);
 
+  useEffect(() => {
+    const selectedProduct = products.find(p => p.id === form.watch("id_produto"));
+    if (selectedProduct) {
+      form.setValue("detalhes_produto", {
+        id: selectedProduct.id || "",
+        nome: selectedProduct.nome || "",
+        valor: selectedProduct.valor || 0,
+        tipo: selectedProduct.tipo || "produto"
+      });
+      form.setValue("tipo_produto", selectedProduct.tipo || "produto");
+    }
+  }, [form.watch("id_produto"), products]);
+
   const onSubmit = (values: z.infer<typeof schema>) => {
     onConfirm({
       data: {
         ...values,
         origin: "web",
-        uuid: venda?.uuid ? venda.uuid : uuidv4(), // Adiciona o uuid apenas se a venda existir
+        uuid: venda?.uuid ? venda.uuid : uuidv4(),
         created_at: venda?.created_at
           ? venda.created_at
-          : new Date().toISOString(), // Adiciona created_at se for uma nova venda
+          : new Date().toISOString(),
       },
     });
     setOpen(false);
@@ -203,6 +230,84 @@ export const CreateOrUpdateVenda = ({
               <FormLabel>Tipo de Pagamento</FormLabel>
               <FormControl>
                 <Input placeholder="Tipo de Pagamento" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="tipo_produto"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo de Produto</FormLabel>
+              <FormControl>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger className="w-full max-w-xs">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="produto">Produto</SelectItem>
+                    <SelectItem value="combo">Combo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="detalhes_produto.id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>ID do Produto (Detalhes)</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="detalhes_produto.nome"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome do Produto</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="detalhes_produto.valor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Valor do Produto</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="detalhes_produto.tipo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo do Produto</FormLabel>
+              <FormControl>
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
