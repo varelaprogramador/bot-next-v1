@@ -1,6 +1,7 @@
 "use server";
 import { v4 } from "uuid";
 import { createClient } from "@supabase/supabase-js";
+import { dispararWebhook } from "@/app/utils/webhook";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -36,6 +37,18 @@ export async function POST(req: Request) {
     if (vendaError) {
       console.error("Erro ao inserir nova venda:", vendaError);
     }
+
+    // Disparar webhook de nova venda
+    await dispararWebhook("nova_venda", {
+      ...novaVenda,
+      produto: body.produto,
+      cliente: {
+        nome: body.nome,
+        telefone: body.telefone,
+        email: body.email,
+      },
+    });
+
     const response = await fetch(
       "https://api.openpix.com.br/api/v1/charge?return_existing=true",
       {
