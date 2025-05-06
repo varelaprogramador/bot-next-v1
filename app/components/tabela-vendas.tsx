@@ -139,8 +139,14 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
       <p><strong>ID:</strong> ${venda.uuid}</p>
       <p><strong>Cliente:</strong> ${venda.nome_cliente || venda.id_cliente}</p>
       <p><strong>Data:</strong> ${formatDate(venda.created_at)}</p>
-      <p><strong>Produto:</strong> Adição de Saldo</p>
-      <p><strong>Valor:</strong> ${formatCurrency(venda.valor)}</p>
+      <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+      <p style="font-weight: bold; margin-bottom: 5px;">DETALHES DO PRODUTO</p>
+      <p><strong>ID do Produto:</strong> ${venda.detalhes_produto.id}</p>
+      <p><strong>Nome:</strong> ${venda.detalhes_produto.nome}</p>
+      <p><strong>Tipo:</strong> ${venda.detalhes_produto.tipo === "produto" ? "Produto" : "Combo"}</p>
+      <p><strong>Valor Unitário:</strong> ${formatCurrency(venda.detalhes_produto.valor)}</p>
+      <div style="border-top: 1px dashed #000; margin: 10px 0;"></div>
+      <p><strong>Valor Total:</strong> ${formatCurrency(venda.valor)}</p>
       <p><strong>Status:</strong> ${venda.status}</p>
       ${venda.tipo_pagamento
         ? `<p><strong>Pagamento:</strong> ${venda.tipo_pagamento}</p>`
