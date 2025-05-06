@@ -1,7 +1,8 @@
 "use server";
 import { v4 } from "uuid";
-import { createClient } from "@supabase/supabase-js";
+
 import { dispararWebhook } from "@/app/utils/webhook";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
