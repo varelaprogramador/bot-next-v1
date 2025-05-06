@@ -39,6 +39,13 @@ import {
 import { FilePlus, Plus } from "lucide-react";
 import { ProdutosProps } from "@/app/utils/produto";
 import ImageSelector from "../popup-imagens";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 
 interface DialogCreateProdutoProps {
   onConfirmCreate: (args: { data: ProdutosProps }) => void;
@@ -52,7 +59,8 @@ const schema = z.object({
     z.number().min(0, "O preço não pode ser negativo!")
   ),
   categoria: z.string().trim().min(1, "Campo Obrigatório!"),
-  url_image: z.string().trim().min(1, "Campo Obrigatório!")
+  url_image: z.string().trim().min(1, "Campo Obrigatório!"),
+  tipo: z.enum(["produto", "combo"])
 });
 
 export const CreateProduto = ({
@@ -69,7 +77,8 @@ export const CreateProduto = ({
       descricao: "",
       valor: 0,
       categoria: "",
-      url_image: ""
+      url_image: "",
+      tipo: "produto"
     },
   });
 
@@ -149,6 +158,29 @@ export const CreateProduto = ({
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="tipo"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tipo do Produto</FormLabel>
+              <FormControl>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger className="w-full max-w-xs">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="produto">Produto</SelectItem>
+                    <SelectItem value="combo">Combo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <ImageSelector defaultValue="" sendData={handlerUrl} onClose={() => { }}></ImageSelector>
         <FormField
           control={form.control}
