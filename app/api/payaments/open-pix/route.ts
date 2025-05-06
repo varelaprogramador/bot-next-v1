@@ -22,7 +22,6 @@ export async function POST(req: Request) {
     const id_transacao = v4();
     const rechargeAmount = body.produto.valor;
     const novaVenda = {
-      id_cliente: "site", // Usando o user_id como id_cliente
       nome_cliente: body.nome,
       id_transacao: id_transacao,
       valor: rechargeAmount,
@@ -38,7 +37,9 @@ export async function POST(req: Request) {
     if (vendaError) {
       console.error("Erro ao inserir nova venda:", vendaError);
     }
-
+    console.log(
+      "==================Disparando webhook de nova venda==================="
+    );
     // Disparar webhook de nova venda
     await dispararWebhook("nova_venda", {
       ...novaVenda,
