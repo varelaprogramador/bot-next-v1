@@ -317,34 +317,35 @@ export async function POST(req: Request) {
     console.log("Resposta OpenPix:", responseData);
 
     if (dadosProcessados.telefone) {
-      const response = await fetch(
-        "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/1MkfIW9naU7u/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: dadosProcessados.nome,
-            phone: dadosProcessados.telefone,
-            produto: dadosProcessados.produto.nome,
-            codigo: responseData.charge.brCode,
-            message: `🔔 ${dadosProcessados.nome}, seu acesso está quase liberado!
+      try {
+        const response = await fetch(
+          "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/1MkfIW9naU7u/",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: dadosProcessados.nome,
+              phone: dadosProcessados.telefone,
+              produto: dadosProcessados.produto.nome,
+              codigo: responseData.charge.brCode,
+              message: `🔔 ${dadosProcessados.nome}, seu acesso está quase liberado!
 Para concluir seu pedido de IPTV, siga as instruções abaixo:
 
 💳 Pagamento via PIX:
 Acesse o link abaixo para efetuar o pagamento de forma rápida e segura:
 
 🔗 ${responseData.charge.paymentLinkUrl}`,
-            message2: `📋 Ou copie e cole o código abaixo no app do seu banco:
+              message2: `📋 Ou copie e cole o código abaixo no app do seu banco:
 
 ${responseData.charge.brCode}`,
-          }),
-        }
-      );
+            }),
+          }
+        );
+        console.log("==========Notificação enviada para EVO============");
+        // Enviar notificação para o EVO
 
-      // Enviar notificação para o EVO
-      try {
         const evoMessage = `🛍️ *Nova Transação*
         
 👤 *Cliente:* ${dadosProcessados.nome}
@@ -356,7 +357,7 @@ ${responseData.charge.brCode}`,
 🔗 *Link PIX:* ${responseData.charge.paymentLinkUrl}
 📋 *Código PIX:* ${responseData.charge.brCode}`;
 
-        await fetch(`${process.env.EVOLUTION_API_URL}/instance/sendMessage`, {
+        await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/evo`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -365,6 +366,7 @@ ${responseData.charge.brCode}`,
             message: evoMessage,
           }),
         });
+        console.log("Notificação enviada para EVO:", evoMessage);
       } catch (evoError) {
         console.error("Erro ao enviar notificação para EVO:", evoError);
       }
