@@ -356,7 +356,7 @@ ${responseData.charge.brCode}`,
 🔗 *Link PIX:* ${responseData.charge.paymentLinkUrl}
 📋 *Código PIX:* ${responseData.charge.brCode}`;
 
-        await fetch("/api/evo", {
+        await fetch(`${process.env.EVOLUTION_API_URL}/instance/sendMessage`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
