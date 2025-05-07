@@ -108,6 +108,11 @@ export function AppSidebar() {
       icon: <MessageSquare className="h-5 w-5" />,
     },
     {
+      title: "Configurações Whatsapp",
+      href: "/config-wp",
+      icon: <MessageSquare className="h-5 w-5" />,
+    },
+    {
       title: "Integrações",
       href: "/integracao",
       icon: <Users className="h-5 w-5" />,
