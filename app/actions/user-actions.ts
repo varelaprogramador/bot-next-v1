@@ -14,6 +14,7 @@ export async function getUsers() {
   });
 
   if (!response.ok) {
+    console.log(response);
     throw new Error("Falha ao buscar usuários");
   }
 

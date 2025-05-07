@@ -24,7 +24,7 @@ import { Label } from "@/app/components/ui/label"
 import { Badge } from "@/app/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/app/components/ui/collapsible"
 import { Skeleton } from "@/app/components/ui/skeleton"
 import {
@@ -65,7 +65,7 @@ const eventLabels = {
 }
 
 export default function WebhookPage() {
-    const supabase = createClient()
+    const supabase = createClientSupabaseClient()
     const [webhooks, setWebhooks] = useState<Webhook[]>([])
     const [loading, setLoading] = useState(true)
     const [expandedWebhook, setExpandedWebhook] = useState<string | null>(null)

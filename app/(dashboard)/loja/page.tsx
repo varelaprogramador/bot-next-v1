@@ -3,7 +3,7 @@
 import { DataTableMediaCarousel } from "@/app/components/tabela-loja";
 import { Button } from "@/app/components/ui/button";
 import { MediaBannerProps, MediaProps } from "@/app/utils/media";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import {
   ChevronLeft,
   ChevronRight,

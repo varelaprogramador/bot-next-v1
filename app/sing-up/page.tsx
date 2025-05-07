@@ -2,12 +2,12 @@
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { GalleryVerticalEnd } from "lucide-react";
-import { useForm} from "react-hook-form"; // Usar Controller aqui
+import { useForm } from "react-hook-form"; // Usar Controller aqui
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/components/ui/form";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 // Esquema de validação com Zod
@@ -18,13 +18,13 @@ const formSchema = z.object({
     .regex(/^\(\d{2}\)\s\d{5}-\d{4}$/, "Telefone inválido. Ex: (00) 00000-0000"),
   senha: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
   confirmarSenha: z
-  .string()
-  .min(6, "A confirmação da senha deve ter pelo menos 6 caracteres")
- 
+    .string()
+    .min(6, "A confirmação da senha deve ter pelo menos 6 caracteres")
+
 });
 
 export default function Page() {
-    const supabase=createClient()
+  const supabase = createClientSupabaseClient()
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -36,19 +36,19 @@ export default function Page() {
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    
+
     if (values.senha !== values.confirmarSenha) {
       form.setError("confirmarSenha", {
         type: "manual",
         message: "As senhas não coincidem",
       });
-      return; 
+      return;
     }
 
-    const data={
-        nome: values.nome,
-        telefone: values.telefone,
-        senha: values.senha,
+    const data = {
+      nome: values.nome,
+      telefone: values.telefone,
+      senha: values.senha,
     }
 
     const { error } = await supabase.from("users-loja").insert([data]);
@@ -59,7 +59,7 @@ export default function Page() {
     }
 
     console.log(values);
-    form.reset(); 
+    form.reset();
   };
   return (
     <div className="grid min-h-screen lg:grid-cols-2">

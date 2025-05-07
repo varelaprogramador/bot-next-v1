@@ -1,41 +1,53 @@
 "use server";
 
+import { NextResponse } from "next/server";
+import { v4 } from "uuid";
+
 export async function POST(req: Request) {
   try {
-    // Pegando os dados do request
-    const body = await req.json();
-    console.log(body);
-    if (!body.produto || !body.nome || !body.telefone) {
-      return new Response(JSON.stringify({ error: "Dados incompletos" }), {
-        status: 400,
-      });
+    const { nome, telefone, valor } = await req.json();
+
+    if (!nome || !telefone || !valor) {
+      return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
     }
 
     const response = await fetch(
-      "https://new-backend.botconversa.com.br/api/v1/webhooks-automation/catch/107090/N0zmZuEk8fwK/",
+      "https://api.openpix.com.br/api/v1/charge?return_existing=true",
       {
         method: "POST",
         headers: {
+          Authorization: `Q2xpZW50X0lkXzM4NmEwYjIxLTRhZTMtNGUzMi05NmMzLTg0NmI1NmRkYzc4ZTpDbGllbnRfU2VjcmV0X0d4WmJZZ0VkUElEbDRobUU3RUxNQW5ybmtuNkhtTkRjNmVRT2JXNVhVT289`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: body.nome,
-          email: body.email || "",
-          phone: body.telefone,
-          codigo: body.codigo,
-          produto: body.nome_produto,
+          correlationID: `${nome}+${v4()}`.replace(/\s+/g, ""),
+          value: valor * 100,
+          comment: "Pagamento via PIX",
+          expiresIn: 420,
+          additionalInfo: [
+            { key: "Nome", value: nome },
+            { key: "Telefone", value: telefone },
+            { key: "Email", value: "sem@gmail.com" },
+            { key: "Invoice", value: Date.now().toString() },
+          ],
+          payer: {
+            name: nome,
+            email: "",
+            phone: telefone,
+          },
         }),
       }
     );
 
     const responseData = await response.json();
-
-    return new Response(JSON.stringify(responseData), {
-      status: response.status,
-    });
+    return NextResponse.json(responseData);
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: "Erro ao processar a requisição" }),
+    console.error("Erro no processamento:", error);
+    return NextResponse.json(
+      {
+        error: "Erro ao processar a requisição",
+        details: String(error),
+      },
       { status: 500 }
     );
   }

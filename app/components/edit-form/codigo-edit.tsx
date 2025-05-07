@@ -42,13 +42,13 @@ import {
   SelectContent,
   SelectItem,
 } from "@/app/components/ui/select"; // Importando o componente Select
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "@/app/utils/produto";
 import { v4 } from "uuid";
 
 // Supondo que você tenha uma função para buscar produtos
 const fetchProducts = async () => {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   try {
     const { data, error } = await supabase.from("produtos").select("*");
 
@@ -85,7 +85,7 @@ export const CreateOrUpdateCodigo = ({
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
-      id_produto: codigo?.id_produto ||"",
+      id_produto: codigo?.id_produto || "",
       codigo: codigo?.codigo || "",
       status: codigo?.status || "",
     },
@@ -121,7 +121,7 @@ export const CreateOrUpdateCodigo = ({
                 <Select
                   onValueChange={field.onChange}
                   value={field.value} // Use 'value' em vez de 'defaultValue'
-                  // Definindo largura máxima
+                // Definindo largura máxima
                 >
                   <SelectTrigger className="w-full max-w-xs">
                     <SelectValue placeholder="Selecione um produto" />
@@ -164,23 +164,23 @@ export const CreateOrUpdateCodigo = ({
                 <Select
                   onValueChange={field.onChange}
                   value={field.value} // Use 'value' em vez de 'defaultValue'
-                  // Definindo largura máxima
+                // Definindo largura máxima
                 >
                   <SelectTrigger >
                     <SelectValue placeholder="Selecione um status" />
                   </SelectTrigger>
                   <SelectContent>
-                   
-                      <SelectItem value="Ativo" >
-                        Ativo
-                      </SelectItem>
-                      <SelectItem value="Inativo" >
-                        Inativo
-                      </SelectItem>
-                      <SelectItem value="Resgatado" >
-                        Resgatado
-                      </SelectItem>
-                    
+
+                    <SelectItem value="Ativo" >
+                      Ativo
+                    </SelectItem>
+                    <SelectItem value="Inativo" >
+                      Inativo
+                    </SelectItem>
+                    <SelectItem value="Resgatado" >
+                      Resgatado
+                    </SelectItem>
+
                   </SelectContent>
                 </Select>
               </FormControl>

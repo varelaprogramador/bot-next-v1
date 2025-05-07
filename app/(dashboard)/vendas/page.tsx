@@ -1,7 +1,7 @@
 "use client"
 
 import { DataTableVendas } from "@/app/components/tabela-vendas"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react"
 import type { VendasProps } from "../../utils/vendas"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -13,7 +13,7 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 
 export default function Vendas() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [data, setData] = useState<VendasProps[]>([])

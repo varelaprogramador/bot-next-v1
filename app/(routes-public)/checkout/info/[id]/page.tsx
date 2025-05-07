@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation"; // Correção na importação
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import {
 
   ShoppingBag,
@@ -147,7 +147,7 @@ const ContactMethodDialog = ({ isOpen, setIsOpen, produto, setIsDialogPayament }
 
 
 export default function VendaDetalhesLoja() {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const [produto, setProduto] = useState<ProdutosProps | null>(null);
   const [produtoRel, setProdutoRel] = useState<ProdutosProps[]>([]);
   const [loadingProduto, setLoadingProduto] = useState<boolean>(true);

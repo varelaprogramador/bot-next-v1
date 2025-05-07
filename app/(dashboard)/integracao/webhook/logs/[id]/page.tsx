@@ -6,7 +6,7 @@ import { ArrowLeft, Clock, CheckCircle2, XCircle } from "lucide-react"
 import { Button } from "@/app/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Badge } from "@/app/components/ui/badge"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -23,7 +23,7 @@ type WebhookLog = {
 
 export default function WebhookLogPage() {
     const params = useParams()
-    const supabase = createClient()
+    const supabase = createClientSupabaseClient()
     const [logs, setLogs] = useState<WebhookLog[]>([])
     const [webhookUrl, setWebhookUrl] = useState<string>("")
     const [loading, setLoading] = useState(true)

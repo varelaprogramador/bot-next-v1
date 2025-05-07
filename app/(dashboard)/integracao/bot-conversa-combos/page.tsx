@@ -38,7 +38,7 @@ import {
     Bot,
     Package,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { CombosProps } from "@/app/utils/combos"
 
 // Types
@@ -63,7 +63,7 @@ export default function BotCombosClient() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
 
-    const supabase = createClient()
+    const supabase = createClientSupabaseClient()
 
     // Carregar dados inicialmente
     useEffect(() => {

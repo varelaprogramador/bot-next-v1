@@ -43,7 +43,7 @@ import {
 import { Textarea } from "@/app/components/ui/textarea";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
@@ -63,7 +63,7 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ user }: UserDropdownProps) {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);

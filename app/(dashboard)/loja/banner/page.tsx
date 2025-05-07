@@ -6,7 +6,7 @@ import { Separator } from "@/app/components/ui/separator"
 import { ArrowLeft, ChevronLeft, ChevronRight, Home, ChevronRightIcon, ImageIcon, Info } from 'lucide-react'
 import Link from "next/link"
 import Image from "next/image"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import type { MediaBannerProps } from "@/app/utils/media"
 import { DataTableMediaBanner } from "@/app/components/tabela-loja-banner"
 import {
@@ -22,7 +22,7 @@ import { motion } from "framer-motion"
 import { Skeleton } from "@/app/components/ui/skeleton"
 
 export default function BannerPage() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const isMobile = useIsMobile()
   const carouselRef = useRef<HTMLDivElement | null>(null)
 
@@ -211,8 +211,8 @@ export default function BannerPage() {
                   <button
                     key={index}
                     className={`w-2 h-2 rounded-full transition-all ${index === currentSlide
-                        ? "bg-primary w-4"
-                        : "bg-primary/30 hover:bg-primary/50"
+                      ? "bg-primary w-4"
+                      : "bg-primary/30 hover:bg-primary/50"
                       }`}
                     onClick={() => {
                       setCurrentSlide(index)

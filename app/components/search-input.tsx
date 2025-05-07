@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import router from "next/router";
 import { ProdutosProps } from "../utils/produto";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import Image from "next/image";
 import Link from "next/link";
 
 const InputSearch = () => {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const [filter, setFilter] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);

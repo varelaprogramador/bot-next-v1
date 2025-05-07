@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import type { MediaProps } from "@/app/utils/media"
 import { DataTableMediaCarousel } from "@/app/components/tabela-loja"
 import { Button } from "@/app/components/ui/button"
@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 
 export default function Carousel() {
   const carouselRef = useRef<HTMLDivElement | null>(null)
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
 
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<MediaProps[]>([])

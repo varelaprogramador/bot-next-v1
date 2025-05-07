@@ -38,7 +38,7 @@ import {
 import { CodigosProps } from "@/app/utils/codigos";
 import { CreateOrUpdateCodigo } from "./edit-form/codigo-edit";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import FileUpload from "./input-xsl";
 
 export const columns: ColumnDef<CodigosProps>[] = [
@@ -119,7 +119,7 @@ export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const handleConfirmCreate = async ({ data }: { data: CodigosProps }) => {
     const { error } = await supabase.from("codigos").insert(data);
     if (error) {
@@ -250,9 +250,9 @@ export function DataTableCodigos({ data }: { data: CodigosProps[] }) {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}

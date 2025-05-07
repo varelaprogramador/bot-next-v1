@@ -1,7 +1,10 @@
 "use server";
 import { createClient } from "@supabase/supabase-js";
 import { v4 } from "uuid";
-require("dotenv").config(); // Carregar variáveis de ambiente
+import { config } from "dotenv";
+import { NextResponse } from "next/server";
+
+config(); // Carregar variáveis de ambiente
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -92,12 +95,12 @@ export async function POST(req: Request) {
       !dadosProcessados.produto.nome
     ) {
       console.error("Dados incompletos:", dadosProcessados);
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           error:
             "Dados incompletos. Necessário: nome, telefone e produto_nome.",
           dados_recebidos: body,
-        }),
+        },
         { status: 400 }
       );
     }
@@ -121,11 +124,11 @@ export async function POST(req: Request) {
           "Combo não encontrado no banco de dados:",
           comboError || "Sem resultados"
         );
-        return new Response(
-          JSON.stringify({
+        return NextResponse.json(
+          {
             error: "Combo não encontrado. Verifique o nome do combo.",
             combo: dadosProcessados.produto.nome,
-          }),
+          },
           { status: 404 }
         );
       }
@@ -134,10 +137,10 @@ export async function POST(req: Request) {
 
       // Verificar se o combo tem valor definido
       if (!comboDB.valor_combo_vinculado) {
-        return new Response(
-          JSON.stringify({
+        return NextResponse.json(
+          {
             error: "Combo encontrado, mas sem valor definido no sistema.",
-          }),
+          },
           { status: 400 }
         );
       }
@@ -201,21 +204,21 @@ export async function POST(req: Request) {
           "Produto não encontrado no banco de dados:",
           produtoError || "Sem resultados"
         );
-        return new Response(
-          JSON.stringify({
+        return NextResponse.json(
+          {
             error: "Produto não encontrado. Verifique o nome do produto.",
             produto: dadosProcessados.produto.nome,
-          }),
+          },
           { status: 404 }
         );
       }
 
       // Verificar se o produto tem valor definido
       if (!produtos[0].valor_vinculado) {
-        return new Response(
-          JSON.stringify({
+        return NextResponse.json(
+          {
             error: "Produto encontrado, mas sem valor definido no sistema.",
-          }),
+          },
           { status: 400 }
         );
       }
@@ -244,10 +247,10 @@ export async function POST(req: Request) {
 
     // Verificação adicional (isso não deveria acontecer, mas é uma proteção)
     if (typeof rechargeAmount !== "number") {
-      return new Response(
-        JSON.stringify({
+      return NextResponse.json(
+        {
           error: "Valor do produto inválido ou não numérico.",
-        }),
+        },
         { status: 400 }
       );
     }
@@ -339,19 +342,41 @@ ${responseData.charge.brCode}`,
           }),
         }
       );
+
+      // Enviar notificação para o EVO
+      try {
+        const evoMessage = `🛍️ *Nova Transação*
+        
+👤 *Cliente:* ${dadosProcessados.nome}
+📱 *Telefone:* ${dadosProcessados.telefone}
+💰 *Valor:* R$ ${rechargeAmount.toFixed(2)}
+🛒 *Produto:* ${dadosProcessados.produto.nome}
+📝 *Tipo:* ${dadosProcessados.type_product}
+🆔 *ID Transação:* ${id_transacao}
+🔗 *Link PIX:* ${responseData.charge.paymentLinkUrl}
+📋 *Código PIX:* ${responseData.charge.brCode}`;
+
+        await fetch("/api/evo", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: evoMessage,
+          }),
+        });
+      } catch (evoError) {
+        console.error("Erro ao enviar notificação para EVO:", evoError);
+      }
     }
-    return new Response(JSON.stringify(responseData), {
-      status: response.status,
-      ...response.headers,
-      ...responseData,
-    });
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Erro no processamento:", error);
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         error: "Erro ao processar a requisição",
         details: String(error),
-      }),
+      },
       { status: 500 }
     );
   }

@@ -1,5 +1,6 @@
 "use server";
 import { v4 } from "uuid";
+import { NextResponse } from "next/server";
 
 import { dispararWebhook } from "@/app/utils/webhook";
 import { createClient } from "@supabase/supabase-js";
@@ -11,31 +12,29 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
-    // Pegando os dados do request
-    const body = await req.json();
-    console.log(body);
-    if (!body.produto || !body.nome || !body.telefone) {
-      return new Response(JSON.stringify({ error: "Dados incompletos" }), {
-        status: 400,
-      });
+    const { nome, telefone, valor } = await req.json();
+
+    if (!nome || !telefone || !valor) {
+      return NextResponse.json({ error: "Dados incompletos" }, { status: 400 });
     }
+
     console.log(
       "==================Iniciando processo de nova venda==================="
     );
     const id_transacao = v4();
-    const rechargeAmount = body.produto.valor;
+    const rechargeAmount = valor;
     const novaVenda = {
       id_cliente: "site",
-      nome_cliente: body.nome,
+      nome_cliente: nome,
       valor: rechargeAmount,
       status: "pendente",
       tipo_pagamento: "pix",
       origin: "site",
       tipo_produto: "produto",
       detalhes_produto: {
-        id: body.produto.id,
-        nome: body.produto.nome,
-        valor: body.produto.valor,
+        id: "produto",
+        nome: "Pagamento via PIX",
+        valor: rechargeAmount,
         tipo: "produto",
       },
     };
@@ -53,11 +52,10 @@ export async function POST(req: Request) {
     // Disparar webhook de nova venda
     await dispararWebhook("nova_venda", {
       ...novaVenda,
-      produto: body.produto,
       cliente: {
-        nome: body.nome,
-        telefone: body.telefone,
-        email: body.email,
+        nome: nome,
+        telefone: telefone,
+        email: "",
       },
     });
 
@@ -66,47 +64,38 @@ export async function POST(req: Request) {
       {
         method: "POST",
         headers: {
-          Authorization: `${process.env.OPENPIX_API_KEY}`, // No backend, não use NEXT_PUBLIC_
+          Authorization: `Q2xpZW50X0lkXzM4NmEwYjIxLTRhZTMtNGUzMi05NmMzLTg0NmI1NmRkYzc4ZTpDbGllbnRfU2VjcmV0X0d4WmJZZ0VkUElEbDRobUU3RUxNQW5ybmtuNkhtTkRjNmVRT2JXNVhVT289`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          correlationID: `${body.produto.nome}+${v4()}`.replace(/\s+/g, ""), // Remove espaços
-          value: body.produto.valor * 100,
-          comment: body.produto.nome,
+          correlationID: `${nome}+${v4()}`.replace(/\s+/g, ""),
+          value: valor * 100,
+          comment: "Pagamento via PIX",
           expiresIn: 420,
           additionalInfo: [
-            { key: "ID", value: id_transacao },
-            { key: "Product", value: body.produto.id },
-            { key: "Product-Nome", value: body.produto.nome },
-            { key: "Nome", value: body.nome },
-            { key: "Telefone", value: body.telefone }, // Corrigido
-            {
-              key: "Email",
-              value: body.email != "" ? body.email : "sem@gmail.com",
-            }, // Corrigido
-            { key: "Invoice", value: body.data || Date.now().toString() }, // Se não tiver `data`, usa timestamp
-            { key: "Origin", value: body.origin || "site" },
+            { key: "Nome", value: nome },
+            { key: "Telefone", value: telefone },
+            { key: "Email", value: "sem@gmail.com" },
+            { key: "Invoice", value: Date.now().toString() },
           ],
           payer: {
-            name: body.nome,
-            email: body.email || "",
-            phone: body.telefone,
+            name: nome,
+            email: "",
+            phone: telefone,
           },
         }),
       }
     );
 
     const responseData = await response.json();
-    console.log(responseData);
-    return new Response(JSON.stringify(responseData), {
-      status: response.status,
-    });
+    return NextResponse.json(responseData);
   } catch (error) {
-    return new Response(
-      JSON.stringify({
-        message: "Erro ao processar a requisição",
-        error: error,
-      }),
+    console.error("Erro no processamento:", error);
+    return NextResponse.json(
+      {
+        error: "Erro ao processar a requisição",
+        details: String(error),
+      },
       { status: 500 }
     );
   }

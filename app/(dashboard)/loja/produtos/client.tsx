@@ -26,7 +26,7 @@ import {
 } from "@dnd-kit/sortable";
 
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { ProdutosLojaProps } from "@/app/utils/produto";
 import { Card, CardContent, CardFooter } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
@@ -37,7 +37,7 @@ interface ClientProps {
 }
 
 export const Client: React.FC<ClientProps> = ({ handleUpdatePositions }) => {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<ProdutosLojaProps[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);

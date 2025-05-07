@@ -1,7 +1,7 @@
 "use client"
 
 import { DataTableCodigos } from "@/app/components/tabela-codigos"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react"
 import type { CodigosProps } from "../../../utils/codigos"
 import { useParams, useRouter } from "next/navigation"
@@ -14,7 +14,7 @@ import { toast } from "sonner"
 import { motion } from "framer-motion"
 
 export default function Codigos() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const router = useRouter()
   const { id } = useParams() // Captura o `id` da venda na URL
   const [loading, setLoading] = useState(true)

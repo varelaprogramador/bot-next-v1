@@ -5,7 +5,7 @@ import type React from "react";
 import { Button } from "@/app/components/ui/button";
 import { Card } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import {
   Check,
@@ -67,7 +67,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [dragActive, setDragActive] = useState(false);
 
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
 
   // Função para verificar se o tipo do arquivo é imagem
   const isImageFile = (type: string) => type.startsWith("image");
@@ -455,8 +455,8 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
                 {isImageFile(previewImage.type)
                   ? `Imagem ${(previewImage.size / 1024 / 1024).toFixed(2)} MB`
                   : `Arquivo ${(previewImage.size / 1024 / 1024).toFixed(
-                      2
-                    )} MB`}
+                    2
+                  )} MB`}
               </DialogDescription>
             </DialogHeader>
             <div className="relative w-full h-[60vh] flex-grow bg-black/5 rounded-md overflow-hidden">

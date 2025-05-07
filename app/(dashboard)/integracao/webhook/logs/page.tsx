@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/app/components/ui/card"
 import { Badge } from "@/app/components/ui/badge"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { ExternalLink } from "lucide-react"
 
@@ -19,7 +19,7 @@ type WebhookLog = {
 }
 
 export default function WebhookLogsPage() {
-    const supabase = createClient()
+    const supabase = createClientSupabaseClient()
     const [logs, setLogs] = useState<WebhookLog[]>([])
 
     useEffect(() => {
@@ -44,9 +44,9 @@ export default function WebhookLogsPage() {
         }
 
         setLogs(
-            data.map((log) => ({
+            data.map((log: WebhookLog) => ({
                 ...log,
-                webhook_url: log.webhooks.url,
+                webhook_url: log.webhook_url,
             })),
         )
     }

@@ -33,7 +33,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/app/components/ui/form";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "@/app/utils/produto";
 import {
   Select,
@@ -48,7 +48,7 @@ import { v4 as uuidv4 } from "uuid";
 
 // Função para buscar produtos
 const fetchProducts = async () => {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   try {
     const { data, error } = await supabase.from("produtos").select("*");
 

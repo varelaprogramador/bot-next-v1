@@ -12,7 +12,7 @@ import {
 
 } from "@/app/components/ui/card";
 import { useEffect, useRef, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "../utils/produto";
 import { MediaBannerProps, MediaProps } from "../utils/media";
 import Link from "next/link";
@@ -22,7 +22,7 @@ import { Skeleton } from "../components/ui/skeleton";
 import EmblaCarouselCircle from "../components/carousel-emblar-circle";
 
 export default function GiftCardStore() {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const [loading, setLoading] = useState(true);
 
   const [data, setData] = useState<ProdutosProps[]>([]);

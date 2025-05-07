@@ -37,7 +37,7 @@ import {
 } from "@/app/components/ui/table";
 
 
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 import { MediaBannerProps, MediaProps } from "../utils/media";
 import { CreateMedia } from "./create-forms/produto-2";
@@ -122,7 +122,7 @@ export function DataTableMediaCarousel({ data }: { data: MediaProps[] }) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const handleConfirmCreate = async ({ data }: { data: MediaProps }) => {
     const { error } = await supabase.from("marca").insert(data);
     if (error) {

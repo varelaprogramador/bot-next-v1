@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion"
 import { ArrowRightIcon, Calendar, CircleDollarSign, Trash2, Search, BarChart3, Plus, Filter, Loader2, Tag, SlidersHorizontal, X } from 'lucide-react'
 
@@ -44,7 +44,7 @@ import {
 import { Progress } from "@/app/components/ui/progress"
 
 export default function Produtos() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<ProdutosProps[]>([])
   const [filterText, setFilterText] = useState("")

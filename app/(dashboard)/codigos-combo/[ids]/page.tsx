@@ -1,7 +1,7 @@
 "use client"
 
 import { DataTableCodigos } from "@/app/components/tabela-codigos"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react"
 import type { CodigosProps } from "../../../utils/codigos"
 import { useParams, useRouter } from "next/navigation"
@@ -15,7 +15,7 @@ import { motion } from "framer-motion"
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 
 export default function CodigosCombos() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const router = useRouter()
   const { ids } = useParams() // Captura o `ids` da URL
   const [loading, setLoading] = useState(true)

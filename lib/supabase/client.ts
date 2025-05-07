@@ -1,14 +1,14 @@
 import { createBrowserClient } from "@supabase/ssr";
 
-export function createClient() {
-  require("dotenv").config();
+export function createClientSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Supabase URL and API key are required.");
+    throw new Error(
+      "Supabase URL e API key são necessários. Verifique suas variáveis de ambiente."
+    );
   }
 
-  // Use a função correta para criar o cliente no navegador
   return createBrowserClient(supabaseUrl, supabaseKey);
 }

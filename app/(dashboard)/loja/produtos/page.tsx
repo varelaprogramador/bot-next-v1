@@ -3,7 +3,7 @@
 import { DataTableMediaCarousel } from "@/app/components/tabela-loja";
 import { Button } from "@/app/components/ui/button";
 import { MediaBannerProps, MediaProps } from "@/app/utils/media";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import {
   ArrowLeftCircle,
   ChevronLeft,
@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { Client } from "./client";
 
 export default function ProdutosLayoutLoja() {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<ProdutosLojaProps[]>([]);
   useEffect(() => {

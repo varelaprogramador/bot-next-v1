@@ -1,7 +1,7 @@
 "use client"
 
 import { DataTableVendas } from "@/app/components/tabela-vendas"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react"
 import type { VendasProps } from "@/app/utils/vendas"
 import { useParams, useRouter } from "next/navigation"
@@ -15,7 +15,7 @@ import { motion } from "framer-motion"
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 
 export default function Vendas() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const router = useRouter()
   const { id } = useParams() // Captura o `id` da venda na URL
   const [loading, setLoading] = useState(true)

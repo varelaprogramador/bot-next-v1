@@ -39,7 +39,7 @@ import {
     CalendarIcon,
     RepeatIcon,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { ProdutosProps } from "@/app/utils/produto"
 
 // Types
@@ -65,7 +65,7 @@ export default function BotProdutosClient() {
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
 
-    const supabase = createClient()
+    const supabase = createClientSupabaseClient()
 
     // Carregar dados inicialmente
     useEffect(() => {

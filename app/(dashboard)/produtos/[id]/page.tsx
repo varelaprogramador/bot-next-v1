@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion"
 import {
   CircleDollarSign,
@@ -43,7 +43,7 @@ import {
 } from "@/app/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
 
-const supabase = createClient()
+const supabase = createClientSupabaseClient()
 
 export default function ProdutoDetalhes() {
   const [produto, setProduto] = useState<ProdutosProps | null>(null)

@@ -1,7 +1,7 @@
 "use client"
 
 import { DataTableCodigos } from "@/app/components/tabela-codigos"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react"
 import type { CodigosProps } from "../../utils/codigos"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -13,7 +13,7 @@ import { motion } from "framer-motion"
 import { toast } from "sonner"
 
 export default function Codigos() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [data, setData] = useState<CodigosProps[]>([])

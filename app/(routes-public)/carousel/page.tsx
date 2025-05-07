@@ -4,7 +4,7 @@ import EmblaCarousel from "@/app/components/carousel-emblar";
 
 import { MediaBannerProps, MediaProps } from "@/app/utils/media";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { EmblaOptionsType } from 'embla-carousel'
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -18,7 +18,7 @@ export default function Test() {
   const [dataBannerMobile, setDataBannerMobile] = useState<MediaBannerProps[]>([]);
   const [dataBanner, setDataBanner] = useState<MediaBannerProps[]>([]);
 
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const mobile = useIsMobile();
 
   useEffect(() => {

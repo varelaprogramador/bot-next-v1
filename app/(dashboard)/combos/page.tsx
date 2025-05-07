@@ -3,7 +3,7 @@ import { Button } from "@/app/components/ui/button"
 import { ArrowRightIcon, Binary, Calendar, CircleDollarSign, FilterIcon, Package, Plus, Search, SquareMousePointer, Trash2 } from 'lucide-react'
 import { useEffect, useState } from "react"
 
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { Input } from "@/app/components/ui/input"
 import { CreateOrUpdateCombo } from "@/app/components/edit-form/combos"
 import type { CombosProps } from "@/app/utils/combos"
@@ -42,7 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { ProdutosProps } from "@/app/utils/produto"
 
 export default function Combos() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<CombosProps[]>([])
   const [filterText, setFilterText] = useState("")

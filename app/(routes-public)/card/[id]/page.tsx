@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation"; // Correção na importação
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import {
 
   ShoppingBag,
@@ -19,7 +19,7 @@ import Link from "next/link";
 
 
 export default function VendaDetalhesLoja() {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const [getMarca, setMarca] = useState<MediaProps | null>(null);
 
   const [loading, setLoading] = useState<boolean>(true);

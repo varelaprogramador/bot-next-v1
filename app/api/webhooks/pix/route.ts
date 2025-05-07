@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig } from "axios";
 import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
 
 import { CodigosProps } from "@/app/utils/codigos";
 require("dotenv").config(); // Carregar variáveis de ambiente
@@ -9,31 +10,23 @@ const supabase = createClient(
   process.env.SUPABASE_KEY!
 );
 
-export async function GET(req: any) {
+export async function GET(req: Request) {
   try {
     console.log(await req.json()); // Corrigido para aguardar a promessa
-    return new Response(JSON.stringify({ message: "GET request successful" }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return NextResponse.json({ message: "GET request successful" });
   } catch (error: any) {
     // Caso ocorra algum erro
     console.error("Erro no GET:", error.message);
-    return new Response(
-      JSON.stringify({ message: "Error", error: error.message }),
+    return NextResponse.json(
+      { message: "Error", error: error.message },
       {
         status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
       }
     );
   }
 }
 
-export async function POST(req: any) {
+export async function POST(req: Request) {
   try {
     const data = await req.json(); // Corpo da requisição
 
@@ -42,13 +35,10 @@ export async function POST(req: any) {
     if (isTestEvent) {
       console.log("Evento de teste recebido com sucesso.");
 
-      return new Response(
-        JSON.stringify({ message: "Evento de teste recebido com sucesso." }),
+      return NextResponse.json(
+        { message: "Evento de teste recebido com sucesso." },
         {
           status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
         }
       );
     }
@@ -58,13 +48,10 @@ export async function POST(req: any) {
     if (!additionalInfo) {
       console.log("Campos adicionais não encontrados");
 
-      return new Response(
-        JSON.stringify({ message: "Campos adicionais não encontrados" }),
+      return NextResponse.json(
+        { message: "Campos adicionais não encontrados" },
         {
           status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
         }
       );
     }
@@ -75,12 +62,12 @@ export async function POST(req: any) {
     if (!allowedEvents.includes(eventType)) {
       console.log("Evento não permitido:", eventType);
 
-      return new Response(JSON.stringify({ error: "Evento não permitido" }), {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return NextResponse.json(
+        JSON.stringify({ error: "Evento não permitido" }),
+        {
+          status: 400,
+        }
+      );
     }
 
     // console.log("Corpo da requisição:", JSON.stringify(data, null, 2)); // Log para verificar o corpo da requisição
@@ -96,13 +83,10 @@ export async function POST(req: any) {
       if (!originValue) {
         console.log("Campo Origin não encontrado");
 
-        return new Response(
-          JSON.stringify({ error: "Campo Origin não encontrado" }),
+        return NextResponse.json(
+          { error: "Campo Origin não encontrado" },
           {
             status: 400,
-            headers: {
-              "Content-Type": "application/json",
-            },
           }
         );
       }
@@ -146,16 +130,13 @@ export async function POST(req: any) {
 
         if (fetchError) {
           console.error("Erro ao buscar saldo do usuário:", fetchError.message);
-          return new Response(
-            JSON.stringify({
+          return NextResponse.json(
+            {
               message: "Erro ao buscar saldo do usuário",
               error: fetchError.message,
-            }),
+            },
             {
               status: 500,
-              headers: {
-                "Content-Type": "application/json",
-              },
             }
           );
         }
@@ -171,16 +152,13 @@ export async function POST(req: any) {
             "Erro ao atualizar saldo do usuário:",
             updateError.message
           );
-          return new Response(
-            JSON.stringify({
+          return NextResponse.json(
+            {
               message: "Erro ao atualizar saldo do usuário",
               error: updateError.message,
-            }),
+            },
             {
               status: 500,
-              headers: {
-                "Content-Type": "application/json",
-              },
             }
           );
         }
@@ -209,16 +187,13 @@ export async function POST(req: any) {
             "Erro ao atualizar o status da venda:",
             vendaUpdateError.message
           );
-          return new Response(
-            JSON.stringify({
+          return NextResponse.json(
+            {
               message: "Erro ao atualizar o status da venda",
               error: vendaUpdateError.message,
-            }),
+            },
             {
               status: 500,
-              headers: {
-                "Content-Type": "application/json",
-              },
             }
           );
         }
@@ -261,16 +236,13 @@ Boas compras!`;
           console.error("Erro ao enviar mensagem:", error);
         }
 
-        return new Response(
-          JSON.stringify({
+        return NextResponse.json(
+          {
             message:
               "Saldo atualizado e status da venda atualizado com sucesso.",
-          }),
+          },
           {
             status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
           }
         );
       }
@@ -313,13 +285,10 @@ Boas compras!`;
         if (!codigosAtivos || codigosAtivos.length <= 0) {
           console.log("Nenhum código ativo encontrado");
 
-          return new Response(
-            JSON.stringify({ error: "Nenhum código ativo encontrado" }),
+          return NextResponse.json(
+            { error: "Nenhum código ativo encontrado" },
             {
               status: 400,
-              headers: {
-                "Content-Type": "application/json",
-              },
             }
           );
         }
@@ -402,53 +371,44 @@ Boas compras!`;
             "Erro ao atualizar o status da venda:",
             vendaUpdateError.message
           );
-          return new Response(
-            JSON.stringify({
+          return NextResponse.json(
+            {
               message: "Erro ao atualizar o status da venda",
               error: vendaUpdateError.message,
-            }),
+            },
             {
               status: 500,
-              headers: {
-                "Content-Type": "application/json",
-              },
             }
           );
         }
         console.log("Status da venda atualizado com sucesso.");
-        return new Response(
-          JSON.stringify({
+        return NextResponse.json(
+          {
             message:
               "Saldo atualizado e status da venda atualizado com sucesso.",
-          }),
+          },
           {
             status: 200,
-            headers: {
-              "Content-Type": "application/json",
-            },
           }
         );
       }
 
       console.log("Origem não reconhecida:", originValue);
 
-      return new Response(JSON.stringify({ error: "Origem não reconhecida" }), {
-        status: 400,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      return NextResponse.json(
+        JSON.stringify({ error: "Origem não reconhecida" }),
+        {
+          status: 400,
+        }
+      );
     }
   } catch (error) {
     console.error("Erro no processamento do POST:", error);
 
-    return new Response(
-      JSON.stringify({ message: "Erro", error: (error as Error).message }),
+    return NextResponse.json(
+      { message: "Erro", error: (error as Error).message },
       {
         status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
       }
     );
   }

@@ -32,14 +32,14 @@ import { MediaProps } from "@/app/utils/media";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { ProdutosProps } from "@/app/utils/produto";
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { Plus, X } from "lucide-react";
 
 
 
 // Função para buscar produtos
 const fetchProducts = async () => {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   try {
     const { data, error } = await supabase.from("produtos").select("*");
 

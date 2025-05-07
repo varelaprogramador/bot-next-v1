@@ -3,7 +3,7 @@ import { RevenueChart, type ChartProps } from "@/app/components/revenue-chart"
 import { Progress } from "@/app/components/ui/progress"
 import { Tabs, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react"
 import type { VendasProps } from "@/app/utils/vendas"
 import { eachDayOfInterval, endOfDay, format, startOfDay, subDays } from "date-fns"
@@ -13,7 +13,7 @@ import { Skeleton } from "@/app/components/ui/skeleton"
 import { Badge } from "@/app/components/ui/badge"
 
 export default function DashboardPage() {
-  const supabase = createClient()
+  const supabase = createClientSupabaseClient()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<VendasProps[]>([])
   const [selectedRange, setSelectedRange] = useState("30")

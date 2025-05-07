@@ -51,7 +51,7 @@ import {
 import { Label } from "@/app/components/ui/label";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 import { UserDropdown } from "./_components/user-dropdown";
 import MessageConfirmation from "./_components/message-confirmation";
@@ -80,7 +80,7 @@ interface MessageTemplate {
 }
 
 export default function DisparoPage() {
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserProps[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");

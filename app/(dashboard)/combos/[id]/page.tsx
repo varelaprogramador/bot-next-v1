@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 import {
   CircleDollarSign,
   Binary,
@@ -46,7 +46,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip"
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 
-const supabase = createClient()
+const supabase = createClientSupabaseClient()
 
 export default function ComboDetalhes() {
   const [combo, setCombo] = useState<CombosProps | null>(null)

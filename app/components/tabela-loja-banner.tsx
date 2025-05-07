@@ -37,7 +37,7 @@ import {
 } from "@/app/components/ui/table";
 
 
-import { createClient } from "@/lib/supabase/client";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 import { MediaBannerProps } from "../utils/media";
 import { CreateMedia } from "./create-forms/produto-2";
@@ -134,7 +134,7 @@ export function DataTableMediaBanner({ data }: { data: MediaBannerProps[] }) {
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
-  const supabase = createClient();
+  const supabase = createClientSupabaseClient();
 
   const handleConfirmCreateBanner = async ({ data }: { data: MediaBannerProps }) => {
     const { error } = await supabase.from("media-loja").insert(data);
