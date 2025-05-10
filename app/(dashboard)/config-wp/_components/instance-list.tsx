@@ -120,18 +120,24 @@ export const InstanceList = () => {
 
     const generateQR = async (instanceName: string) => {
         try {
-            const response = await fetch(`/api/evolution/instances/${instanceName}/qr`)
-            const data = await response.json()
+            console.log("Iniciando geração de QR code para:", instanceName);
+            const response = await fetch(`/api/evolution/instances/qr?instanceName=${instanceName}`);
+            const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || data.details?.message || "Erro ao gerar QR code")
+                console.error("Erro na resposta:", {
+                    status: response.status,
+                    data: data
+                });
+                throw new Error(data.error || data.details?.message || "Erro ao gerar QR code");
             }
 
-            setQrCode(data.qrcode)
-            setSelectedInstance(instanceName)
+            console.log("QR code gerado com sucesso:", data);
+            setQrCode(data.base64);
+            setSelectedInstance(instanceName);
         } catch (error) {
-            console.error("Erro ao gerar QR code:", error)
-            toast.error(error instanceof Error ? error.message : "Não foi possível gerar o QR code")
+            console.error("Erro ao gerar QR code:", error);
+            toast.error(error instanceof Error ? error.message : "Não foi possível gerar o QR code");
         }
     }
 
@@ -165,24 +171,24 @@ export const InstanceList = () => {
 
     const deleteInstance = async (instanceName: string) => {
         try {
-            const response = await fetch(`/api/evolution/instances/${instanceName}`, {
+            const response = await fetch(`/api/evolution/instances/delete?instanceName=${instanceName}`, {
                 method: "DELETE",
-            })
+            });
 
             if (!response.ok) {
-                throw new Error("Erro ao excluir instância")
+                const data = await response.json();
+                throw new Error(data.error || "Erro ao excluir instância");
             }
 
-            toast.success("Instância excluída com sucesso")
-
-            setDeleteDialogOpen(false)
-            setInstanceToDelete(null)
-            fetchInstances()
+            toast.success("Instância excluída com sucesso");
+            setDeleteDialogOpen(false);
+            setInstanceToDelete(null);
+            fetchInstances();
         } catch (error) {
-            console.error("Erro ao excluir instância:", error)
-            toast.error("Não foi possível excluir a instância")
+            console.error("Erro ao excluir instância:", error);
+            toast.error(error instanceof Error ? error.message : "Não foi possível excluir a instância");
         }
-    }
+    };
 
     const setDefaultInstance = async (instanceName: string) => {
         try {

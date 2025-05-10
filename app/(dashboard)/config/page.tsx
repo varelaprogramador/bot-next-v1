@@ -42,7 +42,7 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu"
 import { Skeleton } from "@/app/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
+
 import {
   Breadcrumb,
   BreadcrumbItem,

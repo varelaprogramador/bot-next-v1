@@ -36,6 +36,8 @@ import { Label } from "@/app/components/ui/label";
 import { ScrollArea } from "@/app/components/ui/scroll-area";
 import { toast } from "@/hooks/use-toast";
 import MessageConfirmation from "./_components/message-confirmation";
+import { UsageStats } from "./_components/usage-stats";
+
 interface MessageTemplate {
     id: string;
     title: string;
@@ -68,6 +70,7 @@ export default function DisparoTelegramPage() {
     const [savingContact, setSavingContact] = useState(false);
     const [contactName, setContactName] = useState("");
     const [contactTelegramId, setContactTelegramId] = useState("");
+    const [remainingMessages, setRemainingMessages] = useState<number | null>(null);
 
     const handleImportContacts = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -101,11 +104,11 @@ export default function DisparoTelegramPage() {
         }
     };
 
-    const handleSendMessage = () => {
+    const handleSendMessage = async () => {
         if (telegramContacts.length === 0) {
             toast({
-                title: "Atenção",
-                description: "Por favor, importe pelo menos um contato do Telegram.",
+                title: "Erro",
+                description: "Selecione pelo menos um contato para enviar a mensagem.",
                 variant: "destructive",
             });
             return;
@@ -113,14 +116,71 @@ export default function DisparoTelegramPage() {
 
         if (message.length < 10) {
             toast({
-                title: "Atenção",
-                description: "A mensagem deve conter mais de 10 caracteres.",
+                title: "Erro",
+                description: "A mensagem deve ter pelo menos 10 caracteres.",
                 variant: "destructive",
             });
             return;
         }
 
-        setShowConfirmation(true);
+        setLoading(true);
+
+        try {
+            const results = await Promise.all(
+                telegramContacts.map(async (contactId) => {
+                    const response = await fetch("/api/webhooks/telegram", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            disparo: true,
+                            userId: contactId,
+                            message,
+                            image,
+                        }),
+                    });
+
+                    const data = await response.json();
+                    return { contactId, ...data };
+                })
+            );
+
+            const successCount = results.filter((r) => r.success).length;
+            const failedCount = results.length - successCount;
+
+            if (failedCount > 0) {
+                toast({
+                    title: "Atenção",
+                    description: `${successCount} mensagens enviadas com sucesso. ${failedCount} falhas.`,
+                    variant: "default",
+                });
+            } else {
+                toast({
+                    title: "Sucesso",
+                    description: `${successCount} mensagens enviadas com sucesso.`,
+                });
+            }
+
+            // Atualiza o contador de mensagens restantes
+            if (results[0]?.remaining !== undefined) {
+                setRemainingMessages(results[0].remaining);
+            }
+
+            setShowConfirmation(false);
+            setMessage("");
+            setImage("");
+            setTelegramContacts([]);
+        } catch (error) {
+            console.error("Erro ao enviar mensagens:", error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível enviar as mensagens.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSaveTemplate = async () => {
@@ -275,15 +335,19 @@ export default function DisparoTelegramPage() {
     };
 
     return (
-        <div className="container mx-auto py-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Disparo para Lista do Telegram</h1>
-                <Badge variant="outline" className="px-3 py-1">
-                    {telegramContacts.length} contatos importados
-                </Badge>
+        <div className="container mx-auto p-4 space-y-4">
+            <div className="flex justify-between items-center">
+                <h1 className="text-2xl font-bold">Disparo Telegram</h1>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                        Mensagens restantes hoje: {remainingMessages}
+                    </span>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <UsageStats />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="h-[70vh] flex flex-col">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-lg flex justify-between items-center">

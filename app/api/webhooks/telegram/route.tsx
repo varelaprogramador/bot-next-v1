@@ -4,6 +4,7 @@ import { Telegraf } from "telegraf";
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
+import { telegramUsage } from "@/app/utils/telegram-usage";
 
 interface Codigos {
   id_codigo: string; // UUID
@@ -121,6 +122,13 @@ async function sendMessageToUser(
   image?: string
 ) {
   try {
+    // Verifica o limite de uso
+    const { canSend, remaining } = await telegramUsage.checkAndUpdateUsage(userId);
+
+    if (!canSend) {
+      throw new Error(`Limite diário de mensagens atingido. Tente novamente amanhã.`);
+    }
+
     // Create inline keyboard with buttons
     const inlineKeyboard = buttons.map((button) => [
       {
@@ -137,7 +145,7 @@ async function sendMessageToUser(
         inlineKeyboard.length > 0
           ? { inline_keyboard: inlineKeyboard }
           : undefined,
-      parse_mode: "HTML" as const, // Enable HTML formatting
+      parse_mode: "HTML" as const,
     };
 
     let result;
@@ -155,6 +163,9 @@ async function sendMessageToUser(
       console.log(`Text message sent to user ID: ${userId}`);
     }
 
+    // Incrementa o contador de uso
+    await telegramUsage.incrementUsage(userId);
+
     // Salvar mensagem no Supabase
     await saveMessage({
       user_id: userId,
@@ -164,7 +175,7 @@ async function sendMessageToUser(
       status: 'sent'
     });
 
-    return { success: true, messageId: result.message_id };
+    return { success: true, messageId: result.message_id, remaining };
   } catch (error: any) {
     console.error(`Error sending message to user ${userId}:`, error.message);
 
