@@ -29,6 +29,9 @@ export const Menu = () => {
                                 <Link href="/contato" className="text-gray-600 hover:text-gray-900">
                                     Contato
                                 </Link>
+                                <Link href="/politica-privacidade" className="text-gray-600 hover:text-gray-900">
+                                    Política de Privacidade
+                                </Link>
                             </nav>
                         </div>
                         <div className="hidden xl:flex items-center gap-4">
@@ -69,6 +72,10 @@ export const Menu = () => {
                             <Link onClick={() => setIsOpen(!isOpen)} href="/contato" className="text-gray-600 hover:text-gray-900 text-2xl">
                                 <div className="min-w-[100vw] text-center p-4 hover:bg-gray-100">
                                     Contato</div>
+                            </Link>
+                            <Link onClick={() => setIsOpen(!isOpen)} href="/politica-privacidade" className="text-gray-600 hover:text-gray-900 text-2xl">
+                                <div className="min-w-[100vw] text-center p-4 hover:bg-gray-100">
+                                    Política de Privacidade</div>
                             </Link>
                         </nav>
                     </div>)
