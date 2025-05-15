@@ -26,9 +26,9 @@ export default async function Layout({
   const metadata: {
     [key: string]: any;
   } = user?.privateMetadata as any;
-
+  console.log(metadata);
   if (metadata?.subscription?.status !== "active") {
-    redirect("/not-allowed");
+    redirect("/sign-in");
   }
 
   return (
