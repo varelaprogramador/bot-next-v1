@@ -109,8 +109,8 @@ const ChatBubble = React.memo(({ message, isOutgoing }: ChatBubbleProps) => {
                     {/* Corpo da mensagem */}
                     <div
                         className={`rounded-lg px-3 py-2 shadow-sm ${isOutgoing
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-foreground'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-foreground'
                             }`}
                     >
                         {/* Imagem, se houver */}
@@ -137,8 +137,8 @@ const ChatBubble = React.memo(({ message, isOutgoing }: ChatBubbleProps) => {
                                     <div
                                         key={button.id}
                                         className={`px-2 py-1.5 text-xs font-medium rounded flex items-center gap-1.5 justify-center ${isOutgoing
-                                                ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90'
-                                                : 'bg-background text-foreground hover:bg-background/90'
+                                            ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90'
+                                            : 'bg-background text-foreground hover:bg-background/90'
                                             } cursor-pointer transition-colors`}
                                     >
                                         {button.type === 'url' ? (
