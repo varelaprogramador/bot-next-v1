@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -29,7 +29,7 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/app/components/ui/tabs";
-import { Send, Search, PlusCircle, ImageIcon, Users, Save, FileText, Paperclip, Trash, Plus, UserPlus, Loader2, Clock, CheckCircle2, AlertCircle, LinkIcon, X, MessageSquare, BarChart3, Settings, ChevronRight, Info } from 'lucide-react';
+import { Send, Search, ImageIcon, Users, Save, FileText, UserPlus, Loader2, Clock, CheckCircle2, AlertCircle, LinkIcon, X, MessageSquare, BarChart3, Settings, ChevronRight, Info } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 import GaleriaPopup from "@/app/components/popup-imagens";
@@ -41,6 +41,22 @@ import { Separator } from "@/app/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
 import Image from "next/image";
+import dynamic from 'next/dynamic';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/app/components/ui/popover";
+
+// Importação dinâmica apenas para o componente Picker que é um componente React
+// Carregamento lazy do Picker para melhorar a performance inicial
+const Picker = dynamic(() => import('@emoji-mart/react'), {
+    ssr: false,
+    loading: () => <div className="w-[348px] h-[435px] bg-background flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>
+});
+// Importação normal para os dados
+import data from '@emoji-mart/data';
+
 interface Contact {
     id: string;
     name: string;
@@ -100,9 +116,11 @@ export default function DisparoChatPage() {
     const supabase = createClientSupabaseClient();
     const messageEndRef = useRef<HTMLDivElement>(null);
 
+    // Estado para controle de paginação de mensagens
+    const [messageDisplayLimit, setMessageDisplayLimit] = useState(50);
+
     // Estados
     const [contacts, setContacts] = useState<Contact[]>([]);
-    const [filteredContacts, setFilteredContacts] = useState<Contact[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [message, setMessage] = useState("");
@@ -133,39 +151,57 @@ export default function DisparoChatPage() {
     const [buttonType, setButtonType] = useState<"url" | "command">("url");
     const [commandData, setCommandData] = useState("");
     const [messageButtons, setMessageButtons] = useState<ButtonAction[]>([]);
+    // Novos estados para o editor avançado
+    const [showAdvancedEditor, setShowAdvancedEditor] = useState(false);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [advancedMessage, setAdvancedMessage] = useState("");
+
+    // Memoizamos a lista de contatos filtrada para evitar recálculos desnecessários
+    const filteredContacts = useMemo(() => {
+        if (!searchQuery) return contacts;
+        return contacts.filter(contact =>
+            contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            contact.user_id.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [contacts, searchQuery]);
+
+    // Memoizamos as mensagens visíveis para melhorar a performance
+    const visibleMessages = useMemo(() => {
+        if (messages.length <= messageDisplayLimit) return messages;
+        return messages.slice(messages.length - messageDisplayLimit);
+    }, [messages, messageDisplayLimit]);
+
+    // Carrega mais mensagens quando o usuário rola para cima
+    const handleScrollToTop = useCallback(() => {
+        if (messages.length > messageDisplayLimit) {
+            setMessageDisplayLimit(prev => Math.min(prev + 50, messages.length));
+        }
+    }, [messages.length, messageDisplayLimit]);
+
+    // Otimizando os useEffects para evitar renderizações excessivas
 
     // Carrega contatos
     useEffect(() => {
         loadContacts();
         loadTemplates();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    // Filtra contatos com base na pesquisa
-    useEffect(() => {
-        if (searchQuery) {
-            const filtered = contacts.filter(contact =>
-                contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                contact.user_id.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-            setFilteredContacts(filtered);
-        } else {
-            setFilteredContacts(contacts);
-        }
-    }, [searchQuery, contacts]);
 
     // Rola para a última mensagem quando novas mensagens são adicionadas
     useEffect(() => {
-        messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        if (messages.length > 0) {
+            requestAnimationFrame(() => {
+                messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            });
+        }
     }, [messages]);
 
     // Carrega logs quando a modal é aberta
     useEffect(() => {
         if (showBatchSummary) {
-            fetchMessageLogs().then(() => {
-                // Após carregar os logs, sincronizamos com o resumo
-                setTimeout(syncResumoWithLogs, 500);
-            });
+            fetchMessageLogs();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [showBatchSummary]);
 
     // Sincroniza resumo quando logs são atualizados
@@ -175,7 +211,7 @@ export default function DisparoChatPage() {
         }
     }, [messageLogs]);
 
-    const loadContacts = async () => {
+    const loadContacts = useCallback(async () => {
         setLoadingContacts(true);
         try {
             const { data, error } = await supabase.from("users").select("*");
@@ -192,7 +228,6 @@ export default function DisparoChatPage() {
             }));
 
             setContacts(formattedContacts);
-            setFilteredContacts(formattedContacts);
         } catch (error) {
             console.error("Erro ao carregar contatos:", error);
             toast({
@@ -203,9 +238,9 @@ export default function DisparoChatPage() {
         } finally {
             setLoadingContacts(false);
         }
-    };
+    }, [supabase, toast]);
 
-    const loadTemplates = async () => {
+    const loadTemplates = useCallback(async () => {
         try {
             const { data, error } = await supabase
                 .from("message_templates")
@@ -217,9 +252,9 @@ export default function DisparoChatPage() {
         } catch (error) {
             console.error("Erro ao carregar templates:", error);
         }
-    };
+    }, [supabase]);
 
-    const handleLoadTemplate = (template: MessageTemplate) => {
+    const handleLoadTemplate = useCallback((template: MessageTemplate) => {
         setMessage(template.content);
         if (template.image_url) {
             setImage(template.image_url);
@@ -230,9 +265,9 @@ export default function DisparoChatPage() {
             title: "Template carregado",
             description: `Template "${template.title}" carregado com sucesso`,
         });
-    };
+    }, [toast]);
 
-    const handleSaveTemplate = async () => {
+    const handleSaveTemplate = useCallback(async () => {
         if (!templateTitle.trim()) {
             toast({
                 title: "Erro",
@@ -281,9 +316,9 @@ export default function DisparoChatPage() {
                 variant: "destructive",
             });
         }
-    };
+    }, [templateTitle, message, image, supabase, toast, loadTemplates]);
 
-    const handleAddContact = async () => {
+    const handleAddContact = useCallback(async () => {
         if (!newContactName.trim() || !newContactId.trim()) {
             toast({
                 title: "Erro",
@@ -323,18 +358,16 @@ export default function DisparoChatPage() {
                 variant: "destructive",
             });
         }
-    };
+    }, [newContactName, newContactId, supabase, toast, loadContacts]);
 
     // Função para salvar logs de mensagens
-    const saveMessageLog = async (messages: any[], user_id: string) => {
+    const saveMessageLog = useCallback(async (messages: any[], user_id: string) => {
         try {
             // Filtra apenas as mensagens que precisam ser salvas
             const messagesToSave = messages.filter(msg =>
                 (msg.status === "enviado" || msg.status === "falha") &&
                 msg.recipient // Garante que só salvamos mensagens com destinatário definido
             );
-
-            console.log("Mensagens filtradas para salvar:", messagesToSave.length);
 
             if (messagesToSave.length === 0) {
                 console.log("Nenhuma mensagem para salvar");
@@ -355,27 +388,21 @@ export default function DisparoChatPage() {
                 })
             }));
 
-            console.log("Dados preparados para inserção:", logsToInsert);
-
-            // Salva o log de mensagens no banco de dados
-            const { data, error } = await supabase
-                .from("message_logs")
-                .insert(logsToInsert)
-                .select();
-
-            if (error) {
-                console.error("Erro SQL ao salvar logs:", error);
-                throw error;
+            // Salva o log de mensagens no banco de dados em lotes menores para melhorar performance
+            const BATCH_SIZE = 50;
+            for (let i = 0; i < logsToInsert.length; i += BATCH_SIZE) {
+                const batch = logsToInsert.slice(i, i + BATCH_SIZE);
+                await supabase
+                    .from("message_logs")
+                    .insert(batch);
             }
-
-            console.log("Logs de mensagens salvos com sucesso:", data?.length);
         } catch (error) {
             console.error("Erro ao salvar logs de mensagens:", error);
         }
-    };
+    }, [supabase]);
 
     // Função para carregar logs de mensagens
-    const fetchMessageLogs = async () => {
+    const fetchMessageLogs = useCallback(async () => {
         setLoadingLogs(true);
         try {
             // Consulta os logs de mensagens mais recentes relacionados ao disparo atual
@@ -386,8 +413,6 @@ export default function DisparoChatPage() {
                 .limit(100); // Limitando para melhor performance
 
             if (error) throw error;
-
-            console.log("Logs recuperados do banco:", data?.length);
 
             if (!data || data.length === 0) {
                 setMessageLogs([]);
@@ -441,6 +466,11 @@ export default function DisparoChatPage() {
             });
 
             setMessageLogs(formattedLogs);
+
+            // Atualizar resumos após carregar logs
+            if (formattedLogs.length > 0 && batchLogs.length > 0) {
+                setTimeout(() => syncResumoWithLogs(), 100);
+            }
         } catch (error) {
             console.error("Erro ao carregar logs de mensagens:", error);
             toast({
@@ -451,18 +481,16 @@ export default function DisparoChatPage() {
         } finally {
             setLoadingLogs(false);
         }
-    };
+    }, [supabase, batchLogs, toast]);
 
     // Função para atualizar os resumos com base nos logs reais
-    const syncResumoWithLogs = async () => {
+    const syncResumoWithLogs = useCallback(() => {
         // Se não há logs de mensagens ou lotes, não faz nada
         if (messageLogs.length === 0 || batchLogs.length === 0) return;
 
         // Conta quantas mensagens foram realmente enviadas com sucesso
         const enviadas = messageLogs.filter(log => log.status === "enviado").length;
         const falhas = messageLogs.filter(log => log.status === "falha").length;
-
-        console.log(`Atualizando resumo baseado em ${enviadas} enviadas e ${falhas} falhas`);
 
         // Se temos apenas 1 lote, atualizamos diretamente
         if (batchLogs.length === 1) {
@@ -476,48 +504,160 @@ export default function DisparoChatPage() {
             return;
         }
 
-        // Para múltiplos lotes, manteremos a distribuição, 
-        // mas ajustaremos os totais para refletir o estado real
+        // Para múltiplos lotes, calculamos os valores mais eficientemente
         const updatedLogs = [...batchLogs];
+        const totalContatos = updatedLogs.reduce((acc, log) => acc + log.totalContacts, 0);
 
-        // Total original de todos os lotes
-        const totalOriginalSuccess = updatedLogs.reduce((acc, log) => acc + log.successful, 0);
-        const totalOriginalFailed = updatedLogs.reduce((acc, log) => acc + log.failed, 0);
+        // Distribuímos proporcionalmente
+        let totalSuccessful = 0;
+        let totalFailed = 0;
 
-        // Ajustamos apenas se houver discrepância
-        if (totalOriginalSuccess !== enviadas || totalOriginalFailed !== falhas) {
-            // Atualizando proporcionalmente
-            updatedLogs.forEach((log, index) => {
-                // Calculamos a contribuição proporcional deste lote
-                const successRatio = totalOriginalSuccess > 0 ? log.successful / totalOriginalSuccess : 0;
-                const failRatio = totalOriginalFailed > 0 ? log.failed / totalOriginalFailed : 0;
+        for (let i = 0; i < updatedLogs.length - 1; i++) {
+            const ratio = updatedLogs[i].totalContacts / totalContatos;
+            updatedLogs[i].successful = Math.floor(enviadas * ratio);
+            updatedLogs[i].failed = Math.floor(falhas * ratio);
 
-                // Atribuímos proporcionalmente
-                updatedLogs[index] = {
-                    ...log,
-                    successful: Math.round(enviadas * successRatio),
-                    failed: Math.round(falhas * failRatio)
-                };
-            });
+            totalSuccessful += updatedLogs[i].successful;
+            totalFailed += updatedLogs[i].failed;
+        }
 
-            // Garantimos que o total seja exato
-            const totalSuccess = updatedLogs.reduce((acc, log) => acc + log.successful, 0);
-            const totalFailed = updatedLogs.reduce((acc, log) => acc + log.failed, 0);
+        // O último lote recebe o restante para garantir que a soma seja exata
+        const lastIndex = updatedLogs.length - 1;
+        updatedLogs[lastIndex].successful = enviadas - totalSuccessful;
+        updatedLogs[lastIndex].failed = falhas - totalFailed;
 
-            // Ajustamos o último lote para compensar qualquer diferença
-            if (totalSuccess !== enviadas || totalFailed !== falhas) {
-                const lastIndex = updatedLogs.length - 1;
-                updatedLogs[lastIndex] = {
-                    ...updatedLogs[lastIndex],
-                    successful: updatedLogs[lastIndex].successful + (enviadas - totalSuccess),
-                    failed: updatedLogs[lastIndex].failed + (falhas - totalFailed)
-                };
+        // Atualizamos os valores de skipped para cada lote
+        for (let i = 0; i < updatedLogs.length; i++) {
+            updatedLogs[i].skipped = Math.max(0,
+                updatedLogs[i].totalContacts - updatedLogs[i].successful - updatedLogs[i].failed);
+        }
+
+        setBatchLogs(updatedLogs);
+    }, [messageLogs, batchLogs]);
+
+    // Modificando a função sendMessageBatch para ser mais eficiente
+    const sendMessageBatch = useCallback(async (recipients: string[], messageText: string, imageUrl: string) => {
+        // Evitamos mutações de estado dentro de loops que causam renderizações em cascata
+        const newMessages: any[] = [];
+
+        // Criamos as mensagens sem atualizar o estado imediatamente
+        recipients.forEach(userId => {
+            const newMessage = {
+                id: Date.now().toString() + Math.random().toString(),
+                content: messageText,
+                image: imageUrl,
+                sender: "me",
+                recipient: userId,
+                timestamp: new Date().toISOString(),
+                status: "enviando",
+                buttons: messageButtons.length > 0 ? [...messageButtons] : undefined
+            };
+
+            newMessages.push(newMessage);
+        });
+
+        // Atualizamos o estado uma única vez com todas as novas mensagens
+        setMessages(prev => [...prev, ...newMessages]);
+
+        // Prepara os botões no formato que o Telegram espera
+        let replyMarkup = undefined;
+
+        if (messageButtons.length > 0) {
+            // Cria um array de linhas com botões
+            const inlineKeyboard = [];
+
+            // Agrupa botões em linhas de até 2 botões cada
+            for (let i = 0; i < messageButtons.length; i += 2) {
+                const row = [];
+
+                // Primeiro botão da linha
+                const button1 = messageButtons[i];
+                row.push(button1.type === "url"
+                    ? { text: button1.text, url: button1.url }
+                    : { text: button1.text, callback_data: button1.callback_data || "command" });
+
+                // Segundo botão da linha (se existir)
+                if (i + 1 < messageButtons.length) {
+                    const button2 = messageButtons[i + 1];
+                    row.push(button2.type === "url"
+                        ? { text: button2.text, url: button2.url }
+                        : { text: button2.text, callback_data: button2.callback_data || "command" });
+                }
+
+                inlineKeyboard.push(row);
             }
 
-            setBatchLogs(updatedLogs);
+            replyMarkup = {
+                inline_keyboard: inlineKeyboard
+            };
         }
-    };
 
+        // Monta o payload para envio
+        const payload = {
+            recipients,
+            message: messageText,
+            image: imageUrl,
+            platform: "telegram",
+            reply_markup: replyMarkup
+        };
+
+        try {
+            // Usa o endpoint de disparo
+            const response = await fetch("/api/disparo", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.message || "Erro ao enviar mensagens");
+            }
+
+            // Atualiza o status das mensagens de uma só vez (evita múltiplas renderizações)
+            setMessages(prev =>
+                prev.map(msg => {
+                    if (newMessages.some(newMsg => newMsg.id === msg.id)) {
+                        return { ...msg, status: "enviado" };
+                    }
+                    return msg;
+                })
+            );
+
+            // Obtém o ID do usuário atual
+            const { data: userData } = await supabase.auth.getUser();
+            const currentUserId = userData?.user?.id || "sistema";
+
+            // Salva os logs em segundo plano sem bloquear a UI
+            setTimeout(() => {
+                saveMessageLog(
+                    newMessages.map(msg => ({ ...msg, status: "enviado" })),
+                    currentUserId
+                );
+            }, 100);
+
+            return result;
+        } catch (error) {
+            console.error("Erro ao enviar mensagem:", error);
+
+            // Marca as mensagens como falha de uma só vez (evita múltiplas renderizações)
+            setMessages(prev =>
+                prev.map(msg => {
+                    if (newMessages.some(newMsg => newMsg.id === msg.id)) {
+                        return { ...msg, status: "falha" };
+                    }
+                    return msg;
+                })
+            );
+
+            throw error;
+        }
+    }, [messageButtons, supabase.auth, saveMessageLog]);
+
+    // Otimizando handleSendMessage para evitar bloqueios da UI
     const handleSendMessage = async () => {
         if (!message.trim() && !image) {
             toast({
@@ -565,7 +705,10 @@ export default function DisparoChatPage() {
 
                 if (result.failed > 0 || result.skipped > 0) {
                     setShowBatchSummary(true);
-                    await fetchMessageLogs();
+                    // Carregamos os logs em um segundo momento para não bloquear a UI
+                    setTimeout(() => {
+                        fetchMessageLogs();
+                    }, 500);
                 }
             } else {
                 // Dividir em lotes de 25 destinatários cada
@@ -583,76 +726,8 @@ export default function DisparoChatPage() {
 
                 const newBatchLogs: BatchLog[] = [];
 
-                // Processar cada lote com um intervalo entre eles
-                for (let i = 0; i < batches.length; i++) {
-                    const currentBatch = batches[i];
-
-                    setBatchStatus({
-                        current: i + 1,
-                        total: batches.length,
-                        recipients: currentBatch,
-                        progress: Math.round(((i + 1) / batches.length) * 100),
-                        status: "enviando"
-                    });
-
-                    try {
-                        const result = await sendMessageBatch(currentBatch, message, image);
-
-                        // Registra o log deste lote
-                        const batchLog: BatchLog = {
-                            batchNumber: i + 1,
-                            totalContacts: currentBatch.length,
-                            successful: result.successful || 0,
-                            failed: result.failed || 0,
-                            skipped: result.skipped || 0,
-                            timestamp: new Date().toISOString()
-                        };
-
-                        newBatchLogs.push(batchLog);
-                        setBatchLogs(prev => [...prev, batchLog]);
-
-                        // Se não for o último lote, espera antes de enviar o próximo
-                        if (i < batches.length - 1) {
-                            await new Promise(resolve => setTimeout(resolve, 30000)); // 30 segundos entre lotes
-                        }
-                    } catch (error) {
-                        console.error(`Erro no lote ${i + 1}:`, error);
-
-                        // Registra o erro no log
-                        const batchLog: BatchLog = {
-                            batchNumber: i + 1,
-                            totalContacts: currentBatch.length,
-                            successful: 0,
-                            failed: currentBatch.length,
-                            skipped: 0,
-                            error: error instanceof Error ? error.message : "Erro desconhecido",
-                            timestamp: new Date().toISOString()
-                        };
-
-                        newBatchLogs.push(batchLog);
-                        setBatchLogs(prev => [...prev, batchLog]);
-
-                        setBatchStatus(prev => prev ? {
-                            ...prev,
-                            status: "erro"
-                        } : null);
-
-                        toast({
-                            title: "Erro no lote",
-                            description: `Falha ao enviar o lote ${i + 1}. Tentando próximo lote...`,
-                            variant: "destructive",
-                        });
-
-                        // Espera um pouco antes de tentar o próximo lote
-                        await new Promise(resolve => setTimeout(resolve, 10000));
-                    }
-                }
-
-                setBatchStatus(prev => prev ? {
-                    ...prev,
-                    progress: 100,
-                    status: "concluído"
-                } : null);
+                // Processamos lotes de forma mais eficiente para não bloquear a UI
+                await processMessageBatches(batches, message, image, newBatchLogs);
 
                 toast({
                     title: "Disparo em massa concluído",
@@ -661,7 +736,9 @@ export default function DisparoChatPage() {
 
                 // Mostra a modal com o resumo completo
                 setShowBatchSummary(true);
-                await fetchMessageLogs();
+                setTimeout(() => {
+                    fetchMessageLogs();
+                }, 500);
             }
 
             // Limpa os campos
@@ -681,14 +758,6 @@ export default function DisparoChatPage() {
                 description: error instanceof Error ? error.message : "Não foi possível enviar a mensagem",
                 variant: "destructive",
             });
-
-            // Marca as mensagens como falha
-            setMessages(prev => prev.map(msg => {
-                if (msg.status === "enviando") {
-                    return { ...msg, status: "falha" };
-                }
-                return msg;
-            }));
         } finally {
             setLoading(false);
             setTimeout(() => {
@@ -698,17 +767,95 @@ export default function DisparoChatPage() {
         }
     };
 
+    // Nova função para processar lotes de mensagens sem bloquear a UI
+    const processMessageBatches = async (batches: string[][], messageText: string, imageUrl: string, batchLogs: BatchLog[]) => {
+        for (let i = 0; i < batches.length; i++) {
+            const currentBatch = batches[i];
+
+            // Atualizamos o estado de progresso antes de iniciar o processamento
+            setBatchStatus({
+                current: i + 1,
+                total: batches.length,
+                recipients: currentBatch,
+                progress: Math.round(((i + 1) / batches.length) * 100),
+                status: "enviando"
+            });
+
+            // Esperamos um frame de renderização para atualizar a UI
+            await new Promise(resolve => requestAnimationFrame(resolve));
+
+            try {
+                const result = await sendMessageBatch(currentBatch, messageText, imageUrl);
+
+                // Registra o log deste lote
+                const batchLog: BatchLog = {
+                    batchNumber: i + 1,
+                    totalContacts: currentBatch.length,
+                    successful: result.successful || 0,
+                    failed: result.failed || 0,
+                    skipped: result.skipped || 0,
+                    timestamp: new Date().toISOString()
+                };
+
+                batchLogs.push(batchLog);
+                setBatchLogs(prev => [...prev, batchLog]);
+
+                // Se não for o último lote, espera antes de enviar o próximo
+                if (i < batches.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 30000)); // 30 segundos entre lotes
+                }
+            } catch (error) {
+                console.error(`Erro no lote ${i + 1}:`, error);
+
+                // Registra o erro no log
+                const batchLog: BatchLog = {
+                    batchNumber: i + 1,
+                    totalContacts: currentBatch.length,
+                    successful: 0,
+                    failed: currentBatch.length,
+                    skipped: 0,
+                    error: error instanceof Error ? error.message : "Erro desconhecido",
+                    timestamp: new Date().toISOString()
+                };
+
+                batchLogs.push(batchLog);
+                setBatchLogs(prev => [...prev, batchLog]);
+
+                setBatchStatus(prev => prev ? {
+                    ...prev,
+                    status: "erro"
+                } : null);
+
+                toast({
+                    title: "Erro no lote",
+                    description: `Falha ao enviar o lote ${i + 1}. Tentando próximo lote...`,
+                    variant: "destructive",
+                });
+
+                // Espera um pouco antes de tentar o próximo lote
+                await new Promise(resolve => setTimeout(resolve, 10000));
+            }
+        }
+
+        // Atualizamos o status final quando terminamos todos os lotes
+        setBatchStatus(prev => prev ? {
+            ...prev,
+            progress: 100,
+            status: "concluído"
+        } : null);
+    };
+
     // Função para dividir os destinatários em lotes menores
-    const splitIntoBatches = (items: string[], batchSize: number): string[][] => {
+    const splitIntoBatches = useCallback((items: string[], batchSize: number): string[][] => {
         const batches: string[][] = [];
         for (let i = 0; i < items.length; i += batchSize) {
             batches.push(items.slice(i, i + batchSize));
         }
         return batches;
-    };
+    }, []);
 
     // Função para adicionar um botão à mensagem
-    const handleAddButton = () => {
+    const handleAddButton = useCallback(() => {
         if (!buttonText.trim()) {
             toast({
                 title: "Erro",
@@ -765,132 +912,12 @@ export default function DisparoChatPage() {
             title: "Botão adicionado",
             description: `Botão "${buttonText}" foi adicionado à mensagem`,
         });
-    };
+    }, [buttonText, buttonType, buttonUrl, commandData, toast]);
 
     // Função para remover um botão da mensagem
-    const handleRemoveButton = (id: string) => {
+    const handleRemoveButton = useCallback((id: string) => {
         setMessageButtons((prev) => prev.filter((button) => button.id !== id));
-    };
-
-    // Modificar sendMessageBatch para formatar corretamente os botões para o Telegram
-    const sendMessageBatch = async (recipients: string[], messageText: string, imageUrl: string) => {
-        const newMessages: any[] = [];
-
-        // Adiciona a mensagem simulada antes para feedback visual
-        recipients.forEach(userId => {
-            const newMessage = {
-                id: Date.now().toString() + Math.random().toString(),
-                content: messageText,
-                image: imageUrl,
-                sender: "me",
-                recipient: userId,
-                timestamp: new Date().toISOString(),
-                status: "enviando",
-                buttons: messageButtons.length > 0 ? messageButtons : undefined
-            };
-
-            newMessages.push(newMessage);
-            setMessages(prev => [...prev, newMessage]);
-        });
-
-        // Prepara os botões no formato exato que o Telegram espera
-        let replyMarkup = undefined;
-
-        if (messageButtons.length > 0) {
-            // Cria um array de linhas com botões
-            const inlineKeyboard = [];
-
-            // Agrupa botões em linhas de até 2 botões cada
-            for (let i = 0; i < messageButtons.length; i += 2) {
-                const row = [];
-
-                // Primeiro botão da linha
-                const button1 = messageButtons[i];
-                row.push(button1.type === "url"
-                    ? { text: button1.text, url: button1.url }
-                    : { text: button1.text, callback_data: button1.callback_data || "command" });
-
-                // Segundo botão da linha (se existir)
-                if (i + 1 < messageButtons.length) {
-                    const button2 = messageButtons[i + 1];
-                    row.push(button2.type === "url"
-                        ? { text: button2.text, url: button2.url }
-                        : { text: button2.text, callback_data: button2.callback_data || "command" });
-                }
-
-                inlineKeyboard.push(row);
-            }
-
-            replyMarkup = {
-                inline_keyboard: inlineKeyboard
-            };
-
-            console.log("Enviando teclado inline:", JSON.stringify(replyMarkup, null, 2));
-        }
-
-        // Monta o payload para envio
-        const payload = {
-            recipients,
-            message: messageText,
-            image: imageUrl,
-            platform: "telegram",
-            reply_markup: replyMarkup
-        };
-
-        console.log("Enviando payload para API:", JSON.stringify({
-            recipientsCount: recipients.length,
-            hasMessage: !!messageText,
-            hasImage: !!imageUrl,
-            hasButtons: !!replyMarkup,
-            buttons: messageButtons.length,
-            replyMarkup: replyMarkup
-        }));
-
-        // Usa o endpoint de disparo
-        const response = await fetch("/api/disparo", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-        });
-
-        const result = await response.json();
-
-        console.log("Resposta da API de disparo:", result);
-
-        if (!result.success) {
-            throw new Error(result.message || "Erro ao enviar mensagens");
-        }
-
-        // Atualiza o status das mensagens e mantém referência a elas para salvar logs
-        const updatedMessages = newMessages.map(msg => ({
-            ...msg,
-            status: "enviado"
-        }));
-
-        // Atualiza o estado de mensagens
-        setMessages(prev =>
-            prev.map(msg => {
-                if (msg.status === "enviando") {
-                    return { ...msg, status: "enviado" };
-                }
-                return msg;
-            })
-        );
-
-        // Obtém o ID do usuário atual
-        const { data: userData } = await supabase.auth.getUser();
-        const currentUserId = userData?.user?.id || "sistema";
-
-        // Salva os logs imediatamente para este lote
-        await saveMessageLog(updatedMessages, currentUserId);
-
-        // Limpa os botões após o envio
-        setMessageButtons([]);
-
-        return result;
-    };
+    }, []);
 
     // Modificação na parte da visualização do estado final
     const getStatusText = () => {
@@ -936,9 +963,72 @@ export default function DisparoChatPage() {
     };
 
     // Adicionar função para selecionar comando ao clicar
-    const handleSelectCommand = (command: string) => {
+    const handleSelectCommand = useCallback((command: string) => {
         setCommandData(command);
-    };
+    }, []);
+
+    // Função para adicionar emoji à mensagem
+    const handleEmojiSelect = useCallback((emoji: any) => {
+        if (showAdvancedEditor) {
+            setAdvancedMessage((prev) => prev + emoji.native);
+        } else {
+            setMessage((prev) => prev + emoji.native);
+        }
+        setShowEmojiPicker(false);
+    }, [showAdvancedEditor]);
+
+    // Função para abrir editor avançado
+    const openAdvancedEditor = useCallback(() => {
+        setAdvancedMessage(message);
+        setShowAdvancedEditor(true);
+    }, [message]);
+
+    // Função para aplicar a mensagem do editor avançado
+    const applyAdvancedMessage = useCallback(() => {
+        setMessage(advancedMessage);
+        setShowAdvancedEditor(false);
+    }, [advancedMessage]);
+
+    // Modificando o renderizador de mensagens para usar virtualização
+    const renderMessages = useMemo(() => {
+        if (visibleMessages.length === 0) {
+            return (
+                <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                        <MessageSquare className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-medium">Envie uma mensagem</h3>
+                    <p className="text-muted-foreground max-w-sm mt-2">
+                        Comece enviando uma mensagem para {selectedContact ? selectedContact.name : "os contatos selecionados"}.
+                    </p>
+                </div>
+            );
+        }
+
+        return (
+            <>
+                {visibleMessages.length < messages.length && (
+                    <div
+                        className="text-center py-2 text-sm text-primary cursor-pointer hover:underline"
+                        onClick={handleScrollToTop}
+                    >
+                        Carregar mais mensagens ({messages.length - visibleMessages.length} anteriores)
+                    </div>
+                )}
+                {visibleMessages.map((msg) => (
+                    <ChatBubble
+                        key={msg.id}
+                        message={{
+                            ...msg,
+                            recipient_name: contacts.find(c => c.user_id === msg.recipient)?.name
+                        }}
+                        isOutgoing={msg.sender === "me"}
+                    />
+                ))}
+                <div ref={messageEndRef} />
+            </>
+        );
+    }, [visibleMessages, messages.length, selectedContact, contacts, handleScrollToTop]);
 
     return (
         <div className="container mx-auto py-6">
@@ -1100,29 +1190,7 @@ export default function DisparoChatPage() {
 
                             <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
                                 <ScrollArea className="h-full pr-4">
-                                    {messages.length === 0 ? (
-                                        <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                                                <MessageSquare className="h-8 w-8 text-primary" />
-                                            </div>
-                                            <h3 className="text-lg font-medium">Envie uma mensagem</h3>
-                                            <p className="text-muted-foreground max-w-sm mt-2">
-                                                Comece enviando uma mensagem para {selectedContact ? selectedContact.name : "os contatos selecionados"}.
-                                            </p>
-                                        </div>
-                                    ) : (
-                                        messages.map((msg) => (
-                                            <ChatBubble
-                                                key={msg.id}
-                                                message={{
-                                                    ...msg,
-                                                    recipient_name: contacts.find(c => c.user_id === msg.recipient)?.name
-                                                }}
-                                                isOutgoing={msg.sender === "me"}
-                                            />
-                                        ))
-                                    )}
-                                    <div ref={messageEndRef} />
+                                    {renderMessages}
                                 </ScrollArea>
                             </CardContent>
 
@@ -1235,6 +1303,62 @@ export default function DisparoChatPage() {
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                     <p>Escolher modelo</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                        {/* Botão de emoji */}
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                                            >
+                                                                <span className="text-xl" role="img" aria-label="emoji">😊</span>
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0 border-none" align="start" side="top">
+                                                            <div className="bg-background border rounded-lg shadow-lg">
+                                                                {data && Picker && (
+                                                                    <Picker
+                                                                        data={data}
+                                                                        onEmojiSelect={handleEmojiSelect}
+                                                                        theme="light"
+                                                                        set="native"
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Adicionar emoji</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                        {/* Botão de editor avançado */}
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={openAdvancedEditor}
+                                                        className="text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-maximize-2">
+                                                            <polyline points="15 3 21 3 21 9"></polyline>
+                                                            <polyline points="9 21 3 21 3 15"></polyline>
+                                                            <line x1="21" y1="3" x2="14" y2="10"></line>
+                                                            <line x1="3" y1="21" x2="10" y2="14"></line>
+                                                        </svg>
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Editor avançado</p>
                                                 </TooltipContent>
                                             </Tooltip>
                                         </TooltipProvider>
@@ -1986,6 +2110,174 @@ export default function DisparoChatPage() {
                             Cancelar
                         </Button>
                         <Button onClick={handleAddButton}>Adicionar botão</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog para editor avançado de mensagens */}
+            <Dialog open={showAdvancedEditor} onOpenChange={setShowAdvancedEditor}>
+                <DialogContent className="sm:max-w-[800px] max-h-[80vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Editor Avançado de Mensagens</DialogTitle>
+                        <DialogDescription>
+                            Monte sua mensagem com mais espaço e recursos adicionais
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex-1 overflow-hidden flex flex-col mt-4 gap-4">
+                        <div className="relative">
+                            <Textarea
+                                placeholder="Digite sua mensagem..."
+                                className="min-h-[200px] p-4 resize-none font-medium leading-relaxed"
+                                value={advancedMessage}
+                                onChange={(e) => setAdvancedMessage(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="flex items-center gap-1"
+                                    >
+                                        <span role="img" aria-label="emoji">😊</span>
+                                        Emojis
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 border-none" align="start">
+                                    <div className="bg-background border rounded-lg shadow-lg">
+                                        {data && Picker && (
+                                            <Picker
+                                                data={data}
+                                                onEmojiSelect={handleEmojiSelect}
+                                                theme="light"
+                                                set="native"
+                                            />
+                                        )}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowButtonDialog(true)}
+                                className="flex items-center gap-1"
+                            >
+                                <LinkIcon className="h-4 w-4" />
+                                Adicionar Botão
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowImagePicker(true)}
+                                className="flex items-center gap-1"
+                            >
+                                <ImageIcon className="h-4 w-4" />
+                                Adicionar Imagem
+                            </Button>
+
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowTemplatesDialog(true)}
+                                className="flex items-center gap-1"
+                            >
+                                <FileText className="h-4 w-4" />
+                                Carregar Template
+                            </Button>
+                        </div>
+
+                        {/* Prévia da mensagem */}
+                        <Card>
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-sm">Prévia da Mensagem</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="bg-primary/5 p-3 rounded-lg border">
+                                    <ScrollArea className="h-[150px]">
+                                        <div className="whitespace-pre-wrap text-sm">
+                                            {advancedMessage || <span className="text-muted-foreground italic">Sem conteúdo ainda...</span>}
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Botões e imagem adicionados */}
+                        {(messageButtons.length > 0 || image) && (
+                            <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/5">
+                                {image && (
+                                    <div className="flex flex-col items-start gap-1">
+                                        <span className="text-xs text-muted-foreground mb-1">Imagem anexada:</span>
+                                        <div className="relative w-32 h-32">
+                                            <Image
+                                                width={128}
+                                                height={128}
+                                                src={image}
+                                                alt="Imagem anexada"
+                                                className="rounded-md object-cover"
+                                            />
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                className="h-6 w-6 absolute top-1 right-1 opacity-90"
+                                                onClick={() => setImage("")}
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {messageButtons.length > 0 && (
+                                    <div className="flex flex-col items-start gap-1">
+                                        <span className="text-xs text-muted-foreground mb-1">Botões adicionados:</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {messageButtons.map((button) => (
+                                                <div key={button.id} className="bg-primary/10 rounded-md px-3 py-1.5 flex items-center gap-2 border border-primary/20">
+                                                    {button.type === "url" ? (
+                                                        <LinkIcon className="h-3.5 w-3.5 text-primary" />
+                                                    ) : (
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                                                            <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
+                                                        </svg>
+                                                    )}
+                                                    <span className="text-sm">{button.text}</span>
+                                                    <Badge variant="outline" className="text-xs h-5 px-1.5">
+                                                        {button.type === "url" ? "Link" : "Comando"}
+                                                    </Badge>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-5 w-5 p-0 hover:text-destructive"
+                                                        onClick={() => handleRemoveButton(button.id)}
+                                                    >
+                                                        <X className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="mt-2">
+                        <Button variant="secondary" onClick={() => setShowAdvancedEditor(false)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={applyAdvancedMessage}>
+                            Aplicar Mensagem
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
