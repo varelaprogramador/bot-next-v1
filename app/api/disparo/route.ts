@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { auth } from "@clerk/nextjs/server";
 
 interface DisparoRequest {
   recipients: string[];
   message: string;
   image?: string;
   platform?: string;
+  reply_markup?: {
+    inline_keyboard: Array<
+      Array<{
+        text: string;
+        url?: string;
+        callback_data?: string;
+      }>
+    >;
+  };
 }
 
 const RATE_LIMIT_PER_MINUTE = 50; // Limite de mensagens por minuto
@@ -15,18 +25,24 @@ export async function POST(request: Request) {
     const supabase = await createServerSupabaseClient();
 
     // Verifica se o usuário está autenticado
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json(
         { success: false, message: "Não autorizado" },
         { status: 401 }
       );
     }
 
-    const userId = session.user.id;
     const body: DisparoRequest = await request.json();
+
+    // Log para debug
+    console.log("Recebido na API de disparo:", {
+      recipients: body.recipients.length,
+      hasMessage: !!body.message,
+      hasImage: !!body.image,
+      hasButtons: !!body.reply_markup,
+      platform: body.platform,
+    });
 
     // Valida o corpo da requisição
     if (
@@ -98,7 +114,8 @@ export async function POST(request: Request) {
       platform: string,
       userId: string,
       message: string,
-      image?: string
+      image?: string,
+      reply_markup?: any
     ) => {
       try {
         let endpoint = "";
@@ -114,6 +131,29 @@ export async function POST(request: Request) {
             endpoint = "/api/webhooks/telegram"; // Padrão para telegram
         }
 
+        // Prepara o payload com botões, se existirem
+        const payload: any = {
+          disparo: true,
+          userId,
+          message,
+          image,
+        };
+
+        // Adiciona reply_markup se existir
+        if (reply_markup) {
+          payload.reply_markup = reply_markup;
+        }
+
+        console.log(
+          `Enviando para ${platform}, payload:`,
+          JSON.stringify({
+            userId,
+            hasMessage: !!message,
+            hasImage: !!image,
+            hasButtons: !!reply_markup,
+          })
+        );
+
         const response = await fetch(
           new URL(endpoint, request.url).toString(),
           {
@@ -121,12 +161,7 @@ export async function POST(request: Request) {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-              disparo: true,
-              userId,
-              message,
-              image,
-            }),
+            body: JSON.stringify(payload),
           }
         );
 
@@ -149,7 +184,8 @@ export async function POST(request: Request) {
           body.platform || "telegram",
           recipient,
           body.message,
-          body.image
+          body.image,
+          body.reply_markup
         )
       )
     );

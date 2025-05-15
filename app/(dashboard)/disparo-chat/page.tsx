@@ -12,6 +12,7 @@ import {
     CardHeader,
     CardTitle,
     CardFooter,
+    CardDescription,
 } from "@/app/components/ui/card";
 import {
     Dialog,
@@ -28,27 +29,18 @@ import {
     TabsList,
     TabsTrigger,
 } from "@/app/components/ui/tabs";
-import {
-    Send,
-    Search,
-    PlusCircle,
-    Image as ImageIcon,
-    Users,
-    Save,
-    FileText,
-    Paperclip,
-    Trash,
-    Plus,
-    UserPlus,
-    Loader2,
-} from "lucide-react";
+import { Send, Search, PlusCircle, ImageIcon, Users, Save, FileText, Paperclip, Trash, Plus, UserPlus, Loader2, Clock, CheckCircle2, AlertCircle, LinkIcon, X, MessageSquare, BarChart3, Settings, ChevronRight, Info } from 'lucide-react';
 import { toast } from "@/hooks/use-toast";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 import GaleriaPopup from "@/app/components/popup-imagens";
 import ChatBubble from "./_components/chat-bubble";
 import ContactList from "./_components/contact-list";
 import MessagePreview from "./_components/message-preview";
-
+import { Progress } from "@/app/components/ui/progress";
+import { Separator } from "@/app/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip";
+import Image from "next/image";
 interface Contact {
     id: string;
     name: string;
@@ -64,6 +56,44 @@ interface MessageTemplate {
     content: string;
     image_url?: string;
     created_at: string;
+}
+
+interface BatchStatus {
+    current: number;
+    total: number;
+    recipients: string[];
+    progress: number;
+    status: "pendente" | "enviando" | "concluído" | "erro";
+}
+
+interface BatchLog {
+    batchNumber: number;
+    totalContacts: number;
+    successful: number;
+    failed: number;
+    skipped: number;
+    error?: string;
+    timestamp: string;
+}
+
+interface MessageLog {
+    id?: string;
+    recipient_id: string;
+    recipient_name?: string;
+    message_content: string;
+    image_url?: string;
+    status: string;
+    platform: string;
+    created_at: string;
+    response_data?: any;
+}
+
+interface ButtonAction {
+    id: string;
+    text: string;
+    url?: string;
+    callback_data?: string;
+    type: "url" | "command";
 }
 
 export default function DisparoChatPage() {
@@ -90,6 +120,19 @@ export default function DisparoChatPage() {
     const [loadingContacts, setLoadingContacts] = useState(true);
     const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
     const [showMultipleContactsDialog, setShowMultipleContactsDialog] = useState(false);
+    const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null);
+    const [showBatchProgress, setShowBatchProgress] = useState(false);
+    const [batchLogs, setBatchLogs] = useState<BatchLog[]>([]);
+    const [showBatchSummary, setShowBatchSummary] = useState(false);
+    const [messageLogs, setMessageLogs] = useState<MessageLog[]>([]);
+    const [loadingLogs, setLoadingLogs] = useState(false);
+    const [activeTab, setActiveTab] = useState("resumo");
+    const [showButtonDialog, setShowButtonDialog] = useState(false);
+    const [buttonText, setButtonText] = useState("");
+    const [buttonUrl, setButtonUrl] = useState("");
+    const [buttonType, setButtonType] = useState<"url" | "command">("url");
+    const [commandData, setCommandData] = useState("");
+    const [messageButtons, setMessageButtons] = useState<ButtonAction[]>([]);
 
     // Carrega contatos
     useEffect(() => {
@@ -114,6 +157,23 @@ export default function DisparoChatPage() {
     useEffect(() => {
         messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
+
+    // Carrega logs quando a modal é aberta
+    useEffect(() => {
+        if (showBatchSummary) {
+            fetchMessageLogs().then(() => {
+                // Após carregar os logs, sincronizamos com o resumo
+                setTimeout(syncResumoWithLogs, 500);
+            });
+        }
+    }, [showBatchSummary]);
+
+    // Sincroniza resumo quando logs são atualizados
+    useEffect(() => {
+        if (messageLogs.length > 0 && batchLogs.length > 0) {
+            syncResumoWithLogs();
+        }
+    }, [messageLogs]);
 
     const loadContacts = async () => {
         setLoadingContacts(true);
@@ -265,6 +325,199 @@ export default function DisparoChatPage() {
         }
     };
 
+    // Função para salvar logs de mensagens
+    const saveMessageLog = async (messages: any[], user_id: string) => {
+        try {
+            // Filtra apenas as mensagens que precisam ser salvas
+            const messagesToSave = messages.filter(msg =>
+                (msg.status === "enviado" || msg.status === "falha") &&
+                msg.recipient // Garante que só salvamos mensagens com destinatário definido
+            );
+
+            console.log("Mensagens filtradas para salvar:", messagesToSave.length);
+
+            if (messagesToSave.length === 0) {
+                console.log("Nenhuma mensagem para salvar");
+                return;
+            }
+
+            // Prepara os dados para inserção
+            const logsToInsert = messagesToSave.map(msg => ({
+                user_id,
+                recipient_id: msg.recipient,
+                platform: "telegram",
+                message_content: msg.content,
+                image_url: msg.image || null,
+                status: msg.status === "enviado" ? "enviado" : "falha",
+                response: JSON.stringify({
+                    sent_at: msg.timestamp,
+                    message_id: msg.id
+                })
+            }));
+
+            console.log("Dados preparados para inserção:", logsToInsert);
+
+            // Salva o log de mensagens no banco de dados
+            const { data, error } = await supabase
+                .from("message_logs")
+                .insert(logsToInsert)
+                .select();
+
+            if (error) {
+                console.error("Erro SQL ao salvar logs:", error);
+                throw error;
+            }
+
+            console.log("Logs de mensagens salvos com sucesso:", data?.length);
+        } catch (error) {
+            console.error("Erro ao salvar logs de mensagens:", error);
+        }
+    };
+
+    // Função para carregar logs de mensagens
+    const fetchMessageLogs = async () => {
+        setLoadingLogs(true);
+        try {
+            // Consulta os logs de mensagens mais recentes relacionados ao disparo atual
+            const { data, error } = await supabase
+                .from("message_logs")
+                .select("*")
+                .order('created_at', { ascending: false })
+                .limit(100); // Limitando para melhor performance
+
+            if (error) throw error;
+
+            console.log("Logs recuperados do banco:", data?.length);
+
+            if (!data || data.length === 0) {
+                setMessageLogs([]);
+                setLoadingLogs(false);
+                return;
+            }
+
+            // Busca os nomes dos usuários para os IDs encontrados
+            const uniqueRecipientIds = [...new Set(data.map(log => log.recipient_id))];
+
+            // Busca os dados dos usuários
+            const { data: usersData, error: usersError } = await supabase
+                .from("users")
+                .select("user_id, username")
+                .in('user_id', uniqueRecipientIds);
+
+            // Cria um mapa de IDs para nomes para facilitar o lookup
+            const userMap = new Map();
+            if (usersData && !usersError) {
+                usersData.forEach(user => {
+                    userMap.set(user.user_id, user.username);
+                });
+            }
+
+            // Formata os logs para exibição
+            const formattedLogs: MessageLog[] = data.map(log => {
+                // Tenta encontrar o nome do usuário no mapa, ou usa o ID como nome
+                const userName = userMap.get(log.recipient_id) || 'Desconhecido';
+
+                // Tenta parse do JSON de resposta (se existir)
+                let responseData = {};
+                try {
+                    if (log.response) {
+                        responseData = JSON.parse(log.response);
+                    }
+                } catch (e) {
+                    console.log("Erro ao fazer parse da resposta:", e);
+                }
+
+                return {
+                    id: log.id,
+                    recipient_id: log.recipient_id,
+                    recipient_name: userName,
+                    message_content: log.message_content,
+                    image_url: log.image_url,
+                    status: log.status,
+                    platform: log.platform,
+                    created_at: new Date(log.created_at).toLocaleString(),
+                    response_data: responseData
+                };
+            });
+
+            setMessageLogs(formattedLogs);
+        } catch (error) {
+            console.error("Erro ao carregar logs de mensagens:", error);
+            toast({
+                title: "Erro",
+                description: "Não foi possível carregar os logs de mensagens",
+                variant: "destructive",
+            });
+        } finally {
+            setLoadingLogs(false);
+        }
+    };
+
+    // Função para atualizar os resumos com base nos logs reais
+    const syncResumoWithLogs = async () => {
+        // Se não há logs de mensagens ou lotes, não faz nada
+        if (messageLogs.length === 0 || batchLogs.length === 0) return;
+
+        // Conta quantas mensagens foram realmente enviadas com sucesso
+        const enviadas = messageLogs.filter(log => log.status === "enviado").length;
+        const falhas = messageLogs.filter(log => log.status === "falha").length;
+
+        console.log(`Atualizando resumo baseado em ${enviadas} enviadas e ${falhas} falhas`);
+
+        // Se temos apenas 1 lote, atualizamos diretamente
+        if (batchLogs.length === 1) {
+            const totalContatos = batchLogs[0].totalContacts;
+            setBatchLogs([{
+                ...batchLogs[0],
+                successful: enviadas,
+                failed: falhas,
+                skipped: Math.max(0, totalContatos - enviadas - falhas)
+            }]);
+            return;
+        }
+
+        // Para múltiplos lotes, manteremos a distribuição, 
+        // mas ajustaremos os totais para refletir o estado real
+        const updatedLogs = [...batchLogs];
+
+        // Total original de todos os lotes
+        const totalOriginalSuccess = updatedLogs.reduce((acc, log) => acc + log.successful, 0);
+        const totalOriginalFailed = updatedLogs.reduce((acc, log) => acc + log.failed, 0);
+
+        // Ajustamos apenas se houver discrepância
+        if (totalOriginalSuccess !== enviadas || totalOriginalFailed !== falhas) {
+            // Atualizando proporcionalmente
+            updatedLogs.forEach((log, index) => {
+                // Calculamos a contribuição proporcional deste lote
+                const successRatio = totalOriginalSuccess > 0 ? log.successful / totalOriginalSuccess : 0;
+                const failRatio = totalOriginalFailed > 0 ? log.failed / totalOriginalFailed : 0;
+
+                // Atribuímos proporcionalmente
+                updatedLogs[index] = {
+                    ...log,
+                    successful: Math.round(enviadas * successRatio),
+                    failed: Math.round(falhas * failRatio)
+                };
+            });
+
+            // Garantimos que o total seja exato
+            const totalSuccess = updatedLogs.reduce((acc, log) => acc + log.successful, 0);
+            const totalFailed = updatedLogs.reduce((acc, log) => acc + log.failed, 0);
+
+            // Ajustamos o último lote para compensar qualquer diferença
+            if (totalSuccess !== enviadas || totalFailed !== falhas) {
+                const lastIndex = updatedLogs.length - 1;
+                updatedLogs[lastIndex] = {
+                    ...updatedLogs[lastIndex],
+                    successful: updatedLogs[lastIndex].successful + (enviadas - totalSuccess),
+                    failed: updatedLogs[lastIndex].failed + (falhas - totalFailed)
+                };
+            }
+
+            setBatchLogs(updatedLogs);
+        }
+    };
+
     const handleSendMessage = async () => {
         if (!message.trim() && !image) {
             toast({
@@ -285,6 +538,8 @@ export default function DisparoChatPage() {
         }
 
         setLoading(true);
+        // Limpa logs anteriores
+        setBatchLogs([]);
 
         try {
             // Se tiver um contato selecionado, adiciona ele à lista
@@ -292,73 +547,127 @@ export default function DisparoChatPage() {
                 ? [selectedContact.user_id]
                 : selectedContacts;
 
-            // Adiciona a mensagem simulada antes para feedback visual
-            for (const userId of recipients) {
-                const newMessage = {
-                    id: Date.now().toString(),
-                    content: message,
-                    image: image,
-                    sender: "me",
-                    timestamp: new Date().toISOString(),
-                    status: "enviando"
+            // Se for apenas um destinatário ou poucos, envia normalmente
+            if (recipients.length <= 25) {
+                const result = await sendMessageBatch(recipients, message, image);
+
+                // Registra o log deste lote
+                const batchLog: BatchLog = {
+                    batchNumber: 1,
+                    totalContacts: recipients.length,
+                    successful: result.successful || 0,
+                    failed: result.failed || 0,
+                    skipped: result.skipped || 0,
+                    timestamp: new Date().toISOString()
                 };
 
-                setMessages(prev => [...prev, newMessage]);
-            }
+                setBatchLogs([batchLog]);
 
-            // Usa o novo endpoint otimizado
-            const response = await fetch("/api/disparo", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    recipients,
-                    message,
-                    image,
-                    platform: "telegram", // Ou adicione opção para escolher a plataforma
-                }),
-            });
-
-            const result = await response.json();
-
-            if (!result.success) {
-                throw new Error(result.message || "Erro ao enviar mensagens");
-            }
-
-            // Atualiza o status das mensagens
-            setMessages(prev => prev.map(msg => {
-                if (msg.status === "enviando") {
-                    return { ...msg, status: "enviado" };
+                if (result.failed > 0 || result.skipped > 0) {
+                    setShowBatchSummary(true);
+                    await fetchMessageLogs();
                 }
-                return msg;
-            }));
-
-            if (result.failed > 0) {
-                toast({
-                    title: "Atenção",
-                    description: `${result.successful} mensagens enviadas com sucesso. ${result.failed} falhas.`,
-                    variant: "default",
-                });
             } else {
-                toast({
-                    title: "Sucesso",
-                    description: `${result.successful} ${result.successful === 1 ? 'mensagem enviada' : 'mensagens enviadas'} com sucesso.`,
-                });
-            }
+                // Dividir em lotes de 25 destinatários cada
+                const batches = splitIntoBatches(recipients, 25);
+                setShowBatchProgress(true);
 
-            // Se houver mensagens ignoradas devido ao limite de taxa
-            if (result.skipped > 0) {
-                toast({
-                    title: "Aviso de limite",
-                    description: `${result.skipped} mensagens não foram enviadas devido ao limite de taxa. Restam ${result.remaining} mensagens disponíveis.`,
-                    variant: "destructive",
+                // Configurar estado inicial de lotes
+                setBatchStatus({
+                    current: 1,
+                    total: batches.length,
+                    recipients: batches[0],
+                    progress: 0,
+                    status: "pendente"
                 });
+
+                const newBatchLogs: BatchLog[] = [];
+
+                // Processar cada lote com um intervalo entre eles
+                for (let i = 0; i < batches.length; i++) {
+                    const currentBatch = batches[i];
+
+                    setBatchStatus({
+                        current: i + 1,
+                        total: batches.length,
+                        recipients: currentBatch,
+                        progress: Math.round(((i + 1) / batches.length) * 100),
+                        status: "enviando"
+                    });
+
+                    try {
+                        const result = await sendMessageBatch(currentBatch, message, image);
+
+                        // Registra o log deste lote
+                        const batchLog: BatchLog = {
+                            batchNumber: i + 1,
+                            totalContacts: currentBatch.length,
+                            successful: result.successful || 0,
+                            failed: result.failed || 0,
+                            skipped: result.skipped || 0,
+                            timestamp: new Date().toISOString()
+                        };
+
+                        newBatchLogs.push(batchLog);
+                        setBatchLogs(prev => [...prev, batchLog]);
+
+                        // Se não for o último lote, espera antes de enviar o próximo
+                        if (i < batches.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 30000)); // 30 segundos entre lotes
+                        }
+                    } catch (error) {
+                        console.error(`Erro no lote ${i + 1}:`, error);
+
+                        // Registra o erro no log
+                        const batchLog: BatchLog = {
+                            batchNumber: i + 1,
+                            totalContacts: currentBatch.length,
+                            successful: 0,
+                            failed: currentBatch.length,
+                            skipped: 0,
+                            error: error instanceof Error ? error.message : "Erro desconhecido",
+                            timestamp: new Date().toISOString()
+                        };
+
+                        newBatchLogs.push(batchLog);
+                        setBatchLogs(prev => [...prev, batchLog]);
+
+                        setBatchStatus(prev => prev ? {
+                            ...prev,
+                            status: "erro"
+                        } : null);
+
+                        toast({
+                            title: "Erro no lote",
+                            description: `Falha ao enviar o lote ${i + 1}. Tentando próximo lote...`,
+                            variant: "destructive",
+                        });
+
+                        // Espera um pouco antes de tentar o próximo lote
+                        await new Promise(resolve => setTimeout(resolve, 10000));
+                    }
+                }
+
+                setBatchStatus(prev => prev ? {
+                    ...prev,
+                    progress: 100,
+                    status: "concluído"
+                } : null);
+
+                toast({
+                    title: "Disparo em massa concluído",
+                    description: `Todos os ${recipients.length} destinatários foram processados.`
+                });
+
+                // Mostra a modal com o resumo completo
+                setShowBatchSummary(true);
+                await fetchMessageLogs();
             }
 
             // Limpa os campos
             setMessage("");
             setImage("");
+            setMessageButtons([]);
 
             // Se estava em modo de múltiplos contatos, limpa a seleção
             if (selectedContacts.length > 0) {
@@ -382,35 +691,361 @@ export default function DisparoChatPage() {
             }));
         } finally {
             setLoading(false);
+            setTimeout(() => {
+                setShowBatchProgress(false);
+                setBatchStatus(null);
+            }, 3000);
         }
     };
 
+    // Função para dividir os destinatários em lotes menores
+    const splitIntoBatches = (items: string[], batchSize: number): string[][] => {
+        const batches: string[][] = [];
+        for (let i = 0; i < items.length; i += batchSize) {
+            batches.push(items.slice(i, i + batchSize));
+        }
+        return batches;
+    };
+
+    // Função para adicionar um botão à mensagem
+    const handleAddButton = () => {
+        if (!buttonText.trim()) {
+            toast({
+                title: "Erro",
+                description: "Preencha o texto do botão",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        if (buttonType === "url") {
+            if (!buttonUrl.trim()) {
+                toast({
+                    title: "Erro",
+                    description: "Preencha o URL do botão",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            if (!buttonUrl.startsWith("http://") && !buttonUrl.startsWith("https://")) {
+                toast({
+                    title: "Aviso",
+                    description: "URLs devem começar com http:// ou https://",
+                    variant: "default",
+                });
+                setButtonUrl(`https://${buttonUrl}`);
+                return;
+            }
+        } else if (buttonType === "command") {
+            if (!commandData.trim()) {
+                toast({
+                    title: "Erro",
+                    description: "Preencha o comando do botão",
+                    variant: "destructive",
+                });
+                return;
+            }
+        }
+
+        const newButton: ButtonAction = {
+            id: Date.now().toString(),
+            text: buttonText,
+            type: buttonType,
+            ...(buttonType === "url" ? { url: buttonUrl } : { callback_data: commandData }),
+        };
+
+        setMessageButtons((prev) => [...prev, newButton]);
+        setButtonText("");
+        setButtonUrl("");
+        setCommandData("");
+        setShowButtonDialog(false);
+
+        toast({
+            title: "Botão adicionado",
+            description: `Botão "${buttonText}" foi adicionado à mensagem`,
+        });
+    };
+
+    // Função para remover um botão da mensagem
+    const handleRemoveButton = (id: string) => {
+        setMessageButtons((prev) => prev.filter((button) => button.id !== id));
+    };
+
+    // Modificar sendMessageBatch para formatar corretamente os botões para o Telegram
+    const sendMessageBatch = async (recipients: string[], messageText: string, imageUrl: string) => {
+        const newMessages: any[] = [];
+
+        // Adiciona a mensagem simulada antes para feedback visual
+        recipients.forEach(userId => {
+            const newMessage = {
+                id: Date.now().toString() + Math.random().toString(),
+                content: messageText,
+                image: imageUrl,
+                sender: "me",
+                recipient: userId,
+                timestamp: new Date().toISOString(),
+                status: "enviando",
+                buttons: messageButtons.length > 0 ? messageButtons : undefined
+            };
+
+            newMessages.push(newMessage);
+            setMessages(prev => [...prev, newMessage]);
+        });
+
+        // Prepara os botões no formato exato que o Telegram espera
+        let replyMarkup = undefined;
+
+        if (messageButtons.length > 0) {
+            // Cria um array de linhas com botões
+            const inlineKeyboard = [];
+
+            // Agrupa botões em linhas de até 2 botões cada
+            for (let i = 0; i < messageButtons.length; i += 2) {
+                const row = [];
+
+                // Primeiro botão da linha
+                const button1 = messageButtons[i];
+                row.push(button1.type === "url"
+                    ? { text: button1.text, url: button1.url }
+                    : { text: button1.text, callback_data: button1.callback_data || "command" });
+
+                // Segundo botão da linha (se existir)
+                if (i + 1 < messageButtons.length) {
+                    const button2 = messageButtons[i + 1];
+                    row.push(button2.type === "url"
+                        ? { text: button2.text, url: button2.url }
+                        : { text: button2.text, callback_data: button2.callback_data || "command" });
+                }
+
+                inlineKeyboard.push(row);
+            }
+
+            replyMarkup = {
+                inline_keyboard: inlineKeyboard
+            };
+
+            console.log("Enviando teclado inline:", JSON.stringify(replyMarkup, null, 2));
+        }
+
+        // Monta o payload para envio
+        const payload = {
+            recipients,
+            message: messageText,
+            image: imageUrl,
+            platform: "telegram",
+            reply_markup: replyMarkup
+        };
+
+        console.log("Enviando payload para API:", JSON.stringify({
+            recipientsCount: recipients.length,
+            hasMessage: !!messageText,
+            hasImage: !!imageUrl,
+            hasButtons: !!replyMarkup,
+            buttons: messageButtons.length,
+            replyMarkup: replyMarkup
+        }));
+
+        // Usa o endpoint de disparo
+        const response = await fetch("/api/disparo", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        console.log("Resposta da API de disparo:", result);
+
+        if (!result.success) {
+            throw new Error(result.message || "Erro ao enviar mensagens");
+        }
+
+        // Atualiza o status das mensagens e mantém referência a elas para salvar logs
+        const updatedMessages = newMessages.map(msg => ({
+            ...msg,
+            status: "enviado"
+        }));
+
+        // Atualiza o estado de mensagens
+        setMessages(prev =>
+            prev.map(msg => {
+                if (msg.status === "enviando") {
+                    return { ...msg, status: "enviado" };
+                }
+                return msg;
+            })
+        );
+
+        // Obtém o ID do usuário atual
+        const { data: userData } = await supabase.auth.getUser();
+        const currentUserId = userData?.user?.id || "sistema";
+
+        // Salva os logs imediatamente para este lote
+        await saveMessageLog(updatedMessages, currentUserId);
+
+        // Limpa os botões após o envio
+        setMessageButtons([]);
+
+        return result;
+    };
+
+    // Modificação na parte da visualização do estado final
+    const getStatusText = () => {
+        // Verifica se há mensagens nos logs
+        if (messageLogs.length > 0) {
+            // Se há mensagens nos logs, baseia-se no status real das mensagens
+            const falhas = messageLogs.filter(log => log.status === "falha").length;
+            if (falhas > 0) {
+                return {
+                    icon: <AlertCircle className="h-12 w-12 text-amber-500 mb-2" />,
+                    title: "Concluído com avisos",
+                    description: "Algumas mensagens não puderam ser enviadas"
+                };
+            } else {
+                return {
+                    icon: <CheckCircle2 className="h-12 w-12 text-green-500 mb-2" />,
+                    title: "Disparo concluído com sucesso",
+                    description: "Todas as mensagens foram enviadas"
+                };
+            }
+        } else {
+            // Se não há dados nos logs, baseia-se nas estimativas
+            if (batchLogs.some(log => log.failed > 0 || log.error)) {
+                return {
+                    icon: <AlertCircle className="h-12 w-12 text-amber-500 mb-2" />,
+                    title: "Concluído com avisos",
+                    description: "Algumas mensagens não puderam ser enviadas"
+                };
+            } else if (batchLogs.some(log => log.skipped > 0)) {
+                return {
+                    icon: <AlertCircle className="h-12 w-12 text-amber-500 mb-2" />,
+                    title: "Concluído com limitações",
+                    description: "Algumas mensagens foram ignoradas devido ao limite de taxa"
+                };
+            } else {
+                return {
+                    icon: <CheckCircle2 className="h-12 w-12 text-green-500 mb-2" />,
+                    title: "Disparo concluído com sucesso",
+                    description: "Todas as mensagens foram enviadas"
+                };
+            }
+        }
+    };
+
+    // Adicionar função para selecionar comando ao clicar
+    const handleSelectCommand = (command: string) => {
+        setCommandData(command);
+    };
+
     return (
-        <div className="container mx-auto py-4">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[80vh]">
+        <div className="container mx-auto py-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold">Disparador de Mensagens</h1>
+                    <p className="text-muted-foreground">Envie mensagens para contatos individuais ou em massa</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" size="icon">
+                                    <Settings className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Configurações</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="outline" size="icon" onClick={() => setShowBatchSummary(true)}>
+                                    <BarChart3 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Ver estatísticas</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            </div>
+
+            {/* Indicador de progresso de lotes */}
+            {showBatchProgress && batchStatus && (
+                <div className="fixed top-4 right-4 bg-background border rounded-lg shadow-lg p-4 z-50 w-80">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium">Disparo em lotes</h3>
+                        <Badge variant={
+                            batchStatus.status === "enviando" ? "default" :
+                                batchStatus.status === "concluído" ? "outline" : "destructive"
+                        }>
+                            {batchStatus.status === "enviando" ? "Enviando" :
+                                batchStatus.status === "concluído" ? "Concluído" : "Erro"}
+                        </Badge>
+                    </div>
+                    <div className="space-y-2">
+                        <Progress value={batchStatus.progress} className="h-2" />
+                        <div className="text-sm text-muted-foreground flex items-center justify-between">
+                            <span>Lote {batchStatus.current} de {batchStatus.total}</span>
+                            <span>{batchStatus.recipients.length} contatos</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-10rem)]">
                 {/* Lista de contatos */}
                 <Card className="lg:col-span-4 flex flex-col h-full overflow-hidden">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-2 space-y-3">
                         <div className="flex justify-between items-center">
-                            <CardTitle>Contatos</CardTitle>
+                            <CardTitle className="text-xl flex items-center gap-2">
+                                <Users className="h-5 w-5 text-primary" />
+                                Contatos
+                            </CardTitle>
                             <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => setShowAddContactDialog(true)}
-                                >
-                                    <UserPlus className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() => setShowMultipleContactsDialog(true)}
-                                >
-                                    <Users className="h-4 w-4" />
-                                </Button>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => setShowAddContactDialog(true)}
+                                                className="h-8 w-8"
+                                            >
+                                                <UserPlus className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Adicionar contato</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                onClick={() => setShowMultipleContactsDialog(true)}
+                                                className="h-8 w-8"
+                                            >
+                                                <Users className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Disparo em massa</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
                             </div>
                         </div>
-                        <div className="relative mt-2">
+                        <div className="relative">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Buscar contato..."
@@ -438,9 +1073,12 @@ export default function DisparoChatPage() {
                                 <div className="flex items-center">
                                     {selectedContact ? (
                                         <>
-                                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-3">
-                                                {selectedContact.name.charAt(0)}
-                                            </div>
+                                            <Avatar className="h-10 w-10 mr-3">
+                                                <AvatarImage src={selectedContact.avatar || "/placeholder.svg"} alt={selectedContact.name} />
+                                                <AvatarFallback className="bg-primary/10 text-primary">
+                                                    {selectedContact.name.charAt(0)}
+                                                </AvatarFallback>
+                                            </Avatar>
                                             <div>
                                                 <CardTitle>{selectedContact.name}</CardTitle>
                                                 <p className="text-sm text-muted-foreground">ID: {selectedContact.user_id}</p>
@@ -453,7 +1091,7 @@ export default function DisparoChatPage() {
                                             </div>
                                             <div>
                                                 <CardTitle>Disparo em massa</CardTitle>
-                                                <Badge variant="outline">{selectedContacts.length} contatos selecionados</Badge>
+                                                <Badge variant="outline" className="mt-1">{selectedContacts.length} contatos selecionados</Badge>
                                             </div>
                                         </div>
                                     )}
@@ -461,11 +1099,11 @@ export default function DisparoChatPage() {
                             </CardHeader>
 
                             <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-                                <ScrollArea className="h-full">
+                                <ScrollArea className="h-full pr-4">
                                     {messages.length === 0 ? (
                                         <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                                            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                                                <Send className="h-8 w-8 text-muted-foreground" />
+                                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                                                <MessageSquare className="h-8 w-8 text-primary" />
                                             </div>
                                             <h3 className="text-lg font-medium">Envie uma mensagem</h3>
                                             <p className="text-muted-foreground max-w-sm mt-2">
@@ -476,7 +1114,10 @@ export default function DisparoChatPage() {
                                         messages.map((msg) => (
                                             <ChatBubble
                                                 key={msg.id}
-                                                message={msg}
+                                                message={{
+                                                    ...msg,
+                                                    recipient_name: contacts.find(c => c.user_id === msg.recipient)?.name
+                                                }}
                                                 isOutgoing={msg.sender === "me"}
                                             />
                                         ))
@@ -485,46 +1126,122 @@ export default function DisparoChatPage() {
                                 </ScrollArea>
                             </CardContent>
 
-                            <CardFooter className="p-4 border-t">
-                                {image && (
-                                    <div className="absolute bottom-20 left-4 right-4 p-2 bg-background border rounded-md">
-                                        <div className="relative">
-                                            <img
-                                                src={image}
-                                                alt="Imagem"
-                                                className="h-32 object-contain rounded-md"
-                                            />
-                                            <Button
-                                                variant="destructive"
-                                                size="icon"
-                                                className="absolute top-1 right-1 h-6 w-6"
-                                                onClick={() => setImage("")}
-                                            >
-                                                <Trash className="h-3 w-3" />
-                                            </Button>
-                                        </div>
+                            <CardFooter className="p-4 border-t flex flex-col">
+                                {/* Área de previsualização mais compacta e organizada */}
+                                {(messageButtons.length > 0 || image) && (
+                                    <div className="w-full flex items-center gap-2 mb-3 flex-wrap">
+                                        {image && (
+                                            <div className="flex items-center gap-1 bg-muted/20 rounded-md px-2 py-1 border">
+                                                <Image width={24} height={24} alt="profile" src={image} className="h-6 w-6 object-cover rounded" />
+                                                <span className="text-xs text-muted-foreground">Imagem anexada</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-5 w-5 ml-1 hover:text-destructive p-0"
+                                                    onClick={() => setImage("")}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {messageButtons.length > 0 && (
+                                            <div className="flex items-center gap-1 bg-muted/20 rounded-md px-2 py-1 border">
+                                                <LinkIcon className="h-3.5 w-3.5 text-primary" />
+                                                <span className="text-xs text-muted-foreground">
+                                                    {messageButtons.length} {messageButtons.length === 1 ? 'botão' : 'botões'}
+                                                </span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-5 w-5 ml-1 hover:text-destructive p-0"
+                                                    onClick={() => setMessageButtons([])}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        )}
+
+                                        {messageButtons.map((button) => (
+                                            <div key={button.id} className="flex items-center gap-1 bg-primary/10 rounded-md px-2 py-1 border border-primary/20">
+                                                {button.type === "url" ? (
+                                                    <LinkIcon className="h-3 w-3 text-primary" />
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                                                        <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
+                                                    </svg>
+                                                )}
+                                                <span className="text-xs font-medium">{button.text}</span>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-5 w-5 p-0 hover:text-destructive"
+                                                    onClick={() => handleRemoveButton(button.id)}
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </Button>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
+
                                 <div className="flex items-center w-full gap-2">
                                     <div className="flex-none flex gap-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setShowImagePicker(true)}
-                                        >
-                                            <ImageIcon className="h-5 w-5" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setShowTemplatesDialog(true)}
-                                        >
-                                            <FileText className="h-5 w-5" />
-                                        </Button>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => setShowImagePicker(true)}
+                                                        className="text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                                    >
+                                                        <ImageIcon className="h-5 w-5" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Adicionar imagem</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => setShowButtonDialog(true)}
+                                                        className="text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                                    >
+                                                        <LinkIcon className="h-5 w-5" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Adicionar botão/link</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => setShowTemplatesDialog(true)}
+                                                        className="text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                                    >
+                                                        <FileText className="h-5 w-5" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Escolher modelo</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     </div>
                                     <Textarea
                                         placeholder="Digite sua mensagem..."
-                                        className="flex-1 min-h-10 max-h-32"
+                                        className="flex-1 min-h-10 max-h-32 resize-none"
                                         value={message}
                                         onChange={(e) => setMessage(e.target.value)}
                                         onKeyDown={(e) => {
@@ -535,10 +1252,11 @@ export default function DisparoChatPage() {
                                         }}
                                     />
                                     <Button
-                                        disabled={loading}
+                                        disabled={loading || (!message.trim() && !image)}
                                         onClick={handleSendMessage}
                                         size="icon"
                                         className="flex-none"
+                                        title="Enviar mensagem"
                                     >
                                         {loading ? (
                                             <Loader2 className="h-5 w-5 animate-spin" />
@@ -551,15 +1269,15 @@ export default function DisparoChatPage() {
                         </>
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-                                <Send className="h-10 w-10 text-muted-foreground" />
+                            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                                <MessageSquare className="h-10 w-10 text-primary" />
                             </div>
                             <h2 className="text-2xl font-bold mb-2">Disparador de Mensagens</h2>
                             <p className="text-muted-foreground max-w-sm mb-6">
                                 Selecione um contato para iniciar uma conversa ou use a opção de disparo em massa.
                             </p>
                             <div className="flex gap-4">
-                                <Button onClick={() => setShowAddContactDialog(true)}>
+                                <Button onClick={() => setShowAddContactDialog(true)} className="bg-primary hover:bg-primary/90">
                                     <UserPlus className="h-4 w-4 mr-2" />
                                     Adicionar contato
                                 </Button>
@@ -588,14 +1306,19 @@ export default function DisparoChatPage() {
                     <ScrollArea className="max-h-[60vh] mt-2">
                         <div className="space-y-4 pr-4">
                             {templates.length === 0 ? (
-                                <p className="text-center py-4 text-muted-foreground">
-                                    Nenhum template encontrado.
-                                </p>
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <FileText className="h-10 w-10 mx-auto mb-2 text-muted-foreground/50" />
+                                    <p>Nenhum template encontrado.</p>
+                                    <p className="text-sm mt-1">Crie um novo template para facilitar seus envios.</p>
+                                </div>
                             ) : (
                                 templates.map((template) => (
                                     <Card key={template.id} className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleLoadTemplate(template)}>
                                         <CardContent className="p-4">
-                                            <h3 className="font-medium mb-2">{template.title}</h3>
+                                            <h3 className="font-medium mb-2 flex items-center gap-2">
+                                                <FileText className="h-4 w-4 text-primary" />
+                                                {template.title}
+                                            </h3>
                                             <p className="text-sm text-muted-foreground line-clamp-2">
                                                 {template.content}
                                             </p>
@@ -607,6 +1330,9 @@ export default function DisparoChatPage() {
                                                     </Badge>
                                                 </div>
                                             )}
+                                            <p className="text-xs text-muted-foreground mt-2">
+                                                {new Date(template.created_at).toLocaleDateString()}
+                                            </p>
                                         </CardContent>
                                     </Card>
                                 ))
@@ -716,8 +1442,11 @@ export default function DisparoChatPage() {
                     </DialogHeader>
                     <div className="py-4">
                         <div className="mb-4 flex items-center justify-between">
-                            <h3 className="text-sm font-medium">
-                                Selecionados: {selectedContacts.length} contatos
+                            <h3 className="text-sm font-medium flex items-center gap-2">
+                                <Badge variant="outline" className="rounded-full px-2">
+                                    {selectedContacts.length}
+                                </Badge>
+                                Contatos selecionados
                             </h3>
                             <div className="flex gap-2">
                                 <Button
@@ -746,7 +1475,7 @@ export default function DisparoChatPage() {
                                     contacts.map((contact) => (
                                         <div
                                             key={contact.user_id}
-                                            className={`flex items-center p-2 rounded-md hover:bg-muted/50 cursor-pointer ${selectedContacts.includes(contact.user_id) ? "bg-muted" : ""
+                                            className={`flex items-center p-2 rounded-md hover:bg-muted/50 cursor-pointer ${selectedContacts.includes(contact.user_id) ? "bg-primary/5 border border-primary/20" : ""
                                                 }`}
                                             onClick={() => {
                                                 setSelectedContacts(prev =>
@@ -756,16 +1485,19 @@ export default function DisparoChatPage() {
                                                 );
                                             }}
                                         >
-                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold mr-3">
-                                                {contact.name.charAt(0)}
-                                            </div>
+                                            <Avatar className="h-8 w-8 mr-3">
+                                                <AvatarImage src={contact.avatar || "/placeholder.svg"} alt={contact.name} />
+                                                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                                    {contact.name.charAt(0)}
+                                                </AvatarFallback>
+                                            </Avatar>
                                             <div className="flex-1">
                                                 <p className="font-medium">{contact.name}</p>
                                                 <p className="text-xs text-muted-foreground">ID: {contact.user_id}</p>
                                             </div>
-                                            <div className="w-4 h-4 rounded-sm border flex items-center justify-center">
+                                            <div className="w-5 h-5 rounded-md border flex items-center justify-center">
                                                 {selectedContacts.includes(contact.user_id) && (
-                                                    <div className="w-2 h-2 bg-primary rounded-sm" />
+                                                    <div className="w-3 h-3 bg-primary rounded-sm" />
                                                 )}
                                             </div>
                                         </div>
@@ -810,6 +1542,453 @@ export default function DisparoChatPage() {
                     onClose={() => setShowImagePicker(false)}
                 />
             )}
+
+            {/* Dialog de resumo do disparo em massa */}
+            <Dialog open={showBatchSummary} onOpenChange={setShowBatchSummary}>
+                <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Resumo do Disparo em Massa</DialogTitle>
+                        <DialogDescription>
+                            Log completo da operação de disparo de mensagens
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-4 flex-1 flex flex-col">
+                        <TabsList className="grid grid-cols-2 mb-4">
+                            <TabsTrigger value="resumo">Resumo por Lotes</TabsTrigger>
+                            <TabsTrigger value="mensagens">Mensagens Detalhadas</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="resumo" className="flex-1 overflow-hidden flex flex-col">
+                            <div className="flex flex-col gap-4 flex-1 overflow-hidden">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-lg flex items-center gap-2">
+                                                <BarChart3 className="h-5 w-5 text-primary" />
+                                                Estatísticas Gerais
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span>Total de lotes:</span>
+                                                    <Badge variant="outline">{batchLogs.length}</Badge>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span>Total de contatos:</span>
+                                                    <Badge variant="outline">{batchLogs.reduce((acc, log) => acc + log.totalContacts, 0)}</Badge>
+                                                </div>
+                                                <Separator />
+                                                <div className="flex justify-between items-center">
+                                                    <span>Mensagens enviadas:</span>
+                                                    <Badge variant="outline" className="bg-green-50 text-green-600 hover:bg-green-100 border-green-200">
+                                                        {batchLogs.reduce((acc, log) => acc + log.successful, 0)}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span>Falhas:</span>
+                                                    <Badge variant="outline" className="bg-red-50 text-red-600 hover:bg-red-100 border-red-200">
+                                                        {batchLogs.reduce((acc, log) => acc + log.failed, 0)}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span>Ignoradas (limite):</span>
+                                                    <Badge variant="outline" className="bg-amber-50 text-amber-600 hover:bg-amber-100 border-amber-200">
+                                                        {batchLogs.reduce((acc, log) => acc + log.skipped, 0)}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-lg flex items-center gap-2">
+                                                <Info className="h-5 w-5 text-primary" />
+                                                Resultado Final
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="flex flex-col items-center justify-center h-[140px]">
+                                            {(() => {
+                                                const status = getStatusText();
+                                                return (
+                                                    <div className="flex flex-col items-center">
+                                                        {status.icon}
+                                                        <p className="font-medium">{status.title}</p>
+                                                        <p className="text-sm text-muted-foreground">{status.description}</p>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                <Card className="flex-1 overflow-hidden">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <Clock className="h-5 w-5 text-primary" />
+                                            Detalhamento por Lote
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-0 overflow-hidden">
+                                        <ScrollArea className="h-[30vh]">
+                                            <table className="w-full">
+                                                <thead className="bg-muted/50 sticky top-0">
+                                                    <tr>
+                                                        <th className="text-left p-3 text-sm font-medium">Lote</th>
+                                                        <th className="text-left p-3 text-sm font-medium">Contatos</th>
+                                                        <th className="text-left p-3 text-sm font-medium">Enviados</th>
+                                                        <th className="text-left p-3 text-sm font-medium">Falhas</th>
+                                                        <th className="text-left p-3 text-sm font-medium">Ignorados</th>
+                                                        <th className="text-left p-3 text-sm font-medium">Status</th>
+                                                        <th className="text-left p-3 text-sm font-medium">Hora</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {batchLogs.map((log, index) => (
+                                                        <tr key={index} className="border-b hover:bg-muted/20">
+                                                            <td className="p-3">{log.batchNumber}</td>
+                                                            <td className="p-3">{log.totalContacts}</td>
+                                                            <td className="p-3 text-green-600">{log.successful}</td>
+                                                            <td className="p-3 text-red-600">{log.failed}</td>
+                                                            <td className="p-3 text-amber-600">{log.skipped}</td>
+                                                            <td className="p-3">
+                                                                {log.error ? (
+                                                                    <Badge variant="destructive">Erro</Badge>
+                                                                ) : log.failed > 0 ? (
+                                                                    <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Parcial</Badge>
+                                                                ) : log.skipped > 0 ? (
+                                                                    <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Limitado</Badge>
+                                                                ) : (
+                                                                    <Badge className="bg-green-600">Sucesso</Badge>
+                                                                )}
+                                                            </td>
+                                                            <td className="p-3 text-muted-foreground">
+                                                                {new Date(log.timestamp).toLocaleTimeString()}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </ScrollArea>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="mensagens" className="flex-1 overflow-hidden">
+                            <Card className="flex-1 overflow-hidden flex flex-col h-full">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <MessageSquare className="h-5 w-5 text-primary" />
+                                        Log de Mensagens
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Registro detalhado de todas as mensagens enviadas neste disparo
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-0 overflow-hidden flex-1">
+                                    {loadingLogs ? (
+                                        <div className="flex items-center justify-center h-[40vh]">
+                                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                        </div>
+                                    ) : messageLogs.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-[40vh] text-center">
+                                            <AlertCircle className="h-10 w-10 text-muted-foreground mb-2" />
+                                            <p className="font-medium">Nenhum log encontrado</p>
+                                            <p className="text-muted-foreground max-w-xs mt-1">
+                                                Não foram encontrados registros de mensagens no banco de dados para este disparo
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col">
+                                            <div className="border-b px-3 py-2 bg-muted/40">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="font-medium">Total: {messageLogs.length} mensagens</h3>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={fetchMessageLogs}
+                                                        className="h-8 gap-1"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-refresh-cw">
+                                                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                                                            <path d="M21 3v5h-5" />
+                                                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                                                            <path d="M3 21v-5h5" />
+                                                        </svg>
+                                                        Atualizar
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <ScrollArea className="h-[40vh]">
+                                                <table className="w-full">
+                                                    <thead className="bg-muted/50 sticky top-0">
+                                                        <tr>
+                                                            <th className="text-left p-3 text-sm font-medium">Destinatário</th>
+                                                            <th className="text-left p-3 text-sm font-medium">Mensagem</th>
+                                                            <th className="text-left p-3 text-sm font-medium">Mídia</th>
+                                                            <th className="text-left p-3 text-sm font-medium">Status</th>
+                                                            <th className="text-left p-3 text-sm font-medium">Plataforma</th>
+                                                            <th className="text-left p-3 text-sm font-medium">Data/Hora</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {messageLogs.map((log) => (
+                                                            <tr key={log.id} className="border-b hover:bg-muted/20">
+                                                                <td className="p-3 max-w-[180px]">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Avatar className="h-8 w-8">
+                                                                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                                                                                {log.recipient_name?.charAt(0) || log.recipient_id.charAt(0)}
+                                                                            </AvatarFallback>
+                                                                        </Avatar>
+                                                                        <div className="flex flex-col">
+                                                                            <span className="font-medium text-sm truncate">{log.recipient_name}</span>
+                                                                            <span className="text-xs text-muted-foreground truncate" title={log.recipient_id}>{log.recipient_id}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-3 max-w-[250px]">
+                                                                    <div
+                                                                        className="text-sm line-clamp-2 cursor-pointer hover:text-primary transition-colors"
+                                                                        title={log.message_content}
+                                                                        onClick={() => {
+                                                                            // Mostra o conteúdo completo da mensagem em um toast
+                                                                            toast({
+                                                                                title: "Conteúdo da mensagem",
+                                                                                description: log.message_content,
+                                                                            });
+                                                                        }}
+                                                                    >
+                                                                        {log.message_content}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    {log.image_url ? (
+                                                                        <div className="flex flex-col items-center gap-1">
+                                                                            <Badge variant="outline" className="flex items-center gap-1 cursor-pointer hover:bg-primary/5" onClick={() => window.open(log.image_url, '_blank')}>
+                                                                                <ImageIcon className="h-3 w-3" />
+                                                                                Ver imagem
+                                                                            </Badge>
+                                                                        </div>
+                                                                    ) : (
+                                                                        <span className="text-xs text-muted-foreground">Texto apenas</span>
+                                                                    )}
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <Badge variant={
+                                                                        log.status === "enviado" ? "default" :
+                                                                            log.status === "falha" ? "destructive" : "outline"
+                                                                    }>
+                                                                        {log.status === "enviado" ? "Enviado" :
+                                                                            log.status === "falha" ? "Falha" : log.status}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <Badge variant="outline">
+                                                                        {log.platform === "telegram" ? "Telegram" :
+                                                                            log.platform === "whatsapp" ? "WhatsApp" : log.platform}
+                                                                    </Badge>
+                                                                </td>
+                                                                <td className="p-3 text-muted-foreground text-sm whitespace-nowrap">
+                                                                    {log.created_at}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </ScrollArea>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
+
+                    <DialogFooter className="mt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                console.log("Log completo do disparo:", {
+                                    batches: batchLogs,
+                                    messages: messageLogs
+                                });
+                                toast({
+                                    title: "Log exportado",
+                                    description: "O log completo foi exportado para o console"
+                                });
+                            }}
+                        >
+                            Exportar Log
+                        </Button>
+                        <Button onClick={() => setShowBatchSummary(false)}>Fechar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog para adicionar botão */}
+            <Dialog open={showButtonDialog} onOpenChange={setShowButtonDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Adicionar botão</DialogTitle>
+                        <DialogDescription>
+                            Adicione um botão clicável à sua mensagem. Os botões podem abrir links ou executar comandos no bot.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="button-text">Texto do botão</Label>
+                            <Input
+                                id="button-text"
+                                placeholder="Ex: Visite nosso site"
+                                value={buttonText}
+                                onChange={(e) => setButtonText(e.target.value)}
+                            />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label>Tipo de botão</Label>
+                            <div className="flex gap-4">
+                                <div
+                                    className={`flex items-center gap-2 border rounded-md p-2 cursor-pointer ${buttonType === "url" ? "border-primary bg-primary/5" : "border-muted"}`}
+                                    onClick={() => setButtonType("url")}
+                                >
+                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${buttonType === "url" ? "border-primary" : "border-muted-foreground"}`}>
+                                        {buttonType === "url" && <div className="w-2 h-2 rounded-full bg-primary"></div>}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium">Link externo</span>
+                                        <span className="text-xs text-muted-foreground">Abre uma URL no navegador</span>
+                                    </div>
+                                </div>
+
+                                <div
+                                    className={`flex items-center gap-2 border rounded-md p-2 cursor-pointer ${buttonType === "command" ? "border-primary bg-primary/5" : "border-muted"}`}
+                                    onClick={() => setButtonType("command")}
+                                >
+                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${buttonType === "command" ? "border-primary" : "border-muted-foreground"}`}>
+                                        {buttonType === "command" && <div className="w-2 h-2 rounded-full bg-primary"></div>}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-sm font-medium">Comando interno</span>
+                                        <span className="text-xs text-muted-foreground">Envia comando para o bot</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {buttonType === "url" ? (
+                            <div className="grid gap-2">
+                                <Label htmlFor="button-url">URL do link</Label>
+                                <Input
+                                    id="button-url"
+                                    placeholder="Ex: https://exemplo.com.br"
+                                    value={buttonUrl}
+                                    onChange={(e) => setButtonUrl(e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    O URL deve começar com http:// ou https://
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-2">
+                                <Label htmlFor="command-data">Comando para o bot</Label>
+                                <Input
+                                    id="command-data"
+                                    placeholder="Ex: start_tutorial"
+                                    value={commandData}
+                                    onChange={(e) => setCommandData(e.target.value)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    O comando será enviado para o bot quando o botão for clicado
+                                </p>
+                                <div className="mt-2">
+                                    <Label className="text-xs font-medium">Comandos disponíveis:</Label>
+                                    <div className="mt-1 p-2 border rounded-md bg-muted/20 text-xs space-y-1">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <span className="font-medium">Navegação:</span>
+                                                <ul className="list-disc pl-4 mt-1 text-muted-foreground">
+                                                    <li onClick={() => handleSelectCommand("bemvindos")} className="cursor-pointer hover:text-primary transition-colors">bemvindos - Menu principal</li>
+                                                    <li onClick={() => handleSelectCommand("premium")} className="cursor-pointer hover:text-primary transition-colors">premium - Produtos premium</li>
+                                                    <li onClick={() => handleSelectCommand("produtos")} className="cursor-pointer hover:text-primary transition-colors">produtos - Lista de produtos</li>
+                                                    <li onClick={() => handleSelectCommand("combos")} className="cursor-pointer hover:text-primary transition-colors">combos - Lista de combos</li>
+                                                    <li onClick={() => handleSelectCommand("saldo")} className="cursor-pointer hover:text-primary transition-colors">saldo - Adicionar saldo</li>
+                                                    <li onClick={() => handleSelectCommand("perfil")} className="cursor-pointer hover:text-primary transition-colors">perfil - Ver perfil</li>
+                                                    <li onClick={() => handleSelectCommand("voltar")} className="cursor-pointer hover:text-primary transition-colors">voltar - Voltar ao menu anterior</li>
+                                                </ul>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium">Ações:</span>
+                                                <ul className="list-disc pl-4 mt-1 text-muted-foreground">
+                                                    <li onClick={() => handleSelectCommand("gerar_pix")} className="cursor-pointer hover:text-primary transition-colors">gerar_pix - Gerar pagamento PIX</li>
+                                                    <li onClick={() => handleSelectCommand("start")} className="cursor-pointer hover:text-primary transition-colors">start - Iniciar o bot</li>
+                                                    <li onClick={() => handleSelectCommand("bemvindos-2")} className="cursor-pointer hover:text-primary transition-colors">bemvindos-2 - Menu alternativo</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-3 border-t pt-2">
+                                            <span className="font-medium">Comandos de Produtos:</span>
+                                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                                <ul className="list-disc pl-4 text-muted-foreground">
+                                                    <li onClick={() => handleSelectCommand("confirma_produto_NOME")} className="cursor-pointer hover:text-primary transition-colors">confirma_produto_NOME</li>
+                                                    <li onClick={() => handleSelectCommand("comprar_ID")} className="cursor-pointer hover:text-primary transition-colors">comprar_ID - Comprar produto</li>
+                                                    <li onClick={() => handleSelectCommand("confirmar_compra_ID")} className="cursor-pointer hover:text-primary transition-colors">confirmar_compra_ID</li>
+                                                </ul>
+                                                <ul className="list-disc pl-4 text-muted-foreground">
+                                                    <li onClick={() => handleSelectCommand("2comprar_ID")} className="cursor-pointer hover:text-primary transition-colors">2comprar_ID - Comprar combo</li>
+                                                    <li onClick={() => handleSelectCommand("2confirmar_compra_ID")} className="cursor-pointer hover:text-primary transition-colors">2confirmar_compra_ID</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+
+                                        <div className="text-[11px] bg-muted/30 p-1.5 rounded mt-2">
+                                            <span className="font-medium">Dica:</span> Substitua NOME ou ID pelo nome do produto ou ID correspondente. Clique em qualquer comando para adicioná-lo.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div>
+                            <Label>Prévia do botão</Label>
+                            <div className="mt-2 p-3 border rounded-md bg-muted/20">
+                                <div className="flex justify-center">
+                                    <div className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground px-4 py-2 rounded text-sm">
+                                        {buttonType === "url" ? (
+                                            <LinkIcon className="h-3.5 w-3.5" />
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="m8 3 4 8 5-5 5 15H2L8 3z" />
+                                            </svg>
+                                        )}
+                                        {buttonText || "Texto do botão"}
+                                    </div>
+                                </div>
+                                <div className="mt-2 text-center text-xs text-muted-foreground">
+                                    {buttonType === "url"
+                                        ? buttonUrl
+                                            ? `Abrirá: ${buttonUrl}`
+                                            : "O link ainda não foi definido"
+                                        : commandData
+                                            ? `Enviará o comando: ${commandData}`
+                                            : "O comando ainda não foi definido"
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="secondary" onClick={() => setShowButtonDialog(false)}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={handleAddButton}>Adicionar botão</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
-} 
+}

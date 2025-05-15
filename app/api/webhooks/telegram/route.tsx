@@ -63,6 +63,12 @@ interface MessageButton {
   command: string;
 }
 
+interface TelegramInlineButton {
+  text: string;
+  url?: string;
+  callback_data?: string;
+}
+
 interface Message {
   id: string;
   user_id: string;
@@ -287,12 +293,64 @@ export async function POST(req: Request) {
     }
 
     if (data.disparo) {
-      const { userId, message, button, image } = data;
-      await sendMessageToUser(userId, message, button, image);
+      const { userId, message, image, reply_markup } = data;
+
+      // Log para debug dos botões
+      if (reply_markup) {
+        console.log("Reply markup recebido:", JSON.stringify(reply_markup));
+      }
+
+      // Usar sendMessageToUser com os botões formatados quando forem enviados
+      const result = await sendMessageToUser(userId, message, [], image);
+
+      // Se tiver reply_markup, enviar mensagem usando a API diretamente
+      if (reply_markup && reply_markup.inline_keyboard) {
+        try {
+          // Enviar mensagem diretamente usando a API do bot
+          const botResult = await bot.telegram.sendMessage(userId, message, {
+            parse_mode: "HTML",
+            reply_markup
+          });
+
+          console.log("Mensagem com botões enviada com sucesso:", botResult.message_id);
+
+          // Salvar mensagem no histórico
+          await saveMessage({
+            user_id: userId,
+            message,
+            status: 'sent',
+            buttons: reply_markup.inline_keyboard.flat().map((btn: TelegramInlineButton) => ({
+              name: btn.text,
+              type: btn.url ? 'link' : 'command',
+              command: btn.url || btn.callback_data || ''
+            }))
+          });
+
+          return new NextResponse(
+            JSON.stringify({
+              success: true,
+              message: "Mensagem com botões enviada com sucesso!",
+              messageId: botResult.message_id
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        } catch (error) {
+          console.error("Erro ao enviar mensagem com botões:", error);
+          return new NextResponse(
+            JSON.stringify({
+              success: false,
+              error: "Falha ao enviar mensagem com botões"
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      }
 
       return new NextResponse(
         JSON.stringify({
+          success: true,
           message: "Webhook POST disparo processado com sucesso!",
+          result
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );

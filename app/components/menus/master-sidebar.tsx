@@ -72,14 +72,14 @@ export function AppSidebar() {
       href: "/combos",
       icon: <Layers className="h-5 w-5" />,
     },
+    // {
+    //   title: "Disparo TXT",
+    //   href: "/disparo-telegram",
+    //   icon: <MessageSquare className="h-5 w-5" />,
+    // },
     {
-      title: "Disparo",
-      href: "/disparo",
-      icon: <MessageSquare className="h-5 w-5" />,
-    },
-    {
-      title: "Disparo Telegram",
-      href: "/disparo-telegram",
+      title: "Disparo Chat",
+      href: "/disparo-chat",
       icon: <MessageSquare className="h-5 w-5" />,
     },
     {
