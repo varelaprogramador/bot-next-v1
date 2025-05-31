@@ -49,7 +49,7 @@ export function AppSidebar() {
   const routes = [
     {
       title: "Dashboard",
-      href: "/dashboard",
+      href: "/",
       icon: <BarChart3 className="h-5 w-5" />,
     },
     {
