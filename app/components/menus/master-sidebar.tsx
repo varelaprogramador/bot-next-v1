@@ -128,7 +128,7 @@ export function AppSidebar() {
             Next Git Cards
           </div>
         </SidebarHeader>
-        <div className="px-3">
+        <div className="px-3 max-h-[calc(100vh-200px)] overflow-y-auto">
           <nav className="grid gap-1">
             {routes.map((route) => (
               <Link

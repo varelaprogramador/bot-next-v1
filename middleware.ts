@@ -1,30 +1,22 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Definindo rotas públicas (todas fora da root no diretório app)
+// Definindo rotas públicas
 const isPublicRoute = createRouteMatcher([
-  "/",
-  "/card(.*)",
-  "/checkout(.*)",
   "/sign-in(.*)",
+  "/sign-up(.*)", // Inclua se usar cadastro
   "/auth(.*)",
   "/api(.*)",
-  "/duvidas(.*)",
-  "/contato(.*)",
-  "/demo(.*)",
-  "/politica-privacidade(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, request) => {
+export default clerkMiddleware((auth, request) => {
   if (!isPublicRoute(request)) {
-    await auth; // Protege todas as rotas fora das rotas públicas
+    auth(); // Protege todas as rotas fora das públicas
   }
 });
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and all static files, unless found in search params
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    // Always run for API routes
     "/(api|trpc)(.*)",
   ],
 };
