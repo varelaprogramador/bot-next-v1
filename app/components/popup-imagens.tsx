@@ -1,23 +1,14 @@
-"use client";
+"use client"
 
-import type React from "react";
+import type React from "react"
 
-import { Button } from "@/app/components/ui/button";
-import { Card } from "@/app/components/ui/card";
-import { Input } from "@/app/components/ui/input";
-import { createClientSupabaseClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
-import {
-  Check,
-  Eye,
-  ImageIcon,
-  Loader2,
-  Search,
-  Trash2,
-  Upload,
-  X,
-} from "lucide-react";
-import Image from "next/image";
+import { Button } from "@/app/components/ui/button"
+import { Card } from "@/app/components/ui/card"
+import { Input } from "@/app/components/ui/input"
+import { createClientSupabaseClient } from "@/lib/supabase/client"
+import { useEffect, useState } from "react"
+import { Check, Eye, ImageIcon, Loader2, Search, Trash2, Upload, X } from "lucide-react"
+import Image from "next/image"
 import {
   Dialog,
   DialogContent,
@@ -26,62 +17,53 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./ui/dialog";
-import { Badge } from "@/app/components/ui/badge";
-import { ScrollArea } from "@/app/components/ui/scroll-area";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
-import { cn } from "@/lib/utils";
+} from "./ui/dialog"
+import { Badge } from "@/app/components/ui/badge"
+import { ScrollArea } from "@/app/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
+import { cn } from "@/lib/utils"
 
 export interface FileObject {
-  name: string;
-  size: number;
-  type: string;
-  url: string;
-  qtd: number; // Número de itens para pastas
+  name: string
+  size: number
+  type: string
+  url: string
+  qtd: number // Número de itens para pastas
 }
 
 interface GaleriaPopupProps {
-  defaultValue: string;
-  sendData: (url: string) => void; // Função para enviar a URL da imagem selecionada
-  onClose: () => void; // Função para fechar o popup
+  defaultValue: string
+  sendData: (url: string) => void // Função para enviar a URL da imagem selecionada
+  onClose: () => void // Função para fechar o popup
 }
 
-const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
-  sendData,
-  onClose,
-  defaultValue,
-}) => {
-  const [files, setFiles] = useState<FileObject[]>([]); // Estado para os arquivos
-  const [filteredFiles, setFilteredFiles] = useState<FileObject[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [isOpen, setOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<FileObject | null>(null); // Apenas 1 arquivo selecionado
-  const [nomeFile, setNomeFile] = useState<string | null>("");
-  const [previewImage, setPreviewImage] = useState<FileObject | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dragActive, setDragActive] = useState(false);
+const GaleriaPopup: React.FC<GaleriaPopupProps> = ({ sendData, onClose, defaultValue }) => {
+  const [files, setFiles] = useState<FileObject[]>([]) // Estado para os arquivos
+  const [filteredFiles, setFilteredFiles] = useState<FileObject[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [isOpen, setOpen] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<FileObject | null>(null) // Apenas 1 arquivo selecionado
+  const [nomeFile, setNomeFile] = useState<string | null>("")
+  const [previewImage, setPreviewImage] = useState<FileObject | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [dragActive, setDragActive] = useState(false)
 
-  const supabase = createClientSupabaseClient();
+  const supabase = createClientSupabaseClient()
 
   // Função para verificar se o tipo do arquivo é imagem
-  const isImageFile = (type: string) => type.startsWith("image");
+  const isImageFile = (type: string) => type.startsWith("image")
 
   // Função para carregar os arquivos
   const fetchFiles = async () => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase.storage.from("galeria").list("");
+      setLoading(true)
+      const { data, error } = await supabase.storage.from("galeria").list("")
 
       if (error) {
-        console.error("Erro ao listar arquivos:", error);
+        console.error("Erro ao listar arquivos:", error)
       } else {
-        console.log("Dados dos arquivos:", data);
+        console.log("Dados dos arquivos:", data)
       }
 
       if (data) {
@@ -89,7 +71,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
           data.map(async (file) => {
             const {
               data: { publicUrl },
-            } = supabase.storage.from("galeria").getPublicUrl(`/${file.name}`);
+            } = supabase.storage.from("galeria").getPublicUrl(`/${file.name}`)
 
             return {
               name: file.name,
@@ -97,124 +79,116 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
               type: file.metadata?.mimetype || "unknown",
               url: publicUrl,
               qtd: 0,
-            };
-          })
-        );
-        setFiles(filesWithUrls);
-        setFilteredFiles(filesWithUrls);
+            }
+          }),
+        )
+        setFiles(filesWithUrls)
+        setFilteredFiles(filesWithUrls)
       }
     } catch (error) {
-      console.error("Error fetching files:", error);
+      console.error("Error fetching files:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // Função de upload de arquivos
   const uploadFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files) return;
+    if (!event.target.files) return
 
     try {
-      setUploading(true);
-      const file = event.target.files[0];
-      const { error } = await supabase.storage
-        .from("galeria")
-        .upload(`/${file.name}`, file);
-      if (error) throw error;
+      setUploading(true)
+      const file = event.target.files[0]
+      const { error } = await supabase.storage.from("galeria").upload(`/${file.name}`, file)
+      if (error) throw error
 
       // Recarregar os arquivos após o upload
-      await fetchFiles();
+      await fetchFiles()
     } catch (error) {
-      console.error("Error uploading file:", error);
+      console.error("Error uploading file:", error)
     } finally {
-      setUploading(false);
+      setUploading(false)
     }
-  };
+  }
 
   // Função para upload via drag and drop
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       try {
-        setUploading(true);
-        const file = e.dataTransfer.files[0];
-        const { error } = await supabase.storage
-          .from("galeria")
-          .upload(`/${file.name}`, file);
-        if (error) throw error;
+        setUploading(true)
+        const file = e.dataTransfer.files[0]
+        const { error } = await supabase.storage.from("galeria").upload(`/${file.name}`, file)
+        if (error) throw error
 
-        await fetchFiles();
+        await fetchFiles()
       } catch (error) {
-        console.error("Error uploading file:", error);
+        console.error("Error uploading file:", error)
       } finally {
-        setUploading(false);
+        setUploading(false)
       }
     }
-  };
+  }
 
   const deleteFile = async (fileName: string) => {
     try {
-      const { error } = await supabase.storage
-        .from("galeria")
-        .remove([`/${fileName}`]);
+      const { error } = await supabase.storage.from("galeria").remove([`/${fileName}`])
 
-      if (error) throw error;
+      if (error) throw error
 
-      await fetchFiles();
+      await fetchFiles()
     } catch (error) {
-      console.error("Error deleting file:", error);
+      console.error("Error deleting file:", error)
     }
-  };
+  }
 
   // Função para selecionar apenas 1 imagem
   const handleSelectImage = (file: FileObject) => {
-    setSelectedFile(file); // Seleciona a imagem
-    setPreviewImage(file); // Abre o popup de preview ao selecionar
-  };
+    setSelectedFile(file) // Seleciona a imagem
+    setPreviewImage(file) // Abre o popup de preview ao selecionar
+  }
 
   // Função para continuar após selecionar uma imagem
   const handleProceed = () => {
-    setOpen(false);
-    setPreviewImage(null);
-    sendData(selectedFile?.url as string);
-  };
+    setOpen(false)
+    setPreviewImage(null)
+    sendData(selectedFile?.url as string)
+  }
 
   // Filtrar arquivos com base no termo de pesquisa
   useEffect(() => {
     if (searchTerm.trim() === "") {
-      setFilteredFiles(files);
+      setFilteredFiles(files)
     } else {
-      const filtered = files.filter((file) =>
-        file.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredFiles(filtered);
+      const filtered = files.filter((file) => file.name.toLowerCase().includes(searchTerm.toLowerCase()))
+      setFilteredFiles(filtered)
     }
-  }, [searchTerm, files]);
+  }, [searchTerm, files])
 
   // Configurar o arquivo selecionado baseado no `defaultValue`
   useEffect(() => {
-    fetchFiles();
-  }, []);
+    fetchFiles()
+  }, [])
 
   // Configurar o estado de `selectedFile` no primeiro carregamento de arquivos
   useEffect(() => {
     if (defaultValue && files.length) {
-      const file = files.find((file) => file.url === defaultValue);
+      const file = files.find((file) => file.url === defaultValue)
       if (file) {
-        setSelectedFile(file); // Seleciona automaticamente o arquivo com a URL padrão
+        setSelectedFile(file) // Seleciona automaticamente o arquivo com a URL padrão
       }
     }
-  }, [files, defaultValue]);
+  }, [files, defaultValue])
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
-    );
+    )
   }
 
   return (
@@ -223,6 +197,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
         <DialogTrigger asChild>
           <div className="relative">
             <Button
+              type="button"
               variant="outline"
               className="w-full h-auto flex flex-col items-center justify-center p-4 border-dashed gap-2"
             >
@@ -238,18 +213,14 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
               ) : (
                 <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
               )}
-              <span className="text-sm font-medium">
-                {selectedFile ? "Alterar imagem" : "Selecionar imagem"}
-              </span>
+              <span className="text-sm font-medium">{selectedFile ? "Alterar imagem" : "Selecionar imagem"}</span>
             </Button>
           </div>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[60vw] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="text-xl">Galeria de Imagens</DialogTitle>
-            <DialogDescription>
-              Selecione uma imagem da galeria ou faça upload de uma nova.
-            </DialogDescription>
+            <DialogDescription>Selecione uma imagem da galeria ou faça upload de uma nova.</DialogDescription>
           </DialogHeader>
 
           <Tabs defaultValue="gallery" className="w-full">
@@ -287,9 +258,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
                         key={file.name}
                         className={cn(
                           "group relative overflow-hidden cursor-pointer transition-all hover:shadow-md border",
-                          selectedFile?.name === file.name
-                            ? "ring-2 ring-primary border-primary"
-                            : ""
+                          selectedFile?.name === file.name ? "ring-2 ring-primary border-primary" : "",
                         )}
                         onClick={() => handleSelectImage(file)}
                       >
@@ -316,14 +285,9 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
                           </div>
                         )}
                         <div className="p-2">
-                          <div className="truncate text-xs font-medium">
-                            {file.name}
-                          </div>
+                          <div className="truncate text-xs font-medium">{file.name}</div>
                           <div className="flex items-center justify-between mt-1">
-                            <Badge
-                              variant="outline"
-                              className="text-[10px] h-5"
-                            >
+                            <Badge variant="outline" className="text-[10px] h-5">
                               {(file.size / 1024 / 1024).toFixed(2)} MB
                             </Badge>
                             <Button
@@ -331,8 +295,8 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
                               size="icon"
                               className="h-6 w-6"
                               onClick={(e) => {
-                                e.stopPropagation();
-                                deleteFile(file.name);
+                                e.stopPropagation()
+                                deleteFile(file.name)
                               }}
                             >
                               <Trash2 className="h-3 w-3 text-destructive" />
@@ -346,9 +310,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
                       <ImageIcon className="h-10 w-10 text-muted-foreground mb-2" />
                       <h3 className="font-medium">Nenhuma imagem encontrada</h3>
                       <p className="text-sm text-muted-foreground">
-                        {searchTerm
-                          ? "Tente outro termo de pesquisa"
-                          : "Faça upload de imagens para começar"}
+                        {searchTerm ? "Tente outro termo de pesquisa" : "Faça upload de imagens para começar"}
                       </p>
                     </div>
                   )}
@@ -360,42 +322,31 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
               <div
                 className={cn(
                   "border-2 border-dashed rounded-lg p-8 text-center flex flex-col items-center justify-center h-[50vh]",
-                  dragActive
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25"
+                  dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25",
                 )}
                 onDragOver={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDragActive(true);
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDragActive(true)
                 }}
                 onDragEnter={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDragActive(true);
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDragActive(true)
                 }}
                 onDragLeave={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setDragActive(false);
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDragActive(false)
                 }}
                 onDrop={handleDrop}
               >
                 <div className="flex flex-col items-center max-w-xs mx-auto">
-                  <Upload
-                    className={cn(
-                      "h-10 w-10 mb-4",
-                      dragActive ? "text-primary" : "text-muted-foreground"
-                    )}
-                  />
+                  <Upload className={cn("h-10 w-10 mb-4", dragActive ? "text-primary" : "text-muted-foreground")} />
                   <h3 className="font-medium text-lg mb-2">
-                    {dragActive
-                      ? "Solte para fazer upload"
-                      : "Arraste e solte sua imagem aqui"}
+                    {dragActive ? "Solte para fazer upload" : "Arraste e solte sua imagem aqui"}
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Suporta PNG, JPG ou JPEG até 5MB
-                  </p>
+                  <p className="text-sm text-muted-foreground mb-4">Suporta PNG, JPG ou JPEG até 5MB</p>
                   <div className="relative">
                     <Input
                       id="file-upload"
@@ -406,9 +357,8 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
                       disabled={uploading}
                     />
                     <Button
-                      onClick={() =>
-                        document.getElementById("file-upload")?.click()
-                      }
+                      type="button"
+                      onClick={() => document.getElementById("file-upload")?.click()}
                       disabled={uploading}
                       variant="outline"
                     >
@@ -428,11 +378,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
           </Tabs>
 
           <DialogFooter>
-            <Button
-              onClick={handleProceed}
-              disabled={!selectedFile}
-              className="w-full sm:w-auto"
-            >
+            <Button type="button" onClick={handleProceed} disabled={!selectedFile} className="w-full sm:w-auto">
               {selectedFile ? "Confirmar seleção" : "Selecione uma imagem"}
             </Button>
           </DialogFooter>
@@ -441,10 +387,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
 
       {/* Image Preview Dialog */}
       {previewImage && (
-        <Dialog
-          open={!!previewImage}
-          onOpenChange={(open) => !open && setPreviewImage(null)}
-        >
+        <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
           <DialogContent className="sm:max-w-[90vw] md:max-w-[80vw] max-h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -454,9 +397,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
               <DialogDescription>
                 {isImageFile(previewImage.type)
                   ? `Imagem ${(previewImage.size / 1024 / 1024).toFixed(2)} MB`
-                  : `Arquivo ${(previewImage.size / 1024 / 1024).toFixed(
-                    2
-                  )} MB`}
+                  : `Arquivo ${(previewImage.size / 1024 / 1024).toFixed(2)} MB`}
               </DialogDescription>
             </DialogHeader>
             <div className="relative w-full h-[60vh] flex-grow bg-black/5 rounded-md overflow-hidden">
@@ -475,19 +416,15 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
             </div>
             <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 justify-between w-full">
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => window.open(previewImage.url, "_blank")}
-                >
+                <Button variant="outline" size="icon" onClick={() => window.open(previewImage.url, "_blank")}>
                   <Eye className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="destructive"
                   size="icon"
                   onClick={() => {
-                    deleteFile(previewImage.name);
-                    setPreviewImage(null);
+                    deleteFile(previewImage.name)
+                    setPreviewImage(null)
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -499,8 +436,8 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
                 </Button>
                 <Button
                   onClick={() => {
-                    setSelectedFile(previewImage);
-                    handleProceed();
+                    setSelectedFile(previewImage)
+                    handleProceed()
                   }}
                 >
                   Selecionar e concluir
@@ -511,7 +448,7 @@ const GaleriaPopup: React.FC<GaleriaPopupProps> = ({
         </Dialog>
       )}
     </>
-  );
-};
+  )
+}
 
-export default GaleriaPopup;
+export default GaleriaPopup

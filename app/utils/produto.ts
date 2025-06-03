@@ -1,4 +1,5 @@
 export interface ProdutosProps {
+  imagem: null;
   id?: string;
   nome: string;
   descricao: string;

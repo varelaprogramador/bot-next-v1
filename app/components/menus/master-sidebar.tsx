@@ -125,7 +125,7 @@ export function AppSidebar() {
       <Sidebar className="bg-background">
         <SidebarHeader className="flex px-6 py-6">
           <div className="flex items-center gap-2 font-bold text-2xl">
-            Next Git Cards
+            LERJ RECARGAS
           </div>
         </SidebarHeader>
         <div className="px-3 max-h-[calc(100vh-200px)] overflow-y-auto">

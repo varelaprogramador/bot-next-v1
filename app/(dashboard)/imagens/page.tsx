@@ -16,6 +16,7 @@ import {
   Trash2,
   Upload,
   X,
+  AlertTriangle,
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -35,27 +36,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export interface FileObject {
   name: string;
   size: number;
   type: string;
   url: string;
-  qtd: number; // Número de itens para pastas
+  qtd: number;
 }
 
 export default function GaleriaPage() {
-  const [files, setFiles] = useState<FileObject[]>([]); // Estado para os arquivos
+  const [files, setFiles] = useState<FileObject[]>([]);
   const [filteredFiles, setFilteredFiles] = useState<FileObject[]>([]);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedFile, setSelectedFile] = useState<FileObject | null>(null); // Apenas 1 arquivo selecionado
+  const [selectedFile, setSelectedFile] = useState<FileObject | null>(null);
   const [previewImage, setPreviewImage] = useState<FileObject | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [activeTab, setActiveTab] = useState("gallery");
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  // Estados para a confirmação de exclusão
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<FileObject | null>(null);
 
   const supabase = createClientSupabaseClient();
+  const { toast } = useToast();
 
   // Função para verificar se o tipo do arquivo é imagem
   const isImageFile = (type: string) => type.startsWith("image");
@@ -64,35 +72,49 @@ export default function GaleriaPage() {
   const fetchFiles = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.storage.from("galeria").list("");
+      const { data, error } = await supabase.storage.from("galeria").list("", {
+        limit: 100,
+        offset: 0,
+      });
 
       if (error) {
         console.error("Erro ao listar arquivos:", error);
-      } else {
-        console.log("Dados dos arquivos:", data);
+        toast({
+          title: "Erro ao carregar arquivos",
+          description: "Não foi possível carregar a galeria. Tente novamente.",
+          variant: "destructive",
+        });
+        return;
       }
 
       if (data) {
         const filesWithUrls = await Promise.all(
-          data.map(async (file) => {
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from("galeria").getPublicUrl(`/${file.name}`);
+          data
+            .filter((file) => file.name !== ".emptyFolderPlaceholder")
+            .map(async (file) => {
+              const {
+                data: { publicUrl },
+              } = supabase.storage.from("galeria").getPublicUrl(file.name);
 
-            return {
-              name: file.name,
-              size: file.metadata?.size || 0,
-              type: file.metadata?.mimetype || "unknown",
-              url: publicUrl,
-              qtd: 0,
-            };
-          })
+              return {
+                name: file.name,
+                size: file.metadata?.size || 0,
+                type: file.metadata?.mimetype || "unknown",
+                url: publicUrl,
+                qtd: 0,
+              };
+            })
         );
         setFiles(filesWithUrls);
         setFilteredFiles(filesWithUrls);
       }
     } catch (error) {
       console.error("Error fetching files:", error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao carregar os arquivos.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -100,23 +122,70 @@ export default function GaleriaPage() {
 
   // Função de upload de arquivos
   const uploadFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (!event.target.files) return;
+    if (!event.target.files || event.target.files.length === 0) return;
 
     try {
       setUploading(true);
       const file = event.target.files[0];
+
+      // Validar tamanho do arquivo (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Arquivo muito grande",
+          description: "O arquivo deve ter no máximo 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validar tipo do arquivo
+      if (!file.type.startsWith("image/")) {
+        toast({
+          title: "Tipo de arquivo inválido",
+          description: "Apenas imagens são permitidas (PNG, JPG, JPEG).",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase.storage
         .from("galeria")
-        .upload(`/${file.name}`, file);
-      if (error) throw error;
+        .upload(file.name, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (error) {
+        console.error("Erro no upload:", error);
+        toast({
+          title: "Erro no upload",
+          description: "Não foi possível fazer o upload do arquivo.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Upload realizado",
+        description: "Arquivo enviado com sucesso!",
+      });
 
       // Recarregar os arquivos após o upload
       await fetchFiles();
       setActiveTab("gallery");
     } catch (error) {
       console.error("Error uploading file:", error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro durante o upload.",
+        variant: "destructive",
+      });
     } finally {
       setUploading(false);
+      // Limpar o input
+      if (event.target) {
+        event.target.value = "";
+      }
     }
   };
 
@@ -130,55 +199,136 @@ export default function GaleriaPage() {
       try {
         setUploading(true);
         const file = e.dataTransfer.files[0];
+
+        // Validar tamanho do arquivo (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "Arquivo muito grande",
+            description: "O arquivo deve ter no máximo 5MB.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Validar tipo do arquivo
+        if (!file.type.startsWith("image/")) {
+          toast({
+            title: "Tipo de arquivo inválido",
+            description: "Apenas imagens são permitidas (PNG, JPG, JPEG).",
+            variant: "destructive",
+          });
+          return;
+        }
+
         const { error } = await supabase.storage
           .from("galeria")
-          .upload(`/${file.name}`, file);
-        if (error) throw error;
+          .upload(file.name, file, {
+            cacheControl: "3600",
+            upsert: true,
+          });
+
+        if (error) {
+          console.error("Erro no upload:", error);
+          toast({
+            title: "Erro no upload",
+            description: "Não foi possível fazer o upload do arquivo.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Upload realizado",
+          description: "Arquivo enviado com sucesso!",
+        });
 
         await fetchFiles();
         setActiveTab("gallery");
       } catch (error) {
         console.error("Error uploading file:", error);
+        toast({
+          title: "Erro inesperado",
+          description: "Ocorreu um erro durante o upload.",
+          variant: "destructive",
+        });
       } finally {
         setUploading(false);
       }
     }
   };
 
-  const deleteFile = async (fileName: string) => {
+  // Função para lidar com a exclusão do arquivo (chamada após confirmação)
+  const handleConfirmDelete = async () => {
+    if (!fileToDelete) return;
+
     try {
-      if (selectedFile?.name === fileName) {
-        console.log("Removendo arquivo1:", fileName);
+      setDeleting(fileToDelete.name);
+
+      // Verificar e deselecionar/fechar preview se o arquivo deletado for o selecionado/preview
+      if (selectedFile?.name === fileToDelete.name) {
         setSelectedFile(null);
       }
-
-      if (previewImage?.name === fileName) {
-        console.log("Removendo arquivo25:", fileName);
+      if (previewImage?.name === fileToDelete.name) {
         setPreviewImage(null);
       }
-      console.log("Removendo arquivo1:", fileName);
 
-      const { data, error } = await supabase.storage
+      console.log(`[DELETE] Tentando remover arquivo: ${fileToDelete.name}`);
+
+      const { error } = await supabase.storage
         .from("galeria")
-        .remove([`/${fileName}`]);
+        .remove([fileToDelete.name]);
 
       if (error) {
-        console.error("Error removing file:", error);
-
+        console.error(`[DELETE] Erro ao remover arquivo:`, error);
+        toast({
+          title: "Erro ao excluir",
+          description: `Não foi possível excluir o arquivo ${fileToDelete.name}.`,
+          variant: "destructive",
+        });
         return;
       }
 
-      console.log("File removed successfully:", data);
-      console.log("Removendo arquivo:", fileName);
-      if (error) throw error;
+      console.log(
+        `[DELETE] Arquivo removido com sucesso: ${fileToDelete.name}`
+      );
+
+      // Remover o arquivo da lista local APENAS se a exclusão no Supabase foi bem-sucedida
+      setFiles((prevFiles) =>
+        prevFiles.filter((file) => file.name !== fileToDelete.name)
+      );
+
+      toast({
+        title: "Arquivo excluído",
+        description: `${fileToDelete.name} foi removido da galeria.`,
+      });
+
+      console.log(
+        `[DELETE] Arquivo ${fileToDelete.name} removido do estado local.`
+      );
     } catch (error) {
-      console.error("Error deleting file:", error);
+      console.error(`[DELETE] Erro inesperado:`, error);
+      toast({
+        title: "Erro inesperado",
+        description: "Ocorreu um erro ao tentar excluir o arquivo.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(null);
+      setShowDeleteConfirm(false);
+      setFileToDelete(null);
     }
+  };
+
+  // Função para abrir o modal de confirmação de exclusão
+  const handleDeleteClick = (file: FileObject, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFileToDelete(file);
+    setShowDeleteConfirm(true);
   };
 
   // Função para selecionar apenas 1 imagem
   const handleSelectImage = (file: FileObject) => {
-    setSelectedFile(file); // Seleciona a imagem
+    setSelectedFile(file);
   };
 
   // Função para abrir o preview
@@ -206,7 +356,10 @@ export default function GaleriaPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Carregando galeria...</p>
+        </div>
       </div>
     );
   }
@@ -217,7 +370,8 @@ export default function GaleriaPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Galeria de Imagens</h1>
           <p className="text-muted-foreground">
-            Gerencie suas imagens e arquivos
+            Gerencie suas imagens e arquivos ({files.length}{" "}
+            {files.length === 1 ? "arquivo" : "arquivos"})
           </p>
         </div>
 
@@ -246,7 +400,14 @@ export default function GaleriaPage() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="gallery">Galeria</TabsTrigger>
+          <TabsTrigger value="gallery">
+            Galeria
+            {filteredFiles.length > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {filteredFiles.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="upload">Upload</TabsTrigger>
         </TabsList>
 
@@ -260,6 +421,9 @@ export default function GaleriaPage() {
                     "group relative overflow-hidden cursor-pointer transition-all hover:shadow-md border",
                     selectedFile?.name === file.name
                       ? "ring-2 ring-primary border-primary"
+                      : "",
+                    deleting === file.name
+                      ? "opacity-50 pointer-events-none"
                       : ""
                   )}
                   onClick={() => handleSelectImage(file)}
@@ -271,6 +435,7 @@ export default function GaleriaPage() {
                         alt={file.name}
                         fill
                         className="object-cover transition-transform group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button
@@ -288,6 +453,11 @@ export default function GaleriaPage() {
                           <Check className="h-4 w-4" />
                         </div>
                       )}
+                      {deleting === file.name && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                          <Loader2 className="h-6 w-6 animate-spin text-white" />
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex items-center justify-center aspect-square bg-muted">
@@ -295,7 +465,10 @@ export default function GaleriaPage() {
                     </div>
                   )}
                   <div className="p-3">
-                    <div className="truncate text-sm font-medium">
+                    <div
+                      className="truncate text-sm font-medium"
+                      title={file.name}
+                    >
                       {file.name}
                     </div>
                     <div className="flex items-center justify-between mt-2">
@@ -311,6 +484,7 @@ export default function GaleriaPage() {
                             e.stopPropagation();
                             window.open(file.url, "_blank");
                           }}
+                          title="Baixar arquivo"
                         >
                           <Download className="h-3.5 w-3.5" />
                         </Button>
@@ -318,12 +492,15 @@ export default function GaleriaPage() {
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            await deleteFile(file.name);
-                          }}
+                          onClick={(e) => handleDeleteClick(file, e)}
+                          disabled={deleting === file.name}
+                          title="Excluir arquivo"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          {deleting === file.name ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -353,20 +530,21 @@ export default function GaleriaPage() {
         <TabsContent value="upload">
           <div
             className={cn(
-              "border-2 border-dashed rounded-lg p-8 text-center flex flex-col items-center justify-center min-h-[400px]",
+              "border-2 border-dashed rounded-lg p-8 text-center flex flex-col items-center justify-center min-h-[400px] transition-colors",
               dragActive
                 ? "border-primary bg-primary/5"
-                : "border-muted-foreground/25"
+                : "border-muted-foreground/25",
+              uploading && "pointer-events-none opacity-50"
             )}
             onDragOver={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setDragActive(true);
+              if (!uploading) setDragActive(true);
             }}
             onDragEnter={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setDragActive(true);
+              if (!uploading) setDragActive(true);
             }}
             onDragLeave={(e) => {
               e.preventDefault();
@@ -376,14 +554,20 @@ export default function GaleriaPage() {
             onDrop={handleDrop}
           >
             <div className="flex flex-col items-center max-w-md mx-auto">
-              <Upload
-                className={cn(
-                  "h-12 w-12 mb-6",
-                  dragActive ? "text-primary" : "text-muted-foreground"
-                )}
-              />
+              {uploading ? (
+                <Loader2 className="h-12 w-12 mb-6 animate-spin text-primary" />
+              ) : (
+                <Upload
+                  className={cn(
+                    "h-12 w-12 mb-6",
+                    dragActive ? "text-primary" : "text-muted-foreground"
+                  )}
+                />
+              )}
               <h3 className="font-medium text-xl mb-3">
-                {dragActive
+                {uploading
+                  ? "Enviando arquivo..."
+                  : dragActive
                   ? "Solte para fazer upload"
                   : "Arraste e solte sua imagem aqui"}
               </h3>
@@ -396,7 +580,7 @@ export default function GaleriaPage() {
                   type="file"
                   className="hidden"
                   onChange={uploadFile}
-                  accept=".png,.jpg,.jpeg"
+                  accept="image/png,image/jpeg,image/jpg"
                   disabled={uploading}
                 />
                 <Button
@@ -438,10 +622,12 @@ export default function GaleriaPage() {
               </DialogTitle>
               <DialogDescription>
                 {isImageFile(previewImage.type)
-                  ? `Imagem ${(previewImage.size / 1024 / 1024).toFixed(2)} MB`
-                  : `Arquivo ${(previewImage.size / 1024 / 1024).toFixed(
-                    2
-                  )} MB`}
+                  ? `Imagem • ${(previewImage.size / 1024 / 1024).toFixed(
+                      2
+                    )} MB`
+                  : `Arquivo • ${(previewImage.size / 1024 / 1024).toFixed(
+                      2
+                    )} MB`}
               </DialogDescription>
             </DialogHeader>
             <div className="relative w-full h-[60vh] flex-grow bg-black/5 rounded-md overflow-hidden">
@@ -451,6 +637,7 @@ export default function GaleriaPage() {
                   alt={previewImage.name}
                   fill
                   className="object-contain"
+                  sizes="90vw"
                 />
               ) : (
                 <div className="flex items-center justify-center h-full">
@@ -464,16 +651,17 @@ export default function GaleriaPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => window.open(previewImage.url, "_blank")}
+                  title="Baixar arquivo"
                 >
                   <Download className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="destructive"
                   size="icon"
-                  onClick={async () => {
-                    await deleteFile(previewImage.name);
-                    setPreviewImage(null);
-                  }}
+                  onClick={() =>
+                    handleDeleteClick(previewImage, {} as React.MouseEvent)
+                  }
+                  title="Excluir arquivo"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -495,6 +683,55 @@ export default function GaleriaPage() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Confirmar Exclusão
+            </DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir a imagem{" "}
+              <span className="font-semibold">{fileToDelete?.name}</span>?
+              <br />
+              <span className="text-destructive">
+                Esta ação não poderá ser desfeita.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setFileToDelete(null);
+              }}
+              disabled={!!deleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={!!deleting}
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

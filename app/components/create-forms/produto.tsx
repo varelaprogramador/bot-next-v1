@@ -37,7 +37,7 @@ import {
   FormMessage,
 } from "@/app/components/ui/form";
 import { FilePlus, Plus } from "lucide-react";
-import { ProdutosProps } from "@/app/utils/produto";
+import { ProdutosLojaProps } from "@/app/utils/produto";
 import ImageSelector from "../popup-imagens";
 import {
   Select,
@@ -48,7 +48,7 @@ import {
 } from "@/app/components/ui/select";
 
 interface DialogCreateProdutoProps {
-  onConfirmCreate: (args: { data: ProdutosProps }) => void;
+  onConfirmCreate: (args: { data: ProdutosLojaProps }) => void;
 }
 
 const schema = z.object({
@@ -81,13 +81,20 @@ export const CreateProduto = ({
       tipo: "produto"
     },
   });
-
   const onSubmit = (values: z.infer<typeof schema>) => {
-    onConfirmCreate({ data: values });
+    onConfirmCreate({
+      data: {
+        ...values,
+        id: crypto.randomUUID(),
+        position: 0,
+        reviews: []
+      } as unknown as ProdutosLojaProps
+    });
     setOpen(false);
     form.reset();
   };
-  function handlerUrl(url: string) {
+
+  const handlerUrl = (url: string) => {
     form.setValue("url_image", url);
 
   }

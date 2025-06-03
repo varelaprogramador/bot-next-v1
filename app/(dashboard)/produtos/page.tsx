@@ -5,7 +5,7 @@ import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { motion } from "framer-motion"
 import { ArrowRightIcon, Calendar, CircleDollarSign, Trash2, Search, BarChart3, Plus, Filter, Loader2, Tag, SlidersHorizontal, X } from 'lucide-react'
 
-import type { ProdutosProps } from "@/app/utils/produto"
+import type { ProdutosLojaProps } from "@/app/utils/produto"
 import { CreateProduto } from "@/app/components/create-forms/produto"
 import { EditProduto } from "@/app/components/edit-form/produto-edit"
 import { Badge } from "@/app/components/ui/badge"
@@ -46,9 +46,9 @@ import { Progress } from "@/app/components/ui/progress"
 export default function Produtos() {
   const supabase = createClientSupabaseClient()
   const [loading, setLoading] = useState(true)
-  const [data, setData] = useState<ProdutosProps[]>([])
+  const [data, setData] = useState<ProdutosLojaProps[]>([])
   const [filterText, setFilterText] = useState("")
-  const [filterData, setFilterData] = useState<ProdutosProps[]>([])
+  const [filterData, setFilterData] = useState<ProdutosLojaProps[]>([])
   const [filterCategoria, setFilterCategoria] = useState("")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "">("")
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
@@ -108,9 +108,9 @@ export default function Produtos() {
         setData((prevData) => {
           switch (payload.eventType) {
             case "INSERT":
-              return [...prevData, payload.new as ProdutosProps]
+              return [...prevData, payload.new as ProdutosLojaProps]
             case "UPDATE":
-              return prevData.map((item) => (item.id === payload.new.id ? (payload.new as ProdutosProps) : item))
+              return prevData.map((item) => (item.id === payload.new.id ? (payload.new as ProdutosLojaProps) : item))
             case "DELETE":
               return prevData.filter((item) => item.id !== payload.old.id)
             default:
@@ -158,7 +158,7 @@ export default function Produtos() {
     setFilterData(filtered)
   }, [filterText, filterCategoria, sortOrder, data])
 
-  const handleConfirmCreate = async ({ data }: { data: ProdutosProps }) => {
+  const handleConfirmCreate = async ({ data }: { data: ProdutosLojaProps }) => {
     setLoading(true)
     try {
       const { error } = await supabase.from("produtos").insert([data])
@@ -174,13 +174,28 @@ export default function Produtos() {
     }
   }
 
-  const handleConfirmEdit = async ({ data }: { data: ProdutosProps }) => {
+  const handleConfirmEdit = async ({ data }: { data: ProdutosLojaProps }) => {
+    console.log("TRYYYYYYYYYY", data)
     try {
-      const { error } = await supabase.from("produtos").update(data).eq("id", data.id)
+      const { error } = await supabase
+        .from("produtos")
+        .update(data)
+        .eq("id", data.id)
+
       if (error) {
         throw error
       }
+
+      // Atualiza o estado local com os dados atualizados
+      setData((prevData) =>
+        prevData.map((item) =>
+          item.id === data.id ? { ...item, ...data } : item
+        )
+      )
+
       toast.success("Produto atualizado com sucesso")
+
+      window.location.reload()
     } catch (error) {
       console.error("Erro ao atualizar produto:", error)
       toast.error("Não foi possível atualizar o produto")
