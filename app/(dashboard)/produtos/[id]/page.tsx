@@ -21,7 +21,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 
-import type { ProdutosProps } from "@/app/utils/produto"
+import type { ProdutosLojaProps } from "@/app/utils/produto"
 import { Button } from "@/app/components/ui/button"
 import { EditProduto } from "@/app/components/edit-form/produto-edit"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -46,7 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/ta
 const supabase = createClientSupabaseClient()
 
 export default function ProdutoDetalhes() {
-  const [produto, setProduto] = useState<ProdutosProps | null>(null)
+  const [produto, setProduto] = useState<ProdutosLojaProps | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false)
   const [salesStats, setSalesStats] = useState({
@@ -58,7 +58,7 @@ export default function ProdutoDetalhes() {
   const { id: productId } = useParams()
   const router = useRouter()
 
-  const handleConfirmEdit = async ({ data }: { data: ProdutosProps }) => {
+  const handleConfirmEdit = async ({ data }: { data: ProdutosLojaProps }) => {
     try {
       const { error } = await supabase.from("produtos").update(data).eq("id", data.id)
       if (error) {
