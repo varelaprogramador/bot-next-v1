@@ -40,7 +40,6 @@ import {
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 import { MediaBannerProps } from "../utils/media";
-import { CreateMedia } from "./create-forms/produto-2";
 import { CreateBanner } from "./create-forms/banner";
 
 export const columns: ColumnDef<MediaBannerProps>[] = [

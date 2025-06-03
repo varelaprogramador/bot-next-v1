@@ -1,4 +1,4 @@
-import { ProdutosProps } from "./produto";
+import { ProdutosLojaProps } from "./produto";
 
 export interface MediaProps {
   id?: string;
@@ -7,7 +7,7 @@ export interface MediaProps {
   status: boolean;
   created_at?: string;
   rota?: string;
-  produtos: ProdutosProps[];
+  produtos: ProdutosLojaProps[];
 }
 
 export interface MediaBannerProps {

@@ -31,7 +31,7 @@ import ImageSelector from "../popup-imagens";
 import { MediaProps } from "@/app/utils/media";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
-import { ProdutosProps } from "@/app/utils/produto";
+import { ProdutosProps, ProdutosLojaProps } from "@/app/utils/produto";
 import { createClientSupabaseClient } from "@/lib/supabase/client";
 import { Plus, X } from "lucide-react";
 
@@ -57,14 +57,15 @@ interface DialogCreateMediaProps {
   onConfirmCreate: (args: { data: MediaProps }) => void;
 }
 const produtoSchema = z.object({
-  id: z.string().optional(),
+  id: z.string(),
   nome: z.string().min(1, "O nome do produto é obrigatório"),
   descricao: z.string().min(1, "A descrição do produto é obrigatória"),
   valor: z.number().min(0, "O valor do produto deve ser maior que zero"),
   categoria: z.string().min(1, "A categoria do produto é obrigatória"),
   url_image: z.string().trim().min(1, "Campo Obrigatório!"),
   created_at: z.string().optional(),
-  tipo: z.enum(["produto", "combo"])
+  position: z.number().default(0),
+  reviews: z.any(),
 });
 
 const schema = z.object({
@@ -83,7 +84,7 @@ export const CreateMedia = ({
   const [products, setProducts] = useState<ProdutosProps[]>([]);
   const [productSelecionados, setProductSelecionados] = useState("");
   const [listProductSelecionados, setListProductSelecionados] = useState<
-    ProdutosProps[]
+    ProdutosLojaProps[]
   >([]);
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -102,9 +103,15 @@ export const CreateMedia = ({
     };
     loadProducts();
   }, []);
-
   const onSubmit = (values: z.infer<typeof schema>) => {
-    onConfirmCreate({ data: values });
+    const formattedData: MediaProps = {
+      ...values,
+      produtos: values.produtos.map(produto => ({
+        ...produto,
+        reviews: produto.reviews || []
+      }))
+    };
+    onConfirmCreate({ data: formattedData });
     setOpen(false);
     form.reset();
   };
@@ -154,9 +161,16 @@ export const CreateMedia = ({
           <Button
             onClick={(e) => {
               e.preventDefault();
+              const selectedProduct = products.find(
+                (produtoV) => produtoV.id === productSelecionados
+              );
+              if (!selectedProduct) {
+                // Should not happen if dropdown is populated correctly, but good practice
+                return;
+              }
               if (
                 listProductSelecionados.find(
-                  (produtoV) => produtoV.id === productSelecionados
+                  (produtoV) => produtoV.id === selectedProduct.id
                 )
               ) {
                 window.alert(
@@ -167,11 +181,16 @@ export const CreateMedia = ({
               setListProductSelecionados((prevProducts) => [
                 ...prevProducts,
                 {
-                  ...products.find(
-                    (product) => product.id === productSelecionados
-                  ) as ProdutosProps,
-                  tipo: "produto" as const
-                }
+                  id: selectedProduct.id!,
+                  nome: selectedProduct.nome,
+                  descricao: selectedProduct.descricao,
+                  valor: selectedProduct.valor,
+                  categoria: selectedProduct.categoria,
+                  url_image: selectedProduct.url_image,
+                  created_at: selectedProduct.created_at,
+                  position: 0, // Valor padrão para position
+                  reviews: {}, // Valor padrão para reviews
+                } as ProdutosLojaProps,
               ]);
             }}
           >
