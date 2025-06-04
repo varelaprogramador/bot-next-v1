@@ -10,7 +10,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
 import { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
-
+import NextTopLoader from 'nextjs-toploader'
 import { Inter } from "next/font/google";
 import './globals.css';
 
@@ -42,6 +42,7 @@ export default async function Layout({
           <link rel="manifest" href="/site.webmanifest" />
         </head>
         <body className="font-inter">
+          <NextTopLoader color="blue" />
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
             <SidebarProvider>
               <div className="flex w-screen font-poppins">
