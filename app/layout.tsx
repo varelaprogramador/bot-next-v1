@@ -12,27 +12,31 @@ import { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 
 import { Inter } from "next/font/google";
-import  './globals.css';
+import './globals.css';
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  robots: "noindex, nofollow",
+  title: "LERJ RECARGAS",
+  applicationName: "LERJ RECARGAS",
+  metadataBase: new URL("https://lerjrecargas.com/"),
+  icons: {
+    icon: "/ico.jpg",
+  },
 };
-
 export default async function Layout({
   children,
 }: {
   children: React.ReactNode;
 }) {
- 
+
   return (
     <ClerkProvider>
       <html lang="pt-BR" className={inter.variable} suppressHydrationWarning >
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <meta charSet="utf-8" />
-          <title>DASHBOAR LERJ</title>
+          <title>DASHBOARD LERJ</title>
           <link rel="icon" href="/favicon.ico" />
           <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
           <link rel="manifest" href="/site.webmanifest" />
