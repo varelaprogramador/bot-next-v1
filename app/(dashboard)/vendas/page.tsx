@@ -12,6 +12,9 @@ import { Button } from "@/app/components/ui/button"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
+import { EnhancedFechamentoMensal } from "@/app/components/fechamento-mensal";
+
 export default function Vendas() {
   const supabase = createClientSupabaseClient()
   const [loading, setLoading] = useState(true)
@@ -146,108 +149,121 @@ export default function Vendas() {
         </motion.div>
       </div>
 
-      {/* KPI Cards */}
-      <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6" variants={containerVariants}>
-        {loading ? (
-          <>
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-          </>
-        ) : (
-          <>
-            <motion.div variants={itemVariants}>
-              <Card className="overflow-hidden border-border bg-card/50 backdrop-blur-sm transition-all hover:bg-card/80">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">VENDAS HOJE</CardTitle>
-                    <CircleDollarSign className="h-4 w-4 text-primary" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-baseline justify-between">
-                    <div className="text-2xl font-bold">R$ {vendasHoje.toFixed(2)}</div>
-                    <div
-                      className={`flex items-center text-sm ${percentageChange >= 0 ? "text-green-500" : "text-red-500"}`}
-                    >
-                      {percentageChange >= 0 ? (
-                        <ArrowUpRight className="mr-1 h-4 w-4" />
-                      ) : (
-                        <ArrowUpRight className="mr-1 h-4 w-4 transform rotate-90" />
-                      )}
-                      {Math.abs(percentageChange).toFixed(1)}%
-                    </div>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">vs R$ {vendasOntem.toFixed(2)} ontem</p>
-                </CardContent>
-              </Card>
-            </motion.div>
+      <Tabs defaultValue="vendas" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="vendas">Vendas</TabsTrigger>
+          <TabsTrigger value="fechamento">Fechamento Mensal</TabsTrigger>
+        </TabsList>
 
-            <motion.div variants={itemVariants}>
-              <Card className="overflow-hidden border-border bg-card/50 backdrop-blur-sm transition-all hover:bg-card/80">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">TOTAL DE VENDAS</CardTitle>
-                    <ShoppingBag className="h-4 w-4 text-primary" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-baseline justify-between">
-                    <div className="text-2xl font-bold">R$ {totalVendas.toFixed(2)}</div>
-                    <Badge variant="outline" className="text-xs">
-                      {data.length} transações
-                    </Badge>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Média por venda:</span>
-                    <span className="font-medium">
-                      R$ {data.length > 0 ? (totalVendas / data.length).toFixed(2) : "0.00"}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+        <TabsContent value="vendas" className="space-y-6">
+          {/* KPI Cards */}
+          <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6" variants={containerVariants}>
+            {loading ? (
+              <>
+                <Skeleton className="h-32" />
+                <Skeleton className="h-32" />
+                <Skeleton className="h-32" />
+              </>
+            ) : (
+              <>
+                <motion.div variants={itemVariants}>
+                  <Card className="overflow-hidden border-border bg-card/50 backdrop-blur-sm transition-all hover:bg-card/80">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">VENDAS HOJE</CardTitle>
+                        <CircleDollarSign className="h-4 w-4 text-primary" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-baseline justify-between">
+                        <div className="text-2xl font-bold">R$ {vendasHoje.toFixed(2)}</div>
+                        <div
+                          className={`flex items-center text-sm ${percentageChange >= 0 ? "text-green-500" : "text-red-500"}`}
+                        >
+                          {percentageChange >= 0 ? (
+                            <ArrowUpRight className="mr-1 h-4 w-4" />
+                          ) : (
+                            <ArrowUpRight className="mr-1 h-4 w-4 transform rotate-90" />
+                          )}
+                          {Math.abs(percentageChange).toFixed(1)}%
+                        </div>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">vs R$ {vendasOntem.toFixed(2)} ontem</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-            <motion.div variants={itemVariants}>
-              <Card className="overflow-hidden border-border bg-card/50 backdrop-blur-sm transition-all hover:bg-card/80">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">VENDAS CONCLUÍDAS</CardTitle>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-baseline justify-between">
-                    <div className="text-2xl font-bold">{vendasConcluidas}</div>
-                    <Badge variant="outline" className="text-xs text-green-500 bg-green-500/10">
-                      {percentageConcluidas.toFixed(1)}%
-                    </Badge>
-                  </div>
-                  <div className="mt-2 h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500 rounded-full" style={{ width: `${percentageConcluidas}%` }} />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </>
-        )}
-      </motion.div>
+                <motion.div variants={itemVariants}>
+                  <Card className="overflow-hidden border-border bg-card/50 backdrop-blur-sm transition-all hover:bg-card/80">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">TOTAL DE VENDAS</CardTitle>
+                        <ShoppingBag className="h-4 w-4 text-primary" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-baseline justify-between">
+                        <div className="text-2xl font-bold">R$ {totalVendas.toFixed(2)}</div>
+                        <Badge variant="outline" className="text-xs">
+                          {data.length} transações
+                        </Badge>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Média por venda:</span>
+                        <span className="font-medium">
+                          R$ {data.length > 0 ? (totalVendas / data.length).toFixed(2) : "0.00"}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
 
-      {/* DataTable */}
-      <motion.div
-        variants={itemVariants}
-        className="rounded-lg border border-border bg-card/50 backdrop-blur-sm overflow-hidden"
-      >
-        {loading ? (
-          <div className="p-8 flex flex-col items-center justify-center">
-            <Skeleton className="h-8 w-8 rounded-full mb-4" />
-            <Skeleton className="h-4 w-48 mb-2" />
-            <Skeleton className="h-3 w-32" />
-          </div>
-        ) : (
-          <DataTableVendas data={data} />
-        )}
-      </motion.div>
+                <motion.div variants={itemVariants}>
+                  <Card className="overflow-hidden border-border bg-card/50 backdrop-blur-sm transition-all hover:bg-card/80">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">VENDAS CONCLUÍDAS</CardTitle>
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-baseline justify-between">
+                        <div className="text-2xl font-bold">{vendasConcluidas}</div>
+                        <Badge variant="outline" className="text-xs text-green-500 bg-green-500/10">
+                          {percentageConcluidas.toFixed(1)}%
+                        </Badge>
+                      </div>
+                      <div className="mt-2 h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-green-500 rounded-full" style={{ width: `${percentageConcluidas}%` }} />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </>
+            )}
+          </motion.div>
+
+          {/* DataTable */}
+          <motion.div
+            variants={itemVariants}
+            className="rounded-lg border border-border bg-card/50 backdrop-blur-sm overflow-hidden"
+          >
+            {loading ? (
+              <div className="p-8 flex flex-col items-center justify-center">
+                <Skeleton className="h-8 w-8 rounded-full mb-4" />
+                <Skeleton className="h-4 w-48 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            ) : (
+              <DataTableVendas data={data} />
+            )}
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="fechamento">
+          <EnhancedFechamentoMensal></EnhancedFechamentoMensal>
+        </TabsContent>
+      </Tabs>
     </motion.div>
   )
 }
