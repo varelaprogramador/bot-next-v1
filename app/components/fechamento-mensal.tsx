@@ -8,7 +8,7 @@ import { Badge } from "@/app/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import { Progress } from "@/app/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert";
-import { FileSpreadsheet, FileText, Download, Calendar, TrendingUp, TrendingDown, Target, AlertTriangle, DollarSign, Users, ShoppingCart, BarChart3, PieChartIcon, Activity, Zap, Brain, Lightbulb } from 'lucide-react';
+import { FileSpreadsheet, FileText, Download, Calendar, TrendingUp, TrendingDown, Target, AlertTriangle, DollarSign, Users, ShoppingCart, BarChart3, PieChartIcon, Activity, Zap, Brain, Lightbulb, Calculator } from 'lucide-react';
 import { toast } from "sonner";
 import { format, parseISO, subMonths, addMonths, startOfMonth, endOfMonth, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -47,6 +47,26 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/app/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/app/components/ui/dialog";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/app/components/ui/form";
+import { Input } from "@/app/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 export interface VendasProps {
     origin: string;
@@ -77,11 +97,15 @@ interface ResumoMensal {
         nome: string;
         quantidade: number;
         valorTotal: number;
+        custo?: number;
+        lucro?: number;
     }[];
     vendasPorDia: {
         data: string;
         quantidade: number;
         valor: number;
+        custo?: number;
+        lucro?: number;
         status: {
             concluida: number;
             pendente: number;
@@ -92,23 +116,32 @@ interface ResumoMensal {
         categoria: string;
         quantidade: number;
         valor: number;
+        custo?: number;
+        lucro?: number;
     }[];
     vendasPorStatus: {
         [key in StatusVenda]: {
             quantidade: number;
             valor: number;
+            custo?: number;
+            lucro?: number;
         };
     };
     metricas: {
         crescimentoMensal: number;
         taxaConversao: number;
         ticketMedio: number;
+        margemLucro?: number;
+        lucroTotal?: number;
+        custoTotal?: number;
     };
     comparativoMesAnterior: {
         vendas: number;
         crescimento: number;
         novosClientes: number;
         clientesRecorrentes: number;
+        lucro?: number;
+        crescimentoLucro?: number;
     };
 }
 
@@ -358,6 +391,77 @@ const RelatorioEstrategicoPDF = ({ resumo, mesSelecionado }: { resumo: ResumoMen
     </Document>
 );
 
+const schema = z.object({
+    custo: z.preprocess(
+        (val) => (typeof val === "string" ? parseFloat(val) : val),
+        z.number().min(0, "O custo não pode ser negativo!")
+    ),
+});
+
+const DialogCustoProduto = ({ produto, onConfirm }: { produto: { id: string; nome: string; valorTotal: number }; onConfirm: (custo: number) => void }) => {
+    const [open, setOpen] = useState(false);
+    const form = useForm<z.infer<typeof schema>>({
+        resolver: zodResolver(schema),
+        defaultValues: {
+            custo: 0,
+        },
+    });
+
+    const onSubmit = (values: z.infer<typeof schema>) => {
+        onConfirm(values.custo);
+        setOpen(false);
+        form.reset();
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8">
+                    <Calculator className="h-4 w-4 mr-2" />
+                    Definir Custo
+                </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Definir Custo do Produto</DialogTitle>
+                    <DialogDescription>
+                        Informe o custo de aquisição para o produto {produto.nome}
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="custo"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Custo (R$)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            {...field}
+                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                                Cancelar
+                            </Button>
+                            <Button type="submit">Salvar</Button>
+                        </div>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 export const EnhancedFechamentoMensal = () => {
     const [loading, setLoading] = useState(false);
     const [resumoMensal, setResumoMensal] = useState<ResumoMensal | null>(null);
@@ -367,6 +471,7 @@ export const EnhancedFechamentoMensal = () => {
     });
     const [activeTab, setActiveTab] = useState("overview");
     const supabase = createClientSupabaseClient();
+    const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
 
     // Função para calcular métricas estratégicas
     const calcularMetricasEstrategicas = (vendas: any[], vendasMesAnterior: any[]) => {
@@ -389,6 +494,31 @@ export const EnhancedFechamentoMensal = () => {
             taxaConversao,
             ticketMedio
         };
+    };
+
+    const handleDefinirCusto = async (produtoId: string, custo: number) => {
+        try {
+            const { error } = await supabase
+                .from("custos_produtos")
+                .upsert({
+                    id_produto: produtoId,
+                    custo: custo,
+                    updated_at: new Date().toISOString(),
+                });
+
+            if (error) throw error;
+
+            setCustosProdutos(prev => ({
+                ...prev,
+                [produtoId]: custo
+            }));
+
+            toast.success("Custo definido com sucesso!");
+            carregarFechamentoMensal();
+        } catch (error) {
+            console.error("Erro ao definir custo:", error);
+            toast.error("Erro ao definir custo do produto");
+        }
     };
 
     const carregarFechamentoMensal = async () => {
@@ -415,6 +545,20 @@ export const EnhancedFechamentoMensal = () => {
                 .gte("created_at", startOfMonth(mesAnterior).toISOString())
                 .lte("created_at", endOfMonth(mesAnterior).toISOString());
 
+            // Buscar custos dos produtos
+            const { data: custos, error: custosError } = await supabase
+                .from("custos_produtos")
+                .select("*");
+
+            if (custosError) throw custosError;
+
+            const custosMap = (custos || []).reduce((acc, item) => ({
+                ...acc,
+                [item.id_produto]: item.custo
+            }), {} as Record<string, number>);
+
+            setCustosProdutos(custosMap);
+
             const produtosVendidos = new Map();
             const vendasPorDia = new Map();
             const vendasPorCategoria = new Map();
@@ -427,30 +571,36 @@ export const EnhancedFechamentoMensal = () => {
             vendas?.forEach((venda) => {
                 if (!venda || !venda.detalhes_produto) return;
 
-                const data = format(new Date(venda.created_at), "dd/MM/yyyy");
-                const detalhes = venda.detalhes_produto;
-                const status = (venda.status || "pendente") as StatusVenda;
+                const custoProduto = custosMap[venda.detalhes_produto.id] || 0;
+                const lucroVenda = (venda.valor || 0) - custoProduto;
 
                 // Contagem de produtos
-                if (!produtosVendidos.has(detalhes.id)) {
-                    produtosVendidos.set(detalhes.id, {
-                        id: detalhes.id,
-                        nome: detalhes.nome,
+                if (!produtosVendidos.has(venda.detalhes_produto.id)) {
+                    produtosVendidos.set(venda.detalhes_produto.id, {
+                        id: venda.detalhes_produto.id,
+                        nome: venda.detalhes_produto.nome,
                         quantidade: 0,
                         valorTotal: 0,
+                        custo: custoProduto,
+                        lucro: lucroVenda,
                     });
                 }
-                const produto = produtosVendidos.get(detalhes.id);
+                const produto = produtosVendidos.get(venda.detalhes_produto.id);
                 if (produto) {
                     produto.quantidade += 1;
                     produto.valorTotal += venda.valor || 0;
+                    produto.custo = (produto.custo || 0) + custoProduto;
+                    produto.lucro = (produto.lucro || 0) + lucroVenda;
                 }
 
                 // Vendas por dia
+                const data = format(new Date(venda.created_at), "dd/MM/yyyy");
                 if (!vendasPorDia.has(data)) {
                     vendasPorDia.set(data, {
                         quantidade: 0,
                         valor: 0,
+                        custo: 0,
+                        lucro: 0,
                         status: {
                             concluida: 0,
                             pendente: 0,
@@ -462,24 +612,30 @@ export const EnhancedFechamentoMensal = () => {
                 if (dia) {
                     dia.quantidade += 1;
                     dia.valor += venda.valor || 0;
-                    dia.status[status] += 1;
+                    dia.custo = (dia.custo || 0) + custoProduto;
+                    dia.lucro = (dia.lucro || 0) + lucroVenda;
+                    dia.status[venda.status as StatusVenda] += 1;
                 }
 
                 // Vendas por categoria
                 const categoria = venda.tipo_produto || "Sem categoria";
                 if (!vendasPorCategoria.has(categoria)) {
-                    vendasPorCategoria.set(categoria, { quantidade: 0, valor: 0 });
+                    vendasPorCategoria.set(categoria, { quantidade: 0, valor: 0, custo: 0, lucro: 0 });
                 }
                 const cat = vendasPorCategoria.get(categoria);
                 if (cat) {
                     cat.quantidade += 1;
                     cat.valor += venda.valor || 0;
+                    cat.custo = (cat.custo || 0) + custoProduto;
+                    cat.lucro = (cat.lucro || 0) + lucroVenda;
                 }
 
                 // Vendas por status
-                if (vendasPorStatus[status]) {
-                    vendasPorStatus[status].quantidade += 1;
-                    vendasPorStatus[status].valor += venda.valor || 0;
+                if (vendasPorStatus[venda.status as StatusVenda]) {
+                    vendasPorStatus[venda.status as StatusVenda].quantidade += 1;
+                    vendasPorStatus[venda.status as StatusVenda].valor += venda.valor || 0;
+                    vendasPorStatus[venda.status as StatusVenda].custo = (vendasPorStatus[venda.status as StatusVenda].custo || 0) + custoProduto;
+                    vendasPorStatus[venda.status as StatusVenda].lucro = (vendasPorStatus[venda.status as StatusVenda].lucro || 0) + lucroVenda;
                 }
             });
 
@@ -498,6 +654,50 @@ export const EnhancedFechamentoMensal = () => {
             const novosClientes = [...clientesUnicos].filter(id => !clientesUnicosAnterior.has(id)).length;
             const clientesRecorrentes = [...clientesUnicos].filter(id => clientesUnicosAnterior.has(id)).length;
 
+            // Calcular custos e lucros
+            let custoTotal = 0;
+            let lucroTotal = 0;
+
+            vendas?.forEach((venda) => {
+                if (!venda || !venda.detalhes_produto) return;
+
+                const custoProduto = custosMap[venda.detalhes_produto.id] || 0;
+                const lucroVenda = (venda.valor || 0) - custoProduto;
+
+                custoTotal += custoProduto;
+                lucroTotal += lucroVenda;
+
+                // Atualizar produtos vendidos
+                const produto = produtosVendidos.get(venda.detalhes_produto.id);
+                if (produto) {
+                    produto.custo = (produto.custo || 0) + custoProduto;
+                    produto.lucro = (produto.lucro || 0) + lucroVenda;
+                }
+
+                // Atualizar vendas por dia
+                const data = format(new Date(venda.created_at), "dd/MM/yyyy");
+                const dia = vendasPorDia.get(data);
+                if (dia) {
+                    dia.custo = (dia.custo || 0) + custoProduto;
+                    dia.lucro = (dia.lucro || 0) + lucroVenda;
+                }
+
+                // Atualizar vendas por categoria
+                const categoria = venda.tipo_produto || "Sem categoria";
+                const cat = vendasPorCategoria.get(categoria);
+                if (cat) {
+                    cat.custo = (cat.custo || 0) + custoProduto;
+                    cat.lucro = (cat.lucro || 0) + lucroVenda;
+                }
+
+                // Atualizar vendas por status
+                const status = (venda.status || "pendente") as StatusVenda;
+                if (vendasPorStatus[status]) {
+                    vendasPorStatus[status].custo = (vendasPorStatus[status].custo || 0) + custoProduto;
+                    vendasPorStatus[status].lucro = (vendasPorStatus[status].lucro || 0) + lucroVenda;
+                }
+            });
+
             const resumo: ResumoMensal = {
                 totalVendas: totalVendasAtual,
                 quantidadeProdutos: vendas?.length || 0,
@@ -513,12 +713,22 @@ export const EnhancedFechamentoMensal = () => {
                     })
                 ),
                 vendasPorStatus,
-                metricas,
+                metricas: {
+                    ...metricas,
+                    custoTotal,
+                    lucroTotal,
+                    margemLucro: totalVendasAtual > 0 ? (lucroTotal / totalVendasAtual) * 100 : 0
+                },
                 comparativoMesAnterior: {
                     vendas: totalVendasAnterior,
                     crescimento,
                     novosClientes,
-                    clientesRecorrentes
+                    clientesRecorrentes,
+                    lucro: lucroTotal,
+                    crescimentoLucro: vendasMesAnterior?.reduce((acc, venda) => {
+                        const custoProduto = custosMap[venda.detalhes_produto?.id] || 0;
+                        return acc + ((venda.valor || 0) - custoProduto);
+                    }, 0) || 0
                 }
             };
 
@@ -1013,7 +1223,10 @@ export const EnhancedFechamentoMensal = () => {
                                                         label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                                                     >
                                                         {resumoMensal.vendasPorCategoria.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                                            <Cell
+                                                                key={`cell-${index}`}
+                                                                fill={COLORS[index % COLORS.length]}
+                                                            />
                                                         ))}
                                                     </Pie>
                                                     <Tooltip content={<CustomTooltip />} />
@@ -1118,6 +1331,22 @@ export const EnhancedFechamentoMensal = () => {
                                         </p>
                                     </CardContent>
                                 </Card>
+
+                                <Card className="shadow-sm">
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="text-sm font-medium">
+                                            Lucro Total
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-0">
+                                        <p className="text-2xl font-bold text-green-600">
+                                            R$ {resumoMensal.metricas.lucroTotal?.toFixed(2) || "0.00"}
+                                        </p>
+                                        <p className="text-sm text-muted-foreground mt-2">
+                                            Margem: {resumoMensal.metricas.margemLucro?.toFixed(1)}%
+                                        </p>
+                                    </CardContent>
+                                </Card>
                             </div>
 
                             {/* Gráficos Detalhados */}
@@ -1215,10 +1444,12 @@ export const EnhancedFechamentoMensal = () => {
                                                 <tr className="border-b">
                                                     <th className="text-left p-3">Data</th>
                                                     <th className="text-left p-3">Total</th>
+                                                    <th className="text-left p-3">Custo</th>
+                                                    <th className="text-left p-3">Lucro</th>
+                                                    <th className="text-left p-3">Margem</th>
                                                     <th className="text-left p-3">Concluídas</th>
                                                     <th className="text-left p-3">Pendentes</th>
                                                     <th className="text-left p-3">Expiradas</th>
-                                                    <th className="text-left p-3">Ticket Médio</th>
                                                     <th className="text-left p-3">Performance</th>
                                                 </tr>
                                             </thead>
@@ -1227,24 +1458,18 @@ export const EnhancedFechamentoMensal = () => {
                                                     .sort((a, b) => {
                                                         const [diaA, mesA, anoA] = a.data.split("/").map(Number);
                                                         const [diaB, mesB, anoB] = b.data.split("/").map(Number);
-                                                        return (
-                                                            new Date(anoA, mesA - 1, diaA).getTime() -
-                                                            new Date(anoB, mesB - 1, diaB).getTime()
-                                                        );
+                                                        return new Date(anoA, mesA - 1, diaA).getTime() - new Date(anoB, mesB - 1, diaB).getTime();
                                                     })
                                                     .map((dia) => {
-                                                        const ticketMedioDia = dia.quantidade && dia.quantidade > 0
-                                                            ? dia.valor / dia.quantidade
-                                                            : 0;
-                                                        const taxaConversaoDia = dia.quantidade && dia.quantidade > 0
-                                                            ? (dia.status.concluida / dia.quantidade) * 100
-                                                            : 0;
+                                                        const margemDia = dia.valor > 0 ? ((dia.lucro || 0) / dia.valor) * 100 : 0;
+                                                        const taxaConversaoDia = dia.quantidade > 0 ? (dia.status.concluida / dia.quantidade) * 100 : 0;
                                                         return (
                                                             <tr key={dia.data} className="border-b hover:bg-muted/50">
                                                                 <td className="p-3 font-medium">{dia.data}</td>
-                                                                <td className="p-3">
-                                                                    R$ {dia.valor.toFixed(2)}
-                                                                </td>
+                                                                <td className="p-3">R$ {dia.valor.toFixed(2)}</td>
+                                                                <td className="p-3">R$ {(dia.custo || 0).toFixed(2)}</td>
+                                                                <td className="p-3 text-green-600">R$ {(dia.lucro || 0).toFixed(2)}</td>
+                                                                <td className="p-3">{margemDia.toFixed(1)}%</td>
                                                                 <td className="p-3 text-green-600">
                                                                     {dia.status.concluida} ({((dia.status.concluida / dia.quantidade) * 100).toFixed(0)}%)
                                                                 </td>
@@ -1253,9 +1478,6 @@ export const EnhancedFechamentoMensal = () => {
                                                                 </td>
                                                                 <td className="p-3 text-red-600">
                                                                     {dia.status.expirado} ({((dia.status.expirado / dia.quantidade) * 100).toFixed(0)}%)
-                                                                </td>
-                                                                <td className="p-3">
-                                                                    R$ {ticketMedioDia.toFixed(2)}
                                                                 </td>
                                                                 <td className="p-3">
                                                                     <Badge variant={
@@ -1271,6 +1493,61 @@ export const EnhancedFechamentoMensal = () => {
                                                             </tr>
                                                         );
                                                     })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Lista de Produtos com Custos */}
+                            <Card className="shadow-sm">
+                                <CardHeader className="pb-4">
+                                    <CardTitle>Produtos Vendidos</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="border-b">
+                                                    <th className="text-left p-3">Produto</th>
+                                                    <th className="text-left p-3">Quantidade</th>
+                                                    <th className="text-left p-3">Valor Total</th>
+                                                    <th className="text-left p-3">Custo Unitário</th>
+                                                    <th className="text-left p-3">Custo Total</th>
+                                                    <th className="text-left p-3">Lucro</th>
+                                                    <th className="text-left p-3">Margem</th>
+                                                    <th className="text-left p-3">Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {resumoMensal.produtosVendidos.map((produto) => {
+                                                    const custoUnitario = custosProdutos[produto.id] || 0;
+                                                    const custoTotal = custoUnitario * produto.quantidade;
+                                                    const lucro = produto.valorTotal - custoTotal;
+                                                    const margem = produto.valorTotal > 0 ? (lucro / produto.valorTotal) * 100 : 0;
+
+                                                    return (
+                                                        <tr key={produto.id} className="border-b hover:bg-muted/50">
+                                                            <td className="p-3 font-medium">{produto.nome}</td>
+                                                            <td className="p-3">{produto.quantidade}</td>
+                                                            <td className="p-3">R$ {produto.valorTotal.toFixed(2)}</td>
+                                                            <td className="p-3">R$ {custoUnitario.toFixed(2)}</td>
+                                                            <td className="p-3">R$ {custoTotal.toFixed(2)}</td>
+                                                            <td className="p-3 text-green-600">R$ {lucro.toFixed(2)}</td>
+                                                            <td className="p-3">{margem.toFixed(1)}%</td>
+                                                            <td className="p-3">
+                                                                <DialogCustoProduto
+                                                                    produto={{
+                                                                        id: produto.id,
+                                                                        nome: produto.nome,
+                                                                        valorTotal: produto.valorTotal
+                                                                    }}
+                                                                    onConfirm={(custo) => handleDefinirCusto(produto.id, custo)}
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
