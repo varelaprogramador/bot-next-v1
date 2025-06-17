@@ -1,6 +1,7 @@
 export interface VendasProps {
   origin: string;
   uuid: string;
+  id_transacao?: string;
   id_produto?: string;
   nome_cliente?: string;
   id_cliente: string;

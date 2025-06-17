@@ -159,8 +159,11 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
     const onSubmit = async (data: VendaFormData) => {
         setLoading(true);
         try {
+            console.log("Dados do formulário:", data);
+
             const vendaData = {
                 uuid: uuidv4(),
+                id_transacao: uuidv4(),
                 origin: "manual",
                 nome_cliente: data.nome_cliente,
                 id_cliente: data.id_cliente,
@@ -178,9 +181,14 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
                 },
             };
 
-            const { error } = await supabase.from("vendas").insert([vendaData]);
+            console.log("Dados da venda a serem inseridos:", vendaData);
+
+            const { data: insertedData, error } = await supabase.from("vendas").insert([vendaData]).select();
+
+            console.log("Resposta do Supabase:", { insertedData, error });
 
             if (error) {
+                console.error("Erro detalhado:", error);
                 throw error;
             }
 
@@ -190,7 +198,7 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
             onVendaCriada?.();
         } catch (error) {
             console.error("Erro ao registrar venda:", error);
-            toast.error("Erro ao registrar venda. Tente novamente.");
+            toast.error(`Erro ao registrar venda: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
         } finally {
             setLoading(false);
         }
