@@ -257,7 +257,7 @@ export default function Vendas() {
                 <Skeleton className="h-3 w-32" />
               </div>
             ) : (
-              <DataTableVendas data={data} />
+              <DataTableVendas data={data} onVendaDeleted={loadData} />
             )}
           </motion.div>
         </TabsContent>

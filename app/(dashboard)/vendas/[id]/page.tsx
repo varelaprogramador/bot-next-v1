@@ -40,33 +40,34 @@ export default function Vendas() {
     }
   }
 
+  // Função para recarregar os dados
+  const loadData = async () => {
+    setLoading(true)
+    try {
+      // Buscar detalhes do produto
+      const productData = await fetchProductDetails(id as string)
+      setProductDetails(productData)
+      setProductName(productData?.nome || null)
+
+      // Buscar vendas
+      const { data: vendas, error } = await supabase.from("vendas").select("*").eq("id_produto", id)
+
+      if (error) {
+        throw error
+      }
+
+      setData(vendas || [])
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error)
+      setError("Não foi possível carregar os dados de vendas. Tente novamente mais tarde.")
+      toast.error("Não foi possível carregar as vendas. Tente novamente.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Carregar dados inicialmente
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true)
-      try {
-        // Buscar detalhes do produto
-        const productData = await fetchProductDetails(id as string)
-        setProductDetails(productData)
-        setProductName(productData?.nome || null)
-
-        // Buscar vendas
-        const { data: vendas, error } = await supabase.from("vendas").select("*").eq("id_produto", id)
-
-        if (error) {
-          throw error
-        }
-
-        setData(vendas || [])
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error)
-        setError("Não foi possível carregar os dados de vendas. Tente novamente mais tarde.")
-        toast.error("Não foi possível carregar as vendas. Tente novamente.")
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadData()
   }, [id, supabase])
 
@@ -337,7 +338,7 @@ export default function Vendas() {
         variants={itemVariants}
         className="rounded-lg border border-border bg-card/50 backdrop-blur-sm overflow-hidden"
       >
-        <DataTableVendas data={data} />
+        <DataTableVendas data={data} onVendaDeleted={loadData} />
       </motion.div>
     </motion.div>
   )

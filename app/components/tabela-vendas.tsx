@@ -7,9 +7,12 @@ import {
   Search,
   SortAsc,
   SortDesc,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+import { createClientSupabaseClient } from "@/lib/supabase/client";
 
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
@@ -36,6 +39,16 @@ import {
   DialogTitle,
 } from "@/app/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -46,9 +59,10 @@ import type { VendasProps } from "@/app/utils/vendas";
 
 interface DataTableVendasProps {
   data: VendasProps[];
+  onVendaDeleted?: () => void;
 }
 
-export function DataTableVendas({ data }: DataTableVendasProps) {
+export function DataTableVendas({ data, onVendaDeleted }: DataTableVendasProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<{
@@ -57,6 +71,10 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
   }>({ key: "created_at", direction: "desc" });
   const [selectedVenda, setSelectedVenda] = useState<VendasProps | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [vendaToDelete, setVendaToDelete] = useState<VendasProps | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const supabase = createClientSupabaseClient();
 
   // Função para filtrar e ordenar os dados
   const filteredAndSortedData = data
@@ -255,6 +273,39 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
     setIsDetailOpen(true);
   };
 
+  // Função para abrir o diálogo de confirmação de exclusão
+  const openDeleteDialog = (venda: VendasProps) => {
+    setVendaToDelete(venda);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Função para deletar a venda
+  const handleDeleteVenda = async () => {
+    if (!vendaToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("vendas")
+        .delete()
+        .eq("uuid", vendaToDelete.uuid);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Venda excluída com sucesso!");
+      setIsDeleteDialogOpen(false);
+      setVendaToDelete(null);
+      onVendaDeleted?.();
+    } catch (error) {
+      console.error("Erro ao deletar venda:", error);
+      toast.error("Erro ao excluir venda. Tente novamente.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Obter todos os status únicos dos dados
   const uniqueStatuses = Array.from(new Set(data.map((venda) => venda.status)));
 
@@ -444,6 +495,16 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
                             <Download className="mr-2 h-4 w-4" />
                             Gerar comprovante
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e: { stopPropagation: () => void }) => {
+                              e.stopPropagation();
+                              openDeleteDialog(venda);
+                            }}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir venda
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -550,6 +611,35 @@ export function DataTableVendas({ data }: DataTableVendasProps) {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Dialog de confirmação de exclusão */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita.
+                <br />
+                <br />
+                <strong>Venda:</strong> {vendaToDelete?.nome_cliente || vendaToDelete?.id_cliente}
+                <br />
+                <strong>Valor:</strong> {vendaToDelete ? formatCurrency(vendaToDelete.valor) : ""}
+                <br />
+                <strong>Data:</strong> {vendaToDelete ? formatDate(vendaToDelete.created_at) : ""}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteVenda}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+              >
+                {isDeleting ? "Excluindo..." : "Excluir"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
