@@ -59,14 +59,37 @@ interface VendaManualProps {
 const fetchProducts = async (): Promise<ProdutosProps[]> => {
     const supabase = createClientSupabaseClient();
     try {
-        const { data, error } = await supabase.from("produtos").select("*");
+        // Buscar produtos
+        const { data: produtos, error: produtosError } = await supabase.from("produtos").select("*");
 
-        if (error) {
-            console.error("Erro ao carregar produtos:", error);
-            return [];
+        if (produtosError) {
+            console.error("Erro ao carregar produtos:", produtosError);
         }
 
-        return data || [];
+        // Buscar combos
+        const { data: combos, error: combosError } = await supabase.from("combos").select("*");
+
+        if (combosError) {
+            console.error("Erro ao carregar combos:", combosError);
+        }
+
+        // Converter combos para o formato de produtos
+        const combosFormatados: ProdutosProps[] = (combos || []).map(combo => ({
+            id: combo.id,
+            nome: combo.nome,
+            valor: combo.valor,
+            tipo: "combo" as const,
+            categoria: "Combo",
+            descricao: combo.descricao || "",
+            created_at: combo.created_at,
+            imagem: null,
+            url_image: ""
+        }));
+
+        // Combinar produtos e combos
+        const todosOsItens = [...(produtos || []), ...combosFormatados];
+
+        return todosOsItens;
     } catch (error) {
         console.error("Erro na requisição:", error);
         return [];
@@ -119,7 +142,9 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
     const filteredProducts = products.filter(product =>
         product.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.categoria?.toLowerCase().includes(searchTerm.toLowerCase())
+        product.categoria?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.tipo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // Função para preencher automaticamente os campos quando um produto for selecionado
@@ -141,7 +166,8 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
             form.setValue("tipo_produto", selectedProduct.tipo || "produto");
             form.setValue("categoria", selectedProduct.categoria || "");
 
-            toast.success(`Produto "${selectedProduct.nome}" selecionado!`);
+            const itemType = selectedProduct.tipo === "combo" ? "Combo" : "Produto";
+            toast.success(`${itemType} "${selectedProduct.nome}" selecionado!`);
         }
     };
 
@@ -153,7 +179,7 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
         form.setValue("valor", "");
         form.setValue("tipo_produto", "");
         form.setValue("categoria", "");
-        toast.info("Seleção de produto limpa");
+        toast.info("Seleção de item limpa");
     };
 
     const onSubmit = async (data: VendaFormData) => {
@@ -226,7 +252,7 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
                                     <div className="relative">
                                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            placeholder="Buscar por nome, ID ou categoria..."
+                                            placeholder="Buscar por nome, ID, categoria, tipo ou descrição..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="pl-10"
@@ -241,10 +267,10 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
                                             <SelectTrigger>
                                                 <SelectValue placeholder={
                                                     loadingProducts
-                                                        ? "Carregando produtos..."
+                                                        ? "Carregando produtos e combos..."
                                                         : searchTerm
-                                                            ? `Produtos encontrados: ${filteredProducts.length}`
-                                                            : "Selecione um produto para preenchimento automático"
+                                                            ? `Itens encontrados: ${filteredProducts.length}`
+                                                            : "Selecione um produto ou combo para preenchimento automático"
                                                 } />
                                             </SelectTrigger>
                                         </FormControl>
@@ -265,11 +291,11 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
                                                 ))
                                             ) : searchTerm ? (
                                                 <div className="p-2 text-sm text-muted-foreground">
-                                                    Nenhum produto encontrado para &quot;{searchTerm}&quot;
+                                                    Nenhum item encontrado para &quot;{searchTerm}&quot;
                                                 </div>
                                             ) : (
                                                 <div className="p-2 text-sm text-muted-foreground">
-                                                    Nenhum produto disponível
+                                                    Nenhum item disponível
                                                 </div>
                                             )}
                                         </SelectContent>
@@ -277,7 +303,7 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
 
                                     {searchTerm && (
                                         <p className="text-xs text-muted-foreground">
-                                            Mostrando {filteredProducts.length} de {products.length} produtos
+                                            Mostrando {filteredProducts.length} de {products.length} itens
                                         </p>
                                     )}
                                 </>
@@ -289,7 +315,7 @@ export const VendaManual = ({ onVendaCriada }: VendaManualProps) => {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <p className="font-medium text-sm">
-                                                Produto Selecionado: {form.watch("nome_produto")}
+                                                Item Selecionado: {form.watch("nome_produto")}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
                                                 ID: {form.watch("id_produto")} |
