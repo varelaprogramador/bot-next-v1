@@ -14,6 +14,7 @@ import { motion } from "framer-motion"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
 import { EnhancedFechamentoMensal } from "@/app/components/fechamento-mensal";
+import { VendaManual } from "@/app/components/create-forms/venda-manual";
 
 export default function Vendas() {
   const supabase = createClientSupabaseClient()
@@ -141,7 +142,8 @@ export default function Vendas() {
           <h1 className="text-3xl font-bold">Vendas</h1>
           <p className="text-muted-foreground">Acompanhe e gerencie todas as suas transações</p>
         </motion.div>
-        <motion.div variants={itemVariants}>
+        <motion.div variants={itemVariants} className="flex items-center gap-2">
+          <VendaManual onVendaCriada={loadData} />
           <Button onClick={loadData} disabled={refreshing} className="flex items-center gap-2">
             <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Atualizando..." : "Atualizar dados"}
