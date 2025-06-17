@@ -10,7 +10,6 @@ export interface VendasProps {
   status: string;
   tipo_pagamento?: string;
   tipo_produto: string;
-  categoria?: string;
   detalhes_produto: {
     id: string;
     nome: string;
