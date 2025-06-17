@@ -24,6 +24,21 @@ export const metadata: Metadata = {
     icon: "/ico.jpg",
   },
 };
+
+// Componente wrapper para evitar problemas de hidratação
+function ThemeWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="dark"
+      enableSystem
+      disableTransitionOnChange
+    >
+      {children}
+    </ThemeProvider>
+  );
+}
+
 export default async function Layout({
   children,
 }: {
@@ -32,7 +47,7 @@ export default async function Layout({
 
   return (
     <ClerkProvider>
-      <html lang="pt-BR" className={inter.variable} suppressHydrationWarning >
+      <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <meta charSet="utf-8" />
@@ -40,10 +55,23 @@ export default async function Layout({
           <link rel="icon" href="/favicon.ico" />
           <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
           <link rel="manifest" href="/site.webmanifest" />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                try {
+                  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark')
+                  } else {
+                    document.documentElement.classList.remove('dark')
+                  }
+                } catch (_) {}
+              `,
+            }}
+          />
         </head>
         <body className="font-inter">
           <NextTopLoader color="blue" />
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <ThemeWrapper>
             <SidebarProvider>
               <div className="flex w-screen font-poppins">
                 <AppSidebar />
@@ -60,7 +88,7 @@ export default async function Layout({
                 </SidebarInset>
               </div>
             </SidebarProvider>
-          </ThemeProvider>
+          </ThemeWrapper>
         </body>
       </html>
     </ClerkProvider>

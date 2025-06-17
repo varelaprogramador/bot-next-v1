@@ -21,19 +21,23 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { UserButton } from "@clerk/nextjs"
 import { useUser } from "@clerk/nextjs"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Switch } from "@/app/components/ui/switch"
 import { Label } from "@/app/components/ui/label"
 import { useTheme } from "next-themes"
 import { Preloader } from "@/app/components/ui/preloader"
 
-export function AppSidebar() {
-  const pathname = usePathname()
+// Hook personalizado para evitar problemas de hidratação
+const useThemeSwitch = () => {
   const { theme, setTheme } = useTheme()
-  const { user } = useUser()
+  const [mounted, setMounted] = useState(false)
   const [showPreloader, setShowPreloader] = useState(false)
   const [targetTheme, setTargetTheme] = useState<"light" | "dark">("light")
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleThemeChange = (checked: boolean) => {
     const newTheme = checked ? "dark" : "light"
@@ -45,6 +49,20 @@ export function AppSidebar() {
     setTheme(targetTheme)
     setShowPreloader(false)
   }
+
+  return {
+    theme,
+    mounted,
+    showPreloader,
+    handleThemeChange,
+    handlePreloaderComplete
+  }
+}
+
+export function AppSidebar() {
+  const pathname = usePathname()
+  const { user } = useUser()
+  const { theme, mounted, showPreloader, handleThemeChange, handlePreloaderComplete } = useThemeSwitch()
 
   const routes = [
     {
@@ -151,11 +169,15 @@ export function AppSidebar() {
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Switch
-                  id="dark-mode"
-                  checked={theme === "dark"}
-                  onCheckedChange={handleThemeChange}
-                />
+                {mounted ? (
+                  <Switch
+                    id="dark-mode"
+                    checked={theme === "dark"}
+                    onCheckedChange={handleThemeChange}
+                  />
+                ) : (
+                  <div className="h-5 w-9 rounded-full bg-muted animate-pulse" />
+                )}
                 <Label htmlFor="dark-mode">Modo escuro</Label>
               </div>
             </div>
