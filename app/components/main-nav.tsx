@@ -74,7 +74,7 @@ export function MainNav() {
   return (
     <Sidebar className="shadow-md">
       <SidebarHeader className="border-b p-4">
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href="/dashboard" className="flex items-center space-x-2">
           <span className="text-xl font-bold ">NEXT RECARGAS</span>
         </Link>
       </SidebarHeader>

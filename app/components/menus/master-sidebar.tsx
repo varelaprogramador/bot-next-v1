@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { UserButton } from "@clerk/nextjs"
+import { SignOutButton, UserButton } from "@clerk/nextjs"
 import { useUser } from "@clerk/nextjs"
 import { useState, useEffect } from "react"
 import Image from "next/image"
@@ -67,7 +67,7 @@ export function AppSidebar() {
   const routes = [
     {
       title: "Dashboard",
-      href: "/",
+      href: "/dashboard",
       icon: <BarChart3 className="h-5 w-5" />,
     },
     {
@@ -189,12 +189,9 @@ export function AppSidebar() {
                   <p className="text-xs text-muted-foreground">{user?.emailAddresses[0].emailAddress}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/sign-out">
-                  <LogOut className="h-5 w-5" />
-                  <span className="sr-only">Sair</span>
-                </Link>
-              </Button>
+              <SignOutButton >
+                <LogOut className="h-5 w-5" />
+              </SignOutButton>
             </div>
           </div>
         </SidebarFooter>
