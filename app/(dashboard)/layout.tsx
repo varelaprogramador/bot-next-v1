@@ -5,9 +5,12 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/app/components/ui/sidebar";
+import { getUserPrivateMetadata } from "../hook/get-metadata";
+import { currentUser } from "@clerk/nextjs/server";
 
 import { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
+import { redirect } from "next/navigation";
 
 
 export const metadata: Metadata = {
@@ -38,6 +41,16 @@ export default async function Layout({
 }: {
     children: React.ReactNode;
 }) {
+    const user = await currentUser();
+    const userMetadata = await getUserPrivateMetadata(user?.id || ""); // Substitua "user_id" pelo ID real do usuário
+    const subscriptionStatus = (userMetadata?.subscription as { org?: string, status?: string })?.status;
+    if (!subscriptionStatus) {
+        //não logado
+        redirect("/sign-in")
+    } else if (subscriptionStatus !== "active") {
+        //usuario não permitido
+        redirect("/not-allowed-priv")
+    }
 
     return (
         <>

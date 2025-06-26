@@ -1,19 +1,12 @@
-import { AppSidebar } from "@/app/components/menus/master-sidebar";
-import { Separator } from "@/app/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/app/components/ui/sidebar";
-
 import { ClerkProvider } from "@clerk/nextjs";
-import { currentUser } from "@clerk/nextjs/server";
+
 import { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import NextTopLoader from 'nextjs-toploader'
 import { Inter } from "next/font/google";
 import './globals.css';
-
+import { ptBR } from "@clerk/localizations";
+import { dark } from '@clerk/themes'
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
@@ -46,7 +39,9 @@ export default async function Layout({
 }) {
 
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={ptBR} appearance={{
+      baseTheme: dark,
+    }}>
       <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1" />

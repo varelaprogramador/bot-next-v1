@@ -1,75 +1,105 @@
 "use server";
-
-export async function getUsers() {
-  const apiSecret = process.env.USER_WEBHOOK_API_KEY;
-  const origin =
-    process.env.NEXTAUTH_URL ||
-    process.env.VERCEL_URL ||
-    "http://localhost:3000";
-
-  const response = await fetch(`${origin}/api/users/get-users`, {
-    headers: {
-      "x-secret": apiSecret as string,
-    },
-  });
-
-  if (!response.ok) {
-    console.log(response);
-    throw new Error("Falha ao buscar usuários");
+import { clerkClient } from "@clerk/clerk-sdk-node";
+export const getUsers = async () => {
+  try {
+    const usersList = await clerkClient.users.getUserList({
+      orderBy: "-created_at",
+    });
+    const userListFormatter = usersList.data.map((user: any) => ({
+      id: user.id,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      emailAddresses:
+        user.emailAddresses?.map((e: any) => ({
+          emailAddress: e.emailAddress,
+        })) || [],
+      role: user.privateMetadata?.subscription?.org || "user",
+      createdAt: user.createdAt || "",
+    }));
+    console.log(userListFormatter);
+    return userListFormatter;
+  } catch (error) {
+    console.error("Erro ao obter todos os usuários:", error);
+    throw new Error("Erro ao obter todos os usuários");
   }
+};
 
-  return response.json();
-}
-
-export async function createUser(data: {
+export const createUser = async (data: {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
   status: string;
-  level: string;
-}) {
-  const apiSecret = process.env.USER_WEBHOOK_API_KEY;
-  const origin =
-    process.env.NEXTAUTH_URL ||
-    process.env.VERCEL_URL ||
-    "http://localhost:3000";
+  org: string;
+}) => {
+  const { firstName, lastName, email, password, status, org } = data;
 
-  const response = await fetch(`${origin}/api/users/create-user`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-secret": apiSecret as string,
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error("Falha ao criar usuário");
+  if (!firstName || !lastName || !email || !password) {
+    throw new Error("Dados incompletos");
   }
 
-  return response.json();
-}
+  try {
+    const newUser = await clerkClient.users.createUser({
+      firstName,
+      lastName,
+      emailAddress: [email],
+      password,
+      privateMetadata: {
+        subscription: {
+          org: org || "member",
+          status: status || "active",
+        },
+      },
+    });
+
+    return newUser;
+  } catch (error) {
+    console.error("Erro detalhado ao criar novo usuário:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Erro ao criar novo usuário"
+    );
+  }
+};
 
 export async function deleteUser(id: string) {
-  const apiSecret = process.env.USER_WEBHOOK_API_KEY;
-  const origin =
-    process.env.NEXTAUTH_URL ||
-    process.env.VERCEL_URL ||
-    "http://localhost:3000";
-
-  const response = await fetch(`${origin}/api/users/delete-user`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-secret": apiSecret as string,
-    },
-    body: JSON.stringify({ id }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Falha ao excluir usuário");
+  try {
+    await clerkClient.users.deleteUser(id);
+    return { message: "Usuário excluído com sucesso" };
+  } catch (error) {
+    console.error("Erro ao excluir usuário:", error);
+    throw new Error("Erro ao excluir usuário");
   }
-
-  return response.json();
 }
+
+export const editUser = async (
+  id: string,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
+    status?: string;
+    org?: string;
+  }
+) => {
+  try {
+    const updatePayload: any = {};
+    if (data.firstName) updatePayload.firstName = data.firstName;
+    if (data.lastName) updatePayload.lastName = data.lastName;
+    if (data.email) updatePayload.emailAddress = [data.email];
+    if (data.password && data.password !== "")
+      updatePayload.password = data.password;
+    // status e org podem ser salvos em privateMetadata
+    if (data.status || data.org) {
+      updatePayload.privateMetadata = {};
+      if (data.status)
+        updatePayload.privateMetadata.subscription.status = data.status;
+      if (data.org) updatePayload.privateMetadata.subscription.org = data.org;
+    }
+    const updatedUser = await clerkClient.users.updateUser(id, updatePayload);
+    return updatedUser;
+  } catch (error) {
+    console.error("Erro ao editar usuário:", error);
+    throw new Error("Erro ao editar usuário");
+  }
+};

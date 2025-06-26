@@ -66,6 +66,8 @@ const fetchProducts = async () => {
 interface DialogCreateOrUpdateVendaProps {
   venda?: VendasProps; // Se fornecido, será um formulário de atualização
   onConfirm: (args: { data: VendasProps }) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 interface DetalhesProduto {
@@ -96,8 +98,13 @@ const schema = z.object({
 export const CreateOrUpdateVenda = ({
   venda,
   onConfirm,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: DialogCreateOrUpdateVendaProps) => {
   const [open, setOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined && controlledOnOpenChange !== undefined;
+  const actualOpen = isControlled ? controlledOpen : open;
+  const setActualOpen = isControlled ? controlledOnOpenChange! : setOpen;
   const [products, setProducts] = useState<ProdutosProps[]>([]);
   const isDesktop = !useIsMobile();
 
@@ -128,17 +135,25 @@ export const CreateOrUpdateVenda = ({
   }, []);
 
   useEffect(() => {
-    const selectedProduct = products.find(p => p.id === form.watch("id_produto"));
-    if (selectedProduct) {
-      form.setValue("detalhes_produto", {
-        id: selectedProduct.id || "",
-        nome: selectedProduct.nome || "",
-        valor: selectedProduct.valor || 0,
-        tipo: (selectedProduct.tipo || "produto") as "produto" | "combo"
-      });
-      form.setValue("tipo_produto", (selectedProduct.tipo || "produto") as "produto" | "combo");
-    }
-  }, [form.watch("id_produto"), products]);
+    const subscription = form.watch((values, { name }) => {
+      if (name === "id_produto") {
+        const selectedProduct = products.find(p => p.id === values.id_produto);
+        if (selectedProduct) {
+          // Só preenche se o campo estiver vazio, permitindo edição manual
+          if (!form.getValues("detalhes_produto.nome")) {
+            form.setValue("detalhes_produto", {
+              id: selectedProduct.id || "",
+              nome: selectedProduct.nome || "",
+              valor: selectedProduct.valor || 0,
+              tipo: (selectedProduct.tipo || "produto") as "produto" | "combo"
+            });
+            form.setValue("tipo_produto", (selectedProduct.tipo || "produto") as "produto" | "combo");
+          }
+        }
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [products, form]);
 
   const onSubmit = (values: z.infer<typeof schema>) => {
     onConfirm({
@@ -151,7 +166,7 @@ export const CreateOrUpdateVenda = ({
           : new Date().toISOString(),
       },
     });
-    setOpen(false);
+    setActualOpen(false);
     form.reset();
   };
 
@@ -338,9 +353,9 @@ export const CreateOrUpdateVenda = ({
 
   return isDesktop ? (
     <Dialog
-      open={open}
+      open={actualOpen}
       onOpenChange={(isOpen) => {
-        setOpen(isOpen);
+        setActualOpen(isOpen);
         if (!isOpen) form.reset();
       }}
     >
@@ -362,9 +377,9 @@ export const CreateOrUpdateVenda = ({
     </Dialog>
   ) : (
     <Drawer
-      open={open}
+      open={actualOpen}
       onOpenChange={(isOpen) => {
-        setOpen(isOpen);
+        setActualOpen(isOpen);
         if (!isOpen) form.reset();
       }}
     >

@@ -8,6 +8,7 @@ import {
   SortAsc,
   SortDesc,
   Trash2,
+  Edit,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -56,6 +57,8 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import type { VendasProps } from "@/app/utils/vendas";
+import { CreateOrUpdateVenda } from "@/app/components/edit-form/vendas-edit";
+import { QuickEditVendaModal } from "@/app/components/edit-form/quick-edit-venda-modal";
 
 interface DataTableVendasProps {
   data: VendasProps[];
@@ -74,6 +77,11 @@ export function DataTableVendas({ data, onVendaDeleted }: DataTableVendasProps) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [vendaToDelete, setVendaToDelete] = useState<VendasProps | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [vendaToEdit, setVendaToEdit] = useState<VendasProps | null>(null);
+  const [isQuickEditOpen, setIsQuickEditOpen] = useState(false);
+  const [vendaToQuickEdit, setVendaToQuickEdit] = useState<VendasProps | null>(null);
+  const [quickEditLoading, setQuickEditLoading] = useState(false);
   const supabase = createClientSupabaseClient();
 
   // Função para filtrar e ordenar os dados
@@ -306,6 +314,56 @@ export function DataTableVendas({ data, onVendaDeleted }: DataTableVendasProps) 
     }
   };
 
+  const handleEditVenda = async (args: { data: VendasProps }) => {
+    try {
+      const { data: updated, error } = await supabase
+        .from("vendas")
+        .update({
+          id_produto: args.data.id_produto,
+          valor: args.data.valor,
+          tipo_produto: args.data.tipo_produto,
+          detalhes_produto: args.data.detalhes_produto,
+        })
+        .eq("uuid", args.data.uuid)
+        .select();
+      if (error) throw error;
+      toast.success("Venda atualizada com sucesso!");
+      setIsEditOpen(false);
+      setVendaToEdit(null);
+      onVendaDeleted?.(); // Recarrega os dados
+    } catch (error) {
+      toast.error("Erro ao atualizar venda. Tente novamente.");
+    }
+  };
+
+  const handleQuickEditVenda = async (data: VendasProps) => {
+    setQuickEditLoading(true);
+    try {
+      const { error } = await supabase
+        .from("vendas")
+        .update({
+          id_produto: data.id_produto,
+          valor: data.valor,
+          tipo_produto: data.tipo_produto,
+          detalhes_produto: data.detalhes_produto,
+          id_cliente: data.id_cliente,
+          nome_cliente: data.nome_cliente,
+          status: data.status,
+          tipo_pagamento: data.tipo_pagamento,
+        })
+        .eq("uuid", data.uuid);
+      if (error) throw error;
+      toast.success("Venda atualizada com sucesso!");
+      setIsQuickEditOpen(false);
+      setVendaToQuickEdit(null);
+      onVendaDeleted?.();
+    } catch (error) {
+      toast.error("Erro ao atualizar venda. Tente novamente.");
+    } finally {
+      setQuickEditLoading(false);
+    }
+  };
+
   // Obter todos os status únicos dos dados
   const uniqueStatuses = Array.from(new Set(data.map((venda) => venda.status)));
 
@@ -505,6 +563,17 @@ export function DataTableVendas({ data, onVendaDeleted }: DataTableVendasProps) 
                             <Trash2 className="mr-2 h-4 w-4" />
                             Excluir venda
                           </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={(e: { stopPropagation: () => void }) => {
+                              e.stopPropagation();
+                              setVendaToQuickEdit(venda);
+                              setIsQuickEditOpen(true);
+                            }}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edição rápida
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -640,6 +709,21 @@ export function DataTableVendas({ data, onVendaDeleted }: DataTableVendasProps) 
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <CreateOrUpdateVenda
+          venda={vendaToEdit!}
+          onConfirm={handleEditVenda}
+          open={isEditOpen}
+          onOpenChange={setIsEditOpen}
+        />
+
+        <QuickEditVendaModal
+          open={isQuickEditOpen}
+          onOpenChange={setIsQuickEditOpen}
+          venda={vendaToQuickEdit}
+          onSave={handleQuickEditVenda}
+          loading={quickEditLoading}
+        />
       </CardContent>
     </Card>
   );

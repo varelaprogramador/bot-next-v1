@@ -1,28 +1,27 @@
-import express from 'express';
-import { clerkClient } from '@clerk/express';
+import express from "express";
+import { clerkClient } from "@clerk/express";
 
 const app = express();
 app.use(express.json());
 
 // Endpoint para atualizar o usuário
-app.post('/update-user', async (req, res) => {
+app.post("/update-user", async (req, res) => {
   const { userId, firstName, lastName, email } = req.body;
 
   try {
     const updatedUser = await clerkClient.users.updateUser(userId, {
       firstName,
       lastName,
-     
     });
     res.json(updatedUser);
   } catch (error) {
     console.error("Erro ao atualizar o usuário:", error);
-    res.status(500).json({ error: 'Erro ao atualizar o usuário' });
+    res.status(500).json({ error: "Erro ao atualizar o usuário" });
   }
 });
 
 // Endpoint para criar um novo usuário (admin-only)
-app.post('/create-user', async (req, res) => {
+app.post("/create-user", async (req, res) => {
   const { firstName, lastName, email, password } = req.body;
 
   try {
@@ -35,26 +34,41 @@ app.post('/create-user', async (req, res) => {
     res.json(newUser);
   } catch (error) {
     console.error("Erro ao criar novo usuário:", error);
-    res.status(500).json({ error: 'Erro ao criar novo usuário' });
+    res.status(500).json({ error: "Erro ao criar novo usuário" });
   }
 });
 
 // Endpoint para obter todos os usuários
-app.get('/get-users', async (req, res) => {
+app.get("/get-users", async (req, res) => {
   try {
     // Obtendo todos os usuários
     const users = await clerkClient.users.getUserList({
-      orderBy: '-created_at', // Ordenando pela data de criação (mais recente primeiro)
+      orderBy: "-created_at", // Ordenando pela data de criação (mais recente primeiro)
     });
 
     res.json(users.data); // Retorna apenas os dados dos usuários
   } catch (error) {
     console.error("Erro ao obter todos os usuários:", error);
-    res.status(500).json({ error: 'Erro ao obter todos os usuários' });
+    res.status(500).json({ error: "Erro ao obter todos os usuários" });
   }
 });
 
+/**
+ * Busca o privateMetadata do usuário Clerk
+ * @param userId - ID do usuário Clerk
+ * @returns Objeto privateMetadata (ex: { subscription: { org, status } })
+ */
+export const getUserPrivateMetadata = async (userId: string) => {
+  try {
+    const user = await clerkClient.users.getUser(userId);
+    return user.privateMetadata || {};
+  } catch (error) {
+    console.error("Erro ao buscar privateMetadata do usuário:", error);
+    throw error;
+  }
+};
+
 // Iniciar o servidor
 app.listen(3000, () => {
-  console.log('Servidor rodando na porta 3000');
+  console.log("Servidor rodando na porta 3000");
 });

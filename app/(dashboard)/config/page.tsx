@@ -14,6 +14,7 @@ import {
   Settings,
   Trash,
   Users,
+  Edit,
 } from "lucide-react"
 
 import { Button } from "@/app/components/ui/button"
@@ -51,6 +52,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/app/components/ui/breadcrumb"
+import { EditUserDialog } from "./_components/user"
 
 interface User {
   id: string
@@ -73,6 +75,8 @@ export default function ConfigPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [activeTab, setActiveTab] = useState("users")
   const { toast } = useToast()
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [userToEdit, setUserToEdit] = useState<User | null>(null)
 
   const usersPerPage = 10
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage)
@@ -84,6 +88,7 @@ export default function ConfigPage() {
     try {
       setRefreshing(true)
       const data = await getUsers()
+
       setUsers(data)
       setFilteredUsers(data)
       setError(null)
@@ -216,6 +221,11 @@ export default function ConfigPage() {
           </TableCell>
         </TableRow>
       ))
+  }
+
+  const handleEditUser = (user: User) => {
+    setUserToEdit(user)
+    setEditDialogOpen(true)
   }
 
   return (
@@ -380,6 +390,14 @@ export default function ConfigPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => handleEditUser(user)}
+                              aria-label={`Editar ${user.firstName} ${user.lastName}`}
+                            >
+                              <Edit className="h-4 w-4 text-primary" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => confirmDelete(user)}
                               aria-label={`Excluir ${user.firstName} ${user.lastName}`}
                             >
@@ -451,6 +469,13 @@ export default function ConfigPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        user={userToEdit}
+        onUserUpdated={fetchUsers}
+      />
     </div>
   )
 }
