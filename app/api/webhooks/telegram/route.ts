@@ -76,7 +76,7 @@ interface Message {
   buttons?: MessageButton[];
   image?: string;
   created_at: string;
-  status: 'sent' | 'failed' | 'received';
+  status: "sent" | "failed" | "received";
   error?: string;
   chat_type?: string;
   chat_id?: string;
@@ -96,15 +96,15 @@ const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
-    const userId = url.searchParams.get('userId');
-    const limit = parseInt(url.searchParams.get('limit') || '50');
+    const userId = url.searchParams.get("userId");
+    const limit = parseInt(url.searchParams.get("limit") || "50");
 
     if (userId) {
       const messages = await getUserMessages(userId, limit);
-      return new NextResponse(
-        JSON.stringify({ messages }),
-        { status: 200, headers: { "Content-Type": "application/json" } }
-      );
+      return new NextResponse(JSON.stringify({ messages }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     return new NextResponse(
@@ -129,10 +129,14 @@ async function sendMessageToUser(
 ) {
   try {
     // Verifica o limite de uso
-    const { canSend, remaining } = await telegramUsage.checkAndUpdateUsage(userId);
+    const { canSend, remaining } = await telegramUsage.checkAndUpdateUsage(
+      userId
+    );
 
     if (!canSend) {
-      throw new Error(`Limite diário de mensagens atingido. Tente novamente amanhã.`);
+      throw new Error(
+        `Limite diário de mensagens atingido. Tente novamente amanhã.`
+      );
     }
 
     // Create inline keyboard with buttons
@@ -178,7 +182,7 @@ async function sendMessageToUser(
       message,
       buttons,
       image,
-      status: 'sent'
+      status: "sent",
     });
 
     return { success: true, messageId: result.message_id, remaining };
@@ -191,8 +195,8 @@ async function sendMessageToUser(
       message,
       buttons,
       image,
-      status: 'failed',
-      error: error.message
+      status: "failed",
+      error: error.message,
     });
 
     // Return detailed error information
@@ -206,26 +210,28 @@ async function sendMessageToUser(
 }
 
 // Função para salvar mensagem no Supabase
-async function saveMessage(message: Omit<Message, 'id' | 'created_at'>) {
+async function saveMessage(message: Omit<Message, "id" | "created_at">) {
   try {
     const { data, error } = await supabase
-      .from('messages')
-      .insert([{
-        ...message,
-        id: randomUUID(),
-        created_at: new Date().toISOString()
-      }])
+      .from("messages")
+      .insert([
+        {
+          ...message,
+          id: randomUUID(),
+          created_at: new Date().toISOString(),
+        },
+      ])
       .select()
       .single();
 
     if (error) {
-      console.error('Erro ao salvar mensagem:', error);
+      console.error("Erro ao salvar mensagem:", error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Erro ao salvar mensagem:', error);
+    console.error("Erro ao salvar mensagem:", error);
     return null;
   }
 }
@@ -234,20 +240,20 @@ async function saveMessage(message: Omit<Message, 'id' | 'created_at'>) {
 async function getUserMessages(userId: string, limit: number = 50) {
   try {
     const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
+      .from("messages")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
       .limit(limit);
 
     if (error) {
-      console.error('Erro ao buscar mensagens:', error);
+      console.error("Erro ao buscar mensagens:", error);
       return [];
     }
 
     return data;
   } catch (error) {
-    console.error('Erro ao buscar mensagens:', error);
+    console.error("Erro ao buscar mensagens:", error);
     return [];
   }
 }
@@ -256,18 +262,18 @@ async function getUserMessages(userId: string, limit: number = 50) {
 async function clearUserMessages(userId: string) {
   try {
     const { error } = await supabase
-      .from('messages')
+      .from("messages")
       .delete()
-      .eq('user_id', userId);
+      .eq("user_id", userId);
 
     if (error) {
-      console.error('Erro ao limpar mensagens:', error);
+      console.error("Erro ao limpar mensagens:", error);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('Erro ao limpar mensagens:', error);
+    console.error("Erro ao limpar mensagens:", error);
     return false;
   }
 }
@@ -276,16 +282,20 @@ async function clearUserMessages(userId: string) {
 export async function POST(req: Request) {
   try {
     const data = await req.json(); // Receber a atualização do Telegram
-
+    console.log("data", data);
     // Salvar mensagem no Supabase se for uma mensagem válida
-    if (data.message?.from?.id && data.message?.chat?.type && data.message?.chat?.type !== "supergroup") {
-      const messageData: Omit<Message, 'id' | 'created_at'> = {
+    if (
+      data.message?.from?.id &&
+      data.message?.chat?.type &&
+      data.message?.chat?.type !== "supergroup"
+    ) {
+      const messageData: Omit<Message, "id" | "created_at"> = {
         user_id: data.message.from.id.toString(),
-        message: data.message.text || '',
+        message: data.message.text || "",
         chat_type: data.message.chat.type,
         chat_id: data.message.chat.id.toString(),
         username: data.message.from.username || data.message.from.first_name,
-        status: 'received' as const
+        status: "received" as const,
       };
 
       await saveMessage(messageData);
@@ -309,28 +319,33 @@ export async function POST(req: Request) {
           // Enviar mensagem diretamente usando a API do bot
           const botResult = await bot.telegram.sendMessage(userId, message, {
             parse_mode: "HTML",
-            reply_markup
+            reply_markup,
           });
 
-          console.log("Mensagem com botões enviada com sucesso:", botResult.message_id);
+          console.log(
+            "Mensagem com botões enviada com sucesso:",
+            botResult.message_id
+          );
 
           // Salvar mensagem no histórico
           await saveMessage({
             user_id: userId,
             message,
-            status: 'sent',
-            buttons: reply_markup.inline_keyboard.flat().map((btn: TelegramInlineButton) => ({
-              name: btn.text,
-              type: btn.url ? 'link' : 'command',
-              command: btn.url || btn.callback_data || ''
-            }))
+            status: "sent",
+            buttons: reply_markup.inline_keyboard
+              .flat()
+              .map((btn: TelegramInlineButton) => ({
+                name: btn.text,
+                type: btn.url ? "link" : "command",
+                command: btn.url || btn.callback_data || "",
+              })),
           });
 
           return new NextResponse(
             JSON.stringify({
               success: true,
               message: "Mensagem com botões enviada com sucesso!",
-              messageId: botResult.message_id
+              messageId: botResult.message_id,
             }),
             { status: 200, headers: { "Content-Type": "application/json" } }
           );
@@ -339,7 +354,7 @@ export async function POST(req: Request) {
           return new NextResponse(
             JSON.stringify({
               success: false,
-              error: "Falha ao enviar mensagem com botões"
+              error: "Falha ao enviar mensagem com botões",
             }),
             { status: 500, headers: { "Content-Type": "application/json" } }
           );
@@ -350,7 +365,7 @@ export async function POST(req: Request) {
         JSON.stringify({
           success: true,
           message: "Webhook POST disparo processado com sucesso!",
-          result
+          result,
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
@@ -376,7 +391,7 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   try {
     const url = new URL(req.url);
-    const userId = url.searchParams.get('userId');
+    const userId = url.searchParams.get("userId");
 
     if (!userId) {
       return new NextResponse(
@@ -607,8 +622,8 @@ bot.on("callback_query", async (ctx) => {
 
       const mensagem = `🎖️ PERFIL | PREMIUM 🎖️
       Escolha um produto para confirmar a compra:\n\n${produtosUnique
-          .map((item) => `🔹 ${item.nome}`)
-          .join("\n")}
+        .map((item) => `🔹 ${item.nome}`)
+        .join("\n")}
       
       =====================
       
@@ -653,8 +668,8 @@ bot.on("callback_query", async (ctx) => {
 
       const mensagem = `🎖️ PRODUTOS | PREMIUM 🎖️
       Você selecionou o produto: ${produtoNome}\n\nEscolha a opção para compra:\n\n${produtos
-          .map((item) => `🔹 ${item.nome} - ${item.categoria}`)
-          .join("\n")}
+        .map((item) => `🔹 ${item.nome} - ${item.categoria}`)
+        .join("\n")}
       
       =====================
       
@@ -704,24 +719,24 @@ bot.on("callback_query", async (ctx) => {
 
       {
         /*const mensagem = `🎖️ PERFIL | PREMIUM 🎖️\n${produtos.length > 0
-        ? combos
-          .map((combo) => {
-            return `🔹 ${combo.nome} \n${combo.produtos.length > 0
-              ? combo.produtos
-                .map((item: { nome: any; descricao: any; }) => (item.nome ? ` 🔸 ${item.nome} \n ${item.descricao}\n` : "❌ Produto sem nome"))
-                .join("\n")
-              : "❌ Nenhum produto disponível."}`;
-          })
-          .join("\n\n")
-        : "❌ Nenhum combo disponível."}
-    
-    =====================
-    
-    🏷️ Garantia Total:
-    
-    Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
-    
-    💎 Experiência Premium, feita para você!`;*/
+                ? combos
+                  .map((combo) => {
+                    return `🔹 ${combo.nome} \n${combo.produtos.length > 0
+                      ? combo.produtos
+                        .map((item: { nome: any; descricao: any; }) => (item.nome ? ` 🔸 ${item.nome} \n ${item.descricao}\n` : "❌ Produto sem nome"))
+                        .join("\n")
+                      : "❌ Nenhum produto disponível."}`;
+                  })
+                  .join("\n\n")
+                : "❌ Nenhum combo disponível."}
+            
+            =====================
+            
+            🏷️ Garantia Total:
+            
+            Confiamos na qualidade dos nossos serviços e oferecemos garantia em todos eles.
+            
+            💎 Experiência Premium, feita para você!`;*/
       }
       const mensagem = "Escolha um dos combos acima:";
       const imageUrl = "https://nextgiftcards.com/banner.jpeg";
@@ -795,7 +810,7 @@ bot.on("callback_query", async (ctx) => {
       if (saldoAtual < valorProduto) {
         ctx.editMessageText(
           `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
-          `💰 Recarregue seu saldo para continuar.`,
+            `💰 Recarregue seu saldo para continuar.`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -830,10 +845,10 @@ bot.on("callback_query", async (ctx) => {
 
       ctx.editMessageText(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
-        `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto.toFixed(2)}\n` +
-        `💰 Saldo atual: R$${saldoAtual.toFixed(2)}\n\n` +
-        `Deseja confirmar a compra?`,
+          `🔹 ${produto.nome}\n\n` + // Corrigido para exibir o nome do produto
+          `💵 Preço: R$${valorProduto.toFixed(2)}\n` +
+          `💰 Saldo atual: R$${saldoAtual.toFixed(2)}\n\n` +
+          `Deseja confirmar a compra?`,
         confirmacaoOptions
       );
     } else if (callbackData.startsWith("2comprar_")) {
@@ -898,7 +913,7 @@ bot.on("callback_query", async (ctx) => {
       if (saldoAtual < valorProduto) {
         ctx.reply(
           `⚠️ Saldo insuficiente! Você possui R$${saldoAtual}, mas o produto custa R$${valorProduto}.\n` +
-          `💰 Recarregue seu saldo para continuar.`,
+            `💰 Recarregue seu saldo para continuar.`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -933,10 +948,10 @@ bot.on("callback_query", async (ctx) => {
 
       ctx.reply(
         `🛒 Você está prestes a adquirir o produto:\n\n` +
-        `🔹 ${combo.nome}\n\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo atual: R$${saldoAtual.toFixed(2) || 0}\n\n` +
-        `Deseja confirmar a compra?`,
+          `🔹 ${combo.nome}\n\n` + // Corrigido para exibir o nome do produto
+          `💵 Preço: R$${valorProduto}\n` +
+          `💰 Saldo atual: R$${saldoAtual.toFixed(2) || 0}\n\n` +
+          `Deseja confirmar a compra?`,
         confirmacaoOptions
       );
     } else if (callbackData.startsWith("confirmar_compra_")) {
@@ -1012,7 +1027,7 @@ bot.on("callback_query", async (ctx) => {
       if (codigoError || !codigosAtivos || codigosAtivos.length === 0) {
         await ctx.editMessageText(
           "❌ Não foi possível processar o código do produto. Solicite um chamado e envie o seu id." +
-          `\nSeu id: ${userId}`,
+            `\nSeu id: ${userId}`,
           {
             reply_markup: {
               inline_keyboard: [
@@ -1046,10 +1061,10 @@ bot.on("callback_query", async (ctx) => {
 
       await ctx.editMessageText(
         `🎉 Compra realizada com sucesso!\n` +
-        `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
-        `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
-        `Aproveite seu novo produto!`
+          `🔹 Produto: ${produto.nome}\n` + // Corrigido para exibir o nome do produto
+          `💵 Preço: R$${valorProduto}\n` +
+          `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
+          `Aproveite seu novo produto!`
       );
 
       await ctx.reply(`
@@ -1163,10 +1178,10 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
       // Se todos os códigos estão ativos, prosseguir com a compra
       ctx.editMessageText(
         `🎉 Compra realizada com sucesso!\n` +
-        `🔹 Combo: ${combo.nome}\n` + // Exibindo o nome do combo
-        `💵 Preço: R$${valorProduto}\n` +
-        `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
-        `Aproveite seu novo combo!`
+          `🔹 Combo: ${combo.nome}\n` + // Exibindo o nome do combo
+          `💵 Preço: R$${valorProduto}\n` +
+          `💰 Saldo restante: R$${novoSaldo.toFixed(2)}\n\n` +
+          `Aproveite seu novo combo!`
       );
 
       const mensagensCodigos = codigosAtivos
@@ -1174,8 +1189,9 @@ Se tiver dúvidas, estamos aqui para ajudar. 💬
           const produto = produtosCombo.find(
             (item: { id: any }) => codigo.id_produto === item.id
           );
-          return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${codigo.codigo
-            }`;
+          return `📜 ${produto ? produto.nome : "Produto Desconhecido"}: ${
+            codigo.codigo
+          }`;
         })
         .join("\n");
       for (const codigo of codigosAtivos) {
