@@ -1,8 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
-import { contactManager } from "@/app/utils/contact-manager";
+import { api } from "@/app/utils/api";
 import { Contact, CreateContactDTO } from "@/app/types/contact";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -57,8 +58,8 @@ export const ContactList = () => {
         if (!user) return;
         try {
             setLoading(true);
-            const data = await contactManager.listContacts(user.id);
-            setContacts(data);
+            const response = await api.get<{ contacts: Contact[] }>("/wp-contacts");
+            setContacts(response.data.contacts);
         } catch (error) {
             console.error("Erro ao buscar contatos:", error);
             toast.error("Não foi possível carregar os contatos");
@@ -71,7 +72,10 @@ export const ContactList = () => {
         if (!user) return;
         try {
             setCreatingContact(true);
-            await contactManager.createContact(newContact, user.id);
+            await api.post("/wp-contacts", {
+                name: newContact.name,
+                phone: newContact.whatsapp,
+            });
             toast.success("Contato criado com sucesso");
             setOpen(false);
             setNewContact({
@@ -92,7 +96,7 @@ export const ContactList = () => {
     const deleteContact = async (id: string) => {
         if (!user) return;
         try {
-            await contactManager.deleteContact(id, user.id);
+            await api.delete(`/wp-contacts/${id}`);
             toast.success("Contato excluído com sucesso");
             setDeleteDialogOpen(false);
             setContactToDelete(null);
@@ -107,8 +111,8 @@ export const ContactList = () => {
         if (!user) return;
         try {
             setLoading(true);
-            const data = await contactManager.searchContacts(query, user.id);
-            setContacts(data);
+            const data = await api.get<{ contacts: Contact[] }>(`/wp-contacts/search?query=${query}`);
+            setContacts(data.data.contacts);
         } catch (error) {
             console.error("Erro ao buscar contatos:", error);
             toast.error("Não foi possível buscar os contatos");

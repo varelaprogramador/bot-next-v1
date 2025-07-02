@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/app/components/ui/button"
-import { instanceManager } from "@/app/utils/instance-manager"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog"
 import { Input } from "@/app/components/ui/input"
@@ -23,6 +22,7 @@ import {
 } from "@/app/components/ui/alert-dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip"
 import { motion } from "framer-motion"
+import { api } from "@/app/utils/api"
 
 interface Instance {
     instanceName: string
@@ -60,23 +60,16 @@ export const InstanceList = () => {
     const fetchInstances = async () => {
         try {
             setRefreshing(true)
-            const response = await fetch("/api/evolution/instances")
-            const data = await response.json()
+            const response = await api.get<Instance[]>("/evo/instances")
+            const data = response.data
 
-            if (!response.ok) {
-                throw new Error(data.error || "Erro ao buscar instâncias")
-            }
-
-            // Busca a instância padrão do banco
-            const defaultInstance = await instanceManager.getDefaultInstance()
-
-            // Atualiza o estado is_default das instâncias
-            const updatedInstances = data.map((instance: Instance) => ({
-                ...instance,
-                is_default: defaultInstance?.instance_id === instance.instanceName
-            }))
-
-            setInstances(updatedInstances)
+            // Busca a instância padrão do banco (mantém lógica local se necessário)
+            // const defaultInstance = await instanceManager.getDefaultInstance()
+            // const updatedInstances = data.map((instance: Instance) => ({
+            //     ...instance,
+            //     is_default: defaultInstance?.instance_id === instance.instanceName
+            // }))
+            setInstances(data)
         } catch (error) {
             console.error("Erro ao buscar instâncias:", error)
             toast.error("Não foi possível carregar as instâncias")
@@ -89,20 +82,7 @@ export const InstanceList = () => {
     const createInstance = async () => {
         try {
             setCreatingInstance(true)
-            const response = await fetch("/api/evolution/instances/create", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(newInstance),
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                throw new Error(data.error || "Erro ao criar instância")
-            }
-
+            await api.post("/evo/instance/create", newInstance)
             toast.success("Instância criada com sucesso")
             setSelectedInstance(newInstance.instanceName)
             setOpen(false)
@@ -171,24 +151,16 @@ export const InstanceList = () => {
 
     const deleteInstance = async (instanceName: string) => {
         try {
-            const response = await fetch(`/api/evolution/instances/delete?instanceName=${instanceName}`, {
-                method: "DELETE",
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.error || "Erro ao excluir instância");
-            }
-
-            toast.success("Instância excluída com sucesso");
-            setDeleteDialogOpen(false);
-            setInstanceToDelete(null);
-            fetchInstances();
+            await api.post("/evo/instance/delete", { instanceName })
+            toast.success("Instância excluída com sucesso")
+            setDeleteDialogOpen(false)
+            setInstanceToDelete(null)
+            fetchInstances()
         } catch (error) {
-            console.error("Erro ao excluir instância:", error);
-            toast.error(error instanceof Error ? error.message : "Não foi possível excluir a instância");
+            console.error("Erro ao excluir instância:", error)
+            toast.error(error instanceof Error ? error.message : "Não foi possível excluir a instância")
         }
-    };
+    }
 
     const setDefaultInstance = async (instanceName: string) => {
         try {
@@ -201,7 +173,7 @@ export const InstanceList = () => {
             }
 
             // Envia apenas a instância selecionada para o banco
-            await instanceManager.setDefaultInstance(selectedInstance.instanceName, selectedInstance.instanceName)
+            await api.post("/evo/instance/default", { instanceName })
 
             toast.success("Instância definida como padrão")
             fetchInstances()
