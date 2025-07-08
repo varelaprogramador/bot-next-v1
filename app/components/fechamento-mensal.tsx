@@ -67,6 +67,7 @@ import { Input } from "@/app/components/ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import * as XLSX from "xlsx";
 
 export interface VendasProps {
     origin: string;
@@ -472,6 +473,7 @@ export const EnhancedFechamentoMensal = () => {
     const [activeTab, setActiveTab] = useState("overview");
     const supabase = createClientSupabaseClient();
     const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
+    const [openPixTax, setOpenPixTax] = useState<number>(0.0);
 
     // Função para calcular métricas estratégicas
     const calcularMetricasEstrategicas = (vendas: any[], vendasMesAnterior: any[]) => {
@@ -786,6 +788,68 @@ export const EnhancedFechamentoMensal = () => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    };
+
+    const exportarFechamentoExcel = () => {
+        if (!resumoMensal) return;
+        // Montar dados conforme a planilha enviada
+        const produtos = resumoMensal.produtosVendidos;
+        const rows = produtos.map((produto) => {
+            // Exemplo de cálculo, ajuste conforme necessário
+            const imposto = produto.valorTotal * 0.053;
+            const lucro = produto.valorTotal - (produto.custo || 0) - imposto;
+            const custoMaisImposto = (produto.custo || 0) + imposto;
+            const empresaA = lucro * 0.6;
+            const empresaB = lucro * 0.4;
+            return {
+                "Produtos": produto.nome,
+                "Q. Codigos": produto.quantidade,
+                "Custo": produto.custo || 0,
+                "Venda": produto.valorTotal,
+                "Imposto 5,3%": imposto,
+                "Lucro": lucro,
+                "Custo + Imposto": custoMaisImposto,
+                "Empresa A - 60%": empresaA,
+                "Empresa B - 40%": empresaB,
+            };
+        });
+        // Adicionar totais e taxa OpenPix
+        const totalCusto = rows.reduce((acc, r) => acc + r["Custo"], 0);
+        const totalVenda = rows.reduce((acc, r) => acc + r["Venda"], 0);
+        const totalImposto = rows.reduce((acc, r) => acc + r["Imposto 5,3%"], 0);
+        const totalLucro = rows.reduce((acc, r) => acc + r["Lucro"], 0);
+        const totalCustoImposto = rows.reduce((acc, r) => acc + r["Custo + Imposto"], 0);
+        const totalEmpresaA = rows.reduce((acc, r) => acc + r["Empresa A - 60%"], 0);
+        const totalEmpresaB = rows.reduce((acc, r) => acc + r["Empresa B - 40%"], 0);
+        rows.push({
+            "Produtos": "Total",
+            "Q. Codigos": produtos.reduce((acc, p) => acc + p.quantidade, 0),
+            "Custo": totalCusto,
+            "Venda": totalVenda,
+            "Imposto 5,3%": totalImposto,
+            "Lucro": totalLucro,
+            "Custo + Imposto": totalCustoImposto,
+            "Empresa A - 60%": totalEmpresaA,
+            "Empresa B - 40%": totalEmpresaB,
+        });
+        // Taxa OpenPix
+        const taxaOpenPix = totalVenda * (openPixTax / 100);
+        rows.push({
+            "Produtos": "TAXA OPENPIX",
+            "Q. Codigos": "",
+            "Custo": "",
+            "Venda": taxaOpenPix,
+            "Imposto 5,3%": "",
+            "Lucro": "",
+            "Custo + Imposto": "",
+            "Empresa A - 60%": "",
+            "Empresa B - 40%": "",
+        });
+        // Exportar para Excel
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Fechamento");
+        XLSX.writeFile(wb, `fechamento-mensal-${mesSelecionado}.xlsx`);
     };
 
     const CustomTooltip = ({ active, payload, label }: any) => {
@@ -1688,6 +1752,23 @@ export const EnhancedFechamentoMensal = () => {
                                         </div>
                                     </CardContent>
                                 </Card>
+                            </div>
+                            <div className="flex gap-2 items-end">
+                                <div>
+                                    <label className="block text-xs font-medium mb-1">Taxa OpenPix (%)</label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={openPixTax}
+                                        onChange={e => setOpenPixTax(Number(e.target.value))}
+                                        className="w-24"
+                                    />
+                                </div>
+                                <Button onClick={exportarFechamentoExcel} disabled={!resumoMensal} variant="outline">
+                                    <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                    Exportar Fechamento Excel
+                                </Button>
                             </div>
                         </div>
                     </TabsContent>

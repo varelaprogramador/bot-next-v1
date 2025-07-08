@@ -155,6 +155,8 @@ export default function DisparoChatPage() {
     const [showAdvancedEditor, setShowAdvancedEditor] = useState(false);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [advancedMessage, setAdvancedMessage] = useState("");
+    const [showAddContactsBulkDialog, setShowAddContactsBulkDialog] = useState(false);
+    const [bulkContactsText, setBulkContactsText] = useState("");
 
     // Memoizamos a lista de contatos filtrada para evitar recálculos desnecessários
     const filteredContacts = useMemo(() => {
@@ -359,6 +361,33 @@ export default function DisparoChatPage() {
             });
         }
     }, [newContactName, newContactId, supabase, toast, loadContacts]);
+
+    const handleAddContactsBulk = useCallback(async () => {
+        const lines = bulkContactsText.split("\n").map(l => l.trim()).filter(Boolean);
+        if (lines.length === 0) {
+            toast({ title: "Erro", description: "Insira pelo menos um contato.", variant: "destructive" });
+            return;
+        }
+        // Espera-se: nome;id por linha
+        const contactsToAdd = lines.map(line => {
+            const [name, id] = line.split(";").map(s => s.trim());
+            return { username: name, user_id: id };
+        }).filter(c => c.username && c.user_id);
+        if (contactsToAdd.length === 0) {
+            toast({ title: "Erro", description: "Formato inválido. Use: nome;id por linha.", variant: "destructive" });
+            return;
+        }
+        try {
+            const { error } = await supabase.from("users").insert(contactsToAdd);
+            if (error) throw error;
+            toast({ title: "Sucesso", description: `${contactsToAdd.length} contatos adicionados!` });
+            setShowAddContactsBulkDialog(false);
+            setBulkContactsText("");
+            loadContacts();
+        } catch (error) {
+            toast({ title: "Erro", description: "Não foi possível adicionar os contatos.", variant: "destructive" });
+        }
+    }, [bulkContactsText, supabase, toast, loadContacts]);
 
     // Função para salvar logs de mensagens
     const saveMessageLog = useCallback(async (messages: any[], user_id: string) => {
@@ -1133,6 +1162,9 @@ export default function DisparoChatPage() {
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
+                                <Button onClick={() => setShowAddContactsBulkDialog(true)} variant="outline" className="ml-2">
+                                    Adicionar em Massa
+                                </Button>
                             </div>
                         </div>
                         <div className="relative">
@@ -1411,6 +1443,9 @@ export default function DisparoChatPage() {
                                 >
                                     <Users className="h-4 w-4 mr-2" />
                                     Disparo em massa
+                                </Button>
+                                <Button onClick={() => setShowAddContactsBulkDialog(true)} variant="outline" className="ml-2">
+                                    Adicionar em Massa
                                 </Button>
                             </div>
                         </div>
@@ -2278,6 +2313,25 @@ export default function DisparoChatPage() {
                         <Button onClick={applyAdvancedMessage}>
                             Aplicar Mensagem
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showAddContactsBulkDialog} onOpenChange={setShowAddContactsBulkDialog}>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>Adicionar Contatos em Massa</DialogTitle>
+                        <DialogDescription>Insira um contato por linha no formato: Nome;ID</DialogDescription>
+                    </DialogHeader>
+                    <Textarea
+                        value={bulkContactsText}
+                        onChange={e => setBulkContactsText(e.target.value)}
+                        rows={8}
+                        placeholder="Exemplo:\nJoão;123456\nMaria;654321"
+                    />
+                    <DialogFooter>
+                        <Button variant="secondary" onClick={() => setShowAddContactsBulkDialog(false)}>Cancelar</Button>
+                        <Button onClick={handleAddContactsBulk}>Adicionar Todos</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

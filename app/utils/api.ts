@@ -1,6 +1,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://api.lerjrecargas.com";
 
 if (!API_URL) {
   throw new Error("NEXT_PUBLIC_API_URL não está definida no ambiente.");

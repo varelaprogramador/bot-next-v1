@@ -488,6 +488,13 @@ export function DataTableVendas({ data, onVendaDeleted }: DataTableVendasProps) 
                       ))}
                   </div>
                 </TableHead>
+                <TableHead>
+                  <div
+                    className="flex items-center cursor-pointer"
+                  >
+                    Nome do Produto/Combo
+                  </div>
+                </TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -521,6 +528,9 @@ export function DataTableVendas({ data, onVendaDeleted }: DataTableVendasProps) 
                     </TableCell>
                     <TableCell className="font-medium">
                       {venda.tipo_produto === "produto" ? "Produto" : "Combo"}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {venda.detalhes_produto?.nome || "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>

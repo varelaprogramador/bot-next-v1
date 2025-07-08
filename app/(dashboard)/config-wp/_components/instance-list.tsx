@@ -98,52 +98,43 @@ export const InstanceList = () => {
         }
     }
 
-    const generateQR = async (instanceName: string) => {
-        try {
-            console.log("Iniciando geração de QR code para:", instanceName);
-            const response = await fetch(`/api/evolution/instances/qr?instanceName=${instanceName}`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                console.error("Erro na resposta:", {
-                    status: response.status,
-                    data: data
-                });
-                throw new Error(data.error || data.details?.message || "Erro ao gerar QR code");
-            }
-
-            console.log("QR code gerado com sucesso:", data);
-            setQrCode(data.base64);
-            setSelectedInstance(instanceName);
-        } catch (error) {
-            console.error("Erro ao gerar QR code:", error);
-            toast.error(error instanceof Error ? error.message : "Não foi possível gerar o QR code");
-        }
-    }
 
     const connectInstance = async (instanceName: string) => {
         try {
+            setSelectedInstance(instanceName)
             setConnectingInstance(instanceName)
-            const response = await fetch(`/api/evolution/instances/connect`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ instanceName }),
-            })
-            const data = await response.json()
 
-            if (!response.ok) {
-                throw new Error(data.error || "Erro ao conectar instância")
+            if (!instanceName) {
+                toast.error("Nome da instância é obrigatório")
+                return
             }
 
-            toast.success("Instância conectada com sucesso")
-            setQrCode(null)
-            setSelectedInstance(null)
-            fetchInstances()
-        } catch (error) {
+            const response = await api.get<{ base64: string; code?: string; pairingCode?: string }>(
+                `/evo/instance/connect/${instanceName}`
+            )
+
+            if (response.status !== 200) {
+                throw new Error("Erro ao conectar instância")
+            }
+
+            const qrBase64 = response.data.base64
+            console.log(response.data)
+            if (qrBase64) {
+                setQrCode(qrBase64)
+                setSelectedInstance(instanceName)
+                toast.success("QR Code gerado com sucesso")
+            } else {
+                setQrCode(null)
+                setSelectedInstance(null)
+                toast.success("Instância conectada com sucesso")
+            }
+        } catch (error: any) {
             console.error("Erro ao conectar instância:", error)
-            toast.error(error instanceof Error ? error.message : "Não foi possível conectar a instância")
+            toast.error(
+                error?.response?.data?.error ||
+                error?.message ||
+                "Não foi possível conectar a instância"
+            )
         } finally {
             setConnectingInstance(null)
         }
@@ -382,7 +373,7 @@ export const InstanceList = () => {
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    onClick={() => generateQR(instance.instanceName)}
+                                                                    onClick={() => connectInstance(instance.instanceName)}
                                                                     className="h-8 w-8"
                                                                 >
                                                                     <QrCode className="h-4 w-4" />
@@ -528,7 +519,7 @@ export const InstanceList = () => {
                                             <Button
                                                 variant="outline"
                                                 className="flex-1"
-                                                onClick={() => generateQR(instance.instanceName)}
+                                                onClick={() => connectInstance(instance.instanceName)}
                                             >
                                                 <QrCode className="h-4 w-4 mr-2" />
                                                 Gerar Novo QR
