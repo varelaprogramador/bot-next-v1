@@ -16,6 +16,7 @@ import {
   PanelLeft,
   Palette,
   Users,
+  Webhook,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -99,6 +100,11 @@ export function AppSidebar() {
       title: "Disparo Chat",
       href: "/disparo-chat",
       icon: <MessageSquare className="h-5 w-5" />,
+    },
+    {
+      title: "Token Bot",
+      href: "/token",
+      icon: <Webhook className="h-5 w-5" />,
     },
     {
       title: "Loja",
