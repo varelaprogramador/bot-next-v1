@@ -836,14 +836,14 @@ export const EnhancedFechamentoMensal = () => {
         const taxaOpenPix = totalVenda * (openPixTax / 100);
         rows.push({
             "Produtos": "TAXA OPENPIX",
-            "Q. Codigos": "",
-            "Custo": "",
+            "Q. Codigos": 0,
+            "Custo": 0,
             "Venda": taxaOpenPix,
-            "Imposto 5,3%": "",
-            "Lucro": "",
-            "Custo + Imposto": "",
-            "Empresa A - 60%": "",
-            "Empresa B - 40%": "",
+            "Imposto 5,3%": 0,
+            "Lucro": 0,
+            "Custo + Imposto": 0,
+            "Empresa A - 60%": 0,
+            "Empresa B - 40%": 0,
         });
         // Exportar para Excel
         const ws = XLSX.utils.json_to_sheet(rows);

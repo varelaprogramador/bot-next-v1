@@ -56,14 +56,14 @@ export default function Vendas() {
         table: "vendas",
       },
       (payload) => {
-        setData((prevData: any[]) => {
+        setData((prevData: VendasProps[]) => {
           switch (payload.eventType) {
             case "INSERT":
               return [...prevData, payload.new as VendasProps]
             case "UPDATE":
-              return prevData.map((item: any[]) => (item.uuid === payload.new.uuid ? (payload.new as VendasProps) : item))
+              return prevData.map((item: VendasProps) => (item.uuid === payload.new.uuid ? (payload.new as VendasProps) : item))
             case "DELETE":
-              return prevData.filter((item: any[]) => item.uuid !== payload.old.uuid)
+              return prevData.filter((item: VendasProps) => item.uuid !== payload.old.uuid)
             default:
               return prevData
           }
