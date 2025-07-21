@@ -280,7 +280,11 @@ export default function DashboardPage() {
     // Produtos mais vendidos
     const vendasPorProduto = data.reduce(
         (acc, venda) => {
-            if (venda.status.toLowerCase() === "concluida") {
+            if (
+                venda.status.toLowerCase() === "concluida" &&
+                venda.detalhes_produto &&
+                venda.detalhes_produto.nome
+            ) {
                 const chave = `${venda.detalhes_produto.nome}`
                 acc[chave] = (acc[chave] || 0) + venda.valor
             }
