@@ -29,26 +29,100 @@ export default function DashboardPage() {
   const [data, setData] = useState<VendasProps[]>([]);
   const [selectedRange, setSelectedRange] = useState("30");
   const [filteredData, setFilteredData] = useState<ChartProps[]>([]);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
 
+  // Cache para armazenar dados por período
+  const [dataCache, setDataCache] = useState<Map<string, VendasProps[]>>(new Map());
 
+  // Função para carregar dados em batch com base no período selecionado
+  const loadDataByRange = async (range: string) => {
+    const cacheKey = range;
+    
+    // Verifica se já existe no cache
+    if (dataCache.has(cacheKey)) {
+      setData(dataCache.get(cacheKey) || []);
+      return;
+    }
 
+    setBatchLoading(true);
+    const today = new Date();
+    let startDate = today;
+
+    switch (range) {
+      case "7":
+        startDate = subDays(today, 7);
+        break;
+      case "15":
+        startDate = subDays(today, 15);
+        break;
+      case "30":
+        startDate = subDays(today, 30);
+        break;
+      default:
+        startDate = subDays(today, 30);
+        break;
+    }
+
+    try {
+      const BATCH_SIZE = 1000;
+      let allData: VendasProps[] = [];
+      let start = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const { data: batch, error } = await supabase
+          .from("vendas")
+          .select("*")
+          .gte("created_at", startDate.toISOString())
+          .lte("created_at", today.toISOString())
+          .order("created_at", { ascending: false })
+          .range(start, start + BATCH_SIZE - 1);
+
+        if (error) throw error;
+
+        if (batch && batch.length > 0) {
+          allData = [...allData, ...batch];
+          start += BATCH_SIZE;
+          hasMore = batch.length === BATCH_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+
+      // Armazena no cache
+      setDataCache(prev => new Map(prev.set(cacheKey, allData)));
+      setData(allData);
+      
+    } catch (error) {
+      console.error("Erro ao carregar dados em batch:", error);
+    } finally {
+      setBatchLoading(false);
+    }
+  };
+
+  // Carregamento inicial simplificado - apenas dados recentes
   useEffect(() => {
-    const loadData = async () => {
+    const loadInitialData = async () => {
       setLoading(true);
       try {
-        const { data: vendas, error } = await supabase
+        // Carrega apenas os últimos 30 dias inicialmente
+        await loadDataByRange("30");
+        
+        // Carrega contagem total em background
+        const { count } = await supabase
           .from("vendas")
-          .select("*");
-        if (error) throw error;
-        setData(vendas || []);
+          .select("*", { count: "exact", head: true });
+        
+        setTotalRecords(count || 0);
       } catch (error) {
-        console.error("Erro ao carregar dados:", error);
+        console.error("Erro ao carregar dados iniciais:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadData();
+    loadInitialData();
   }, [supabase]);
 
   useEffect(() => {
@@ -60,20 +134,56 @@ export default function DashboardPage() {
         table: "vendas",
       },
       (payload) => {
+        // Invalida cache quando há mudanças
+        setDataCache(new Map());
+        
         setData((prevData) => {
+          const newVenda = payload.new as VendasProps;
+          const oldVenda = payload.old as VendasProps;
+          
           switch (payload.eventType) {
             case "INSERT":
-              return [...prevData, payload.new as VendasProps];
+              // Verifica se a nova venda está no período atual
+              const vendaDate = new Date(newVenda.created_at);
+              const today = new Date();
+              let shouldInclude = false;
+              
+              switch (selectedRange) {
+                case "7":
+                  shouldInclude = vendaDate >= subDays(today, 7);
+                  break;
+                case "15":
+                  shouldInclude = vendaDate >= subDays(today, 15);
+                  break;
+                case "30":
+                  shouldInclude = vendaDate >= subDays(today, 30);
+                  break;
+              }
+              
+              return shouldInclude ? [...prevData, newVenda] : prevData;
+              
             case "UPDATE":
               return prevData.map((item) =>
-                item.uuid === payload.new.uuid
-                  ? (payload.new as VendasProps)
-                  : item
+                item.uuid === newVenda.uuid ? newVenda : item
               );
+              
             case "DELETE":
-              return prevData.filter((item) => item.uuid !== payload.old.uuid);
+              return prevData.filter((item) => item.uuid !== oldVenda.uuid);
+              
             default:
               return prevData;
+          }
+        });
+        
+        // Atualiza contagem total
+        setTotalRecords(prev => {
+          switch (payload.eventType) {
+            case "INSERT":
+              return prev + 1;
+            case "DELETE":
+              return prev - 1;
+            default:
+              return prev;
           }
         });
       }
@@ -83,7 +193,7 @@ export default function DashboardPage() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, selectedRange]);
 
   // Função para filtrar os dados com base no intervalo de dias
   const filterDataByRange = (range: string) => {
@@ -130,14 +240,17 @@ export default function DashboardPage() {
     setFilteredData(finalFilteredData);
   };
 
-  // Atualiza os dados filtrados quando a aba é alterada
+  // Atualiza os dados filtrados quando os dados mudam
   useEffect(() => {
-    filterDataByRange(selectedRange);
-  }, [selectedRange, data]);
+    if (data.length > 0) {
+      filterDataByRange(selectedRange);
+    }
+  }, [data]);
 
-  // Handle tab change
-  const handleTabChange = (value: string) => {
+  // Handle tab change - carrega dados quando muda o período
+  const handleTabChange = async (value: string) => {
     setSelectedRange(value);
+    await loadDataByRange(value);
   };
   const today = new Date();
   const startOfToday = startOfDay(today);
@@ -147,43 +260,47 @@ export default function DashboardPage() {
   const startOfYesterday = startOfDay(yesterday);
   const endOfYesterday = endOfDay(yesterday);
 
-  // Calculando o total de vendas
+  // Calculando métricas otimizadas
   const vendashoje = data
     .filter((venda) => {
       const itemDate = new Date(venda.created_at);
       return itemDate >= startOfToday && itemDate <= endOfToday;
     })
-    .reduce((acc, venda) => acc + venda.valor || 0, 0);
+    .reduce((acc, venda) => acc + (venda.valor || 0), 0);
 
-  const vendastotal =  data
-  .filter((venda) => {
-    return (
-      venda.status.toLowerCase() === "concluida"
-  );
-  })
-  .reduce((acc, venda) => acc + venda.valor || 0, 0); // Soma os valores das vendas
+  // Para vendas totais, fazemos uma query separada quando necessário
+  const [vendastotal, setVendasTotal] = useState(0);
+  
+  useEffect(() => {
+    const getVendasTotal = async () => {
+      try {
+        const { data: totalVendas } = await supabase
+          .from("vendas")
+          .select("valor")
+          .eq("status", "concluida");
+        
+        const total = (totalVendas || []).reduce((acc, venda) => acc + (venda.valor || 0), 0);
+        setVendasTotal(total);
+      } catch (error) {
+        console.error("Erro ao carregar vendas totais:", error);
+      }
+    };
 
+    getVendasTotal();
+  }, [supabase]);
 
   const vendasontem = data
     .filter((venda) => {
       const itemDate = new Date(venda.created_at);
       return itemDate >= startOfYesterday && itemDate <= endOfYesterday;
     })
-    .reduce((acc, venda) => acc + venda.valor || 0, 0);
+    .reduce((acc, venda) => acc + (venda.valor || 0), 0);
 
-    const trintaDiasAtras = new Date(today);
-    trintaDiasAtras.setDate(today.getDate() - 30);
-    
-    // Filtra as vendas que têm o status 'concluida' e foram feitas nos últimos 30 dias
-    const vendasfeitas = data
-      .filter((venda) => {
-        const dataVenda = new Date(venda.created_at); // Converte a data de criação da venda para o formato Date
-        return (
-          venda.status.toLowerCase() === "concluida" &&
-          dataVenda >= trintaDiasAtras // Verifica se a venda é dos últimos 30 dias
-        );
-      })
-      .reduce((acc, venda) => acc + venda.valor || 0, 0); // Soma os valores das vendas
+  const vendasfeitas = data
+    .filter((venda) => {
+      return venda.status.toLowerCase() === "concluida";
+    })
+    .reduce((acc, venda) => acc + (venda.valor || 0), 0);
     
   const vendaspendentes = data
     .filter(
@@ -192,11 +309,11 @@ export default function DashboardPage() {
         new Date(venda.created_at) >= startOfToday &&
         new Date(venda.created_at) <= endOfToday
     )
-    .reduce((acc, venda) => acc + venda.valor || 0, 0);
+    .reduce((acc, venda) => acc + (venda.valor || 0), 0);
 
-  const vendaspix =
-    (data.filter((venda) => venda.tipo_pagamento === "pix").length * 100) /
-    data.length;
+  const vendaspix = data.length > 0 
+    ? (data.filter((venda) => venda.tipo_pagamento === "pix").length * 100) / data.length
+    : 0;
 
   const [valorAtual, setValorAtual] = useState(vendastotal); 
   const [meta, setMeta] = useState(10000); 
@@ -262,7 +379,20 @@ setValorAtual(vendashoje);
       </div>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">GRÁFICO DE VENDAS</h3>
+          <div className="flex items-center gap-4">
+            <h3 className="text-lg font-medium">GRÁFICO DE VENDAS</h3>
+            {batchLoading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                Carregando dados...
+              </div>
+            )}
+            {totalRecords > 0 && (
+              <span className="text-sm text-muted-foreground">
+                Total: {totalRecords.toLocaleString()} registros
+              </span>
+            )}
+          </div>
           <Tabs
             defaultValue="30"
             className="space-y-4 "
@@ -271,19 +401,21 @@ setValorAtual(vendashoje);
             <TabsList className="filter-category-night">
               <TabsTrigger
                 value="7"
-
+                disabled={batchLoading}
                 aria-label="Filter data for the last 7 days"
               >
                 7 dias
               </TabsTrigger>
               <TabsTrigger
                 value="15"
+                disabled={batchLoading}
                 aria-label="Filter data for the last 15 days"
               >
                 15 dias
               </TabsTrigger>
               <TabsTrigger
                 value="30"
+                disabled={batchLoading}
                 aria-label="Filter data for the last 30 days"
               >
                 30 dias
