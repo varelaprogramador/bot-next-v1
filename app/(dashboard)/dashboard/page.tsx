@@ -49,25 +49,149 @@ import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
 export default function DashboardPage() {
     const supabase = createClientSupabaseClient()
     const [loading, setLoading] = useState(true)
+    const [batchLoading, setBatchLoading] = useState(false)
     const [data, setData] = useState<VendasProps[]>([])
     const [selectedRange, setSelectedRange] = useState("30")
     const [filteredData, setFilteredData] = useState<ChartProps[]>([])
+    const [totalRecords, setTotalRecords] = useState(0)
+    
+    // Cache para armazenar dados por período
+    const [dataCache, setDataCache] = useState<Map<string, VendasProps[]>>(new Map())
+    
+    // Estados para métricas agregadas
+    const [metricsData, setMetricsData] = useState({
+        vendastotal: 0,
+        clientesUnicos: 0,
+        vendasCanceladas: 0
+    })
 
+    // Função para carregar dados em batch otimizado por período
+    const loadDataByRange = async (range: string) => {
+        const cacheKey = range
+        
+        // Verifica se já existe no cache
+        if (dataCache.has(cacheKey)) {
+            setData(dataCache.get(cacheKey) || [])
+            return
+        }
+
+        setBatchLoading(true)
+        const today = new Date()
+        let startDate = today
+
+        switch (range) {
+            case "7":
+                startDate = subDays(today, 7)
+                break
+            case "15":
+                startDate = subDays(today, 15)
+                break
+            case "30":
+                startDate = subDays(today, 30)
+                break
+            default:
+                startDate = subDays(today, 30)
+                break
+        }
+
+        try {
+            const BATCH_SIZE = 1000
+            let allData: VendasProps[] = []
+            let start = 0
+            let hasMore = true
+
+            while (hasMore) {
+                const { data: batch, error } = await supabase
+                    .from("vendas")
+                    .select("*")
+                    .gte("created_at", startDate.toISOString())
+                    .lte("created_at", today.toISOString())
+                    .order("created_at", { ascending: false })
+                    .range(start, start + BATCH_SIZE - 1)
+
+                if (error) throw error
+
+                if (batch && batch.length > 0) {
+                    allData = [...allData, ...batch]
+                    start += BATCH_SIZE
+                    hasMore = batch.length === BATCH_SIZE
+                } else {
+                    hasMore = false
+                }
+            }
+
+            // Armazena no cache
+            setDataCache(prev => new Map(prev.set(cacheKey, allData)))
+            setData(allData)
+            
+        } catch (error) {
+            console.error("Erro ao carregar dados em batch:", error)
+        } finally {
+            setBatchLoading(false)
+        }
+    }
+
+    // Função para carregar métricas agregadas em background
+    const loadAggregatedMetrics = async () => {
+        try {
+            // Vendas totais concluídas
+            const { data: totalData } = await supabase
+                .from("vendas")
+                .select("valor")
+                .eq("status", "concluida")
+            
+            const vendastotal = (totalData || []).reduce((acc, venda) => acc + (venda.valor || 0), 0)
+
+            // Clientes únicos
+            const { data: clientesData } = await supabase
+                .from("vendas")
+                .select("id_cliente")
+            
+            const clientesUnicos = new Set((clientesData || []).map(v => v.id_cliente)).size
+
+            // Vendas canceladas
+            const { data: canceladasData } = await supabase
+                .from("vendas")
+                .select("uuid")
+                .eq("status", "cancelada")
+            
+            const vendasCanceladas = canceladasData?.length || 0
+
+            setMetricsData({
+                vendastotal,
+                clientesUnicos,
+                vendasCanceladas
+            })
+
+        } catch (error) {
+            console.error("Erro ao carregar métricas agregadas:", error)
+        }
+    }
+
+    // Carregamento inicial otimizado
     useEffect(() => {
-        const loadData = async () => {
+        const loadInitialData = async () => {
             setLoading(true)
             try {
-                const { data: vendas, error } = await supabase.from("vendas").select("*")
-                if (error) throw error
-                setData(vendas || [])
+                // Carrega dados do período selecionado
+                await loadDataByRange(selectedRange)
+                
+                // Carrega métricas agregadas em paralelo
+                await Promise.all([
+                    loadAggregatedMetrics(),
+                    // Carrega contagem total
+                    supabase.from("vendas").select("*", { count: "exact", head: true })
+                        .then(({ count }) => setTotalRecords(count || 0))
+                ])
+                
             } catch (error) {
-                console.error("Erro ao carregar dados:", error)
+                console.error("Erro ao carregar dados iniciais:", error)
             } finally {
                 setLoading(false)
             }
         }
 
-        loadData()
+        loadInitialData()
     }, [supabase])
 
     useEffect(() => {
@@ -79,18 +203,63 @@ export default function DashboardPage() {
                 table: "vendas",
             },
             (payload) => {
+                // Invalida cache quando há mudanças
+                setDataCache(new Map())
+                
                 setData((prevData) => {
+                    const newVenda = payload.new as VendasProps
+                    const oldVenda = payload.old as VendasProps
+                    
                     switch (payload.eventType) {
                         case "INSERT":
-                            return [...prevData, payload.new as VendasProps]
+                            // Verifica se a nova venda está no período atual
+                            const vendaDate = new Date(newVenda.created_at)
+                            const today = new Date()
+                            let shouldInclude = false
+                            
+                            switch (selectedRange) {
+                                case "7":
+                                    shouldInclude = vendaDate >= subDays(today, 7)
+                                    break
+                                case "15":
+                                    shouldInclude = vendaDate >= subDays(today, 15)
+                                    break
+                                case "30":
+                                    shouldInclude = vendaDate >= subDays(today, 30)
+                                    break
+                            }
+                            
+                            return shouldInclude ? [...prevData, newVenda] : prevData
+                            
                         case "UPDATE":
-                            return prevData.map((item) => (item.uuid === payload.new.uuid ? (payload.new as VendasProps) : item))
+                            return prevData.map((item) => (item.uuid === newVenda.uuid ? newVenda : item))
+                            
                         case "DELETE":
-                            return prevData.filter((item) => item.uuid !== payload.old.uuid)
+                            return prevData.filter((item) => item.uuid !== oldVenda.uuid)
+                            
                         default:
                             return prevData
                     }
                 })
+                
+                // Atualiza métricas agregadas e contagem total
+                if (payload.eventType === "INSERT") {
+                    setTotalRecords(prev => prev + 1)
+                    // Recarrega métricas agregadas se necessário
+                    if ((payload.new as VendasProps).status?.toLowerCase() === "concluida") {
+                        loadAggregatedMetrics()
+                    }
+                } else if (payload.eventType === "DELETE") {
+                    setTotalRecords(prev => prev - 1)
+                    loadAggregatedMetrics()
+                } else if (payload.eventType === "UPDATE") {
+                    // Recarrega métricas se o status mudou
+                    const oldStatus = (payload.old as VendasProps).status?.toLowerCase()
+                    const newStatus = (payload.new as VendasProps).status?.toLowerCase()
+                    if (oldStatus !== newStatus) {
+                        loadAggregatedMetrics()
+                    }
+                }
             },
         )
 
@@ -98,7 +267,7 @@ export default function DashboardPage() {
         return () => {
             subscription.unsubscribe()
         }
-    }, [supabase])
+    }, [supabase, selectedRange])
 
     const filterDataByRange = (range: string) => {
         const today = new Date()
@@ -150,11 +319,14 @@ export default function DashboardPage() {
     }
 
     useEffect(() => {
-        filterDataByRange(selectedRange)
-    }, [selectedRange, data])
+        if (data.length > 0) {
+            filterDataByRange(selectedRange)
+        }
+    }, [data])
 
-    const handleTabChange = (value: string) => {
+    const handleTabChange = async (value: string) => {
         setSelectedRange(value)
+        await loadDataByRange(value)
     }
 
     // Cálculos de métricas
@@ -173,9 +345,7 @@ export default function DashboardPage() {
         })
         .reduce((acc, venda) => acc + venda.valor || 0, 0)
 
-    const vendastotal = data
-        .filter((venda) => venda.status.toLowerCase() === "concluida")
-        .reduce((acc, venda) => acc + venda.valor || 0, 0)
+    const vendastotal = metricsData.vendastotal
 
     const vendasontem = data
         .filter((venda) => {
@@ -305,22 +475,21 @@ export default function DashboardPage() {
 
     const taxaConversao = data.length > 0 ? (vendasPorStatus["concluida"] / data.length) * 100 : 0
 
-    // Clientes únicos
-    const clientesUnicos = new Set(data.map((v) => v.id_cliente)).size
+    // Clientes únicos (usando dados agregados)
+    const clientesUnicos = metricsData.clientesUnicos
 
     // Receita por cliente
     const receitaPorCliente = clientesUnicos > 0 ? vendastotal / clientesUnicos : 0
 
-    // Vendas canceladas
-    const vendasCanceladas = data.filter((v) => v.status.toLowerCase() === "cancelada").length
-    const taxaCancelamento = data.length > 0 ? (vendasCanceladas / data.length) * 100 : 0
+    // Vendas canceladas (usando dados agregados)
+    const vendasCanceladas = metricsData.vendasCanceladas
+    const taxaCancelamento = totalRecords > 0 ? (vendasCanceladas / totalRecords) * 100 : 0
 
     return (
         <div className="min-h-screen ">
             <div className="flex min-h-[90vh] flex-col space-y-8 px-4 py-6 animate-fade-in">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-
                     <div className="flex items-center space-x-4">
                         <Badge variant="outline" className="px-4 py-2 bg-white/50 backdrop-blur-sm">
                             <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -330,6 +499,17 @@ export default function DashboardPage() {
                             <Clock className="mr-2 h-4 w-4" />
                             {format(new Date(), "dd/MM/yyyy HH:mm")}
                         </Badge>
+                        {batchLoading && (
+                            <Badge variant="outline" className="px-4 py-2 bg-blue-50 border-blue-200">
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2"></div>
+                                Carregando dados...
+                            </Badge>
+                        )}
+                        {totalRecords > 0 && (
+                            <Badge variant="secondary" className="px-4 py-2">
+                                Total: {totalRecords.toLocaleString()} registros
+                            </Badge>
+                        )}
                     </div>
                 </div>
 
@@ -525,13 +705,25 @@ export default function DashboardPage() {
                                     </div>
                                     <Tabs defaultValue="30" className="space-y-4" onValueChange={handleTabChange}>
                                         <TabsList className="bg-gray-100 dark:bg-gray-700">
-                                            <TabsTrigger value="7" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 dark:text-gray-200">
+                                            <TabsTrigger 
+                                                value="7" 
+                                                disabled={batchLoading}
+                                                className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 dark:text-gray-200"
+                                            >
                                                 7 dias
                                             </TabsTrigger>
-                                            <TabsTrigger value="15" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 dark:text-gray-200">
+                                            <TabsTrigger 
+                                                value="15" 
+                                                disabled={batchLoading}
+                                                className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 dark:text-gray-200"
+                                            >
                                                 15 dias
                                             </TabsTrigger>
-                                            <TabsTrigger value="30" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 dark:text-gray-200">
+                                            <TabsTrigger 
+                                                value="30" 
+                                                disabled={batchLoading}
+                                                className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-600 dark:text-gray-200"
+                                            >
                                                 30 dias
                                             </TabsTrigger>
                                         </TabsList>
