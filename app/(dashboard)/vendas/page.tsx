@@ -26,14 +26,36 @@ export default function Vendas() {
   const loadData = async () => {
     setRefreshing(true)
     try {
-      const { data: vendas, error } = await supabase.from("vendas").select("*")
+      let allVendas: VendasProps[] = []
+      const batchSize = 1000
+      let page = 0
+      let hasMore = true
 
-      if (error) {
-        throw error
+      while (hasMore) {
+        const from = page * batchSize
+        const to = from + batchSize - 1
+
+        const { data: vendas, error } = await supabase
+          .from("vendas")
+          .select("*")
+          .range(from, to)
+          .order('created_at', { ascending: false })
+
+        if (error) {
+          throw error
+        }
+
+        if (vendas && vendas.length > 0) {
+          allVendas = [...allVendas, ...vendas]
+          page++
+          hasMore = vendas.length === batchSize
+        } else {
+          hasMore = false
+        }
       }
 
-      setData(vendas || [])
-      toast.success(`${vendas?.length || 0} vendas carregadas com sucesso.`)
+      setData(allVendas)
+      toast.success(`${allVendas.length} vendas carregadas com sucesso.`)
     } catch (error) {
       console.error("Erro ao carregar dados:", error)
       toast.error("Não foi possível carregar as vendas. Tente novamente.")
