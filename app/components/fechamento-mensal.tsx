@@ -528,7 +528,7 @@ export const EnhancedFechamentoMensal = () => {
         try {
             const [ano, mes] = mesSelecionado.split("-").map(Number);
             const primeiroDiaMes = new Date(ano, mes - 1, 1);
-            const ultimoDiaMes = new Date(ano, mes, 0);
+            const ultimoDiaMes = new Date(ano, mes, 0, 23, 59, 59, 999);
 
             // Buscar vendas do mês atual
             const { data: vendas, error } = await supabase
